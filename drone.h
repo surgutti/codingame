@@ -19,6 +19,7 @@ struct Drone {
     Fish* scans[CREATURE_COUNT];
     
     std::string move;
+    std::string msg;
 };
 
 #endif // DRONE_H

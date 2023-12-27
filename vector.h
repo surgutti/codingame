@@ -23,6 +23,13 @@ struct Vector {
     bool isZero() const {
         return x == 0 && y == 0;
     }
+    
+    Vector normalize() {
+        double length = sqrt(x * x + y * y);
+        if (length == 0)
+            return Vector(0, 0);
+        return Vector(x / length, y / length);
+    }
 
     bool inRange(const Vector &v, double range) const {
         return (v.x - x) * (v.x - x) + (v.y - y) * (v.y - y) <= range * range;

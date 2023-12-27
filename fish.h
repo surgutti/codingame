@@ -9,6 +9,12 @@ struct Fish {
     int id;
     int type;
     int color;
+    bool is_visible;
+    bool is_scanned;
+    bool is_foe_scanned;
+    bool in_gamezone;
+    bool is_reported;
+    bool is_foe_reported;
 
     bool isMonster() const {
         return type == -1;
