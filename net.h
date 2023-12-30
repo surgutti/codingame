@@ -2,6 +2,7 @@
 #define NET_H
 
 #include <algorithm>
+#include <cassert>
 
 #include "vector.h"
 
@@ -57,6 +58,10 @@ struct Net {
     bool inRange(const Vector &point, double range) const {
         return LU.x - range <= point.x && point.x <= RD.x + range &&
                LU.y - range <= point.y && point.y <= RD.y + range;
+    }
+
+    double getArea() const {
+        return (RD.x - LU.x + 1) * (RD.y - LU.y + 1);
     }
 };
 

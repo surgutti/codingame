@@ -3,6 +3,10 @@
 
 #include <cmath>
 
+#include "drone.h"
+#include "net.h"
+#include "fish.h"
+
 int gameTurn;
 const int WIDTH = 10000;
 const int HEIGHT = 10000;
@@ -43,11 +47,45 @@ const Vector CENTER((WIDTH - 1) / 2.0, (HEIGHT - 1) / 2.0);
 
 const int MAX_TURNS = 201;
 
-// BOT CONST
-
 const int CREATURE_COUNT = 30;
 
 const double PI = acos(-1);
 const double TAU = 2 * PI;
+
+const int FISH_TYPES = 4;
+const int FISH_COLORS = 3;
+const int UNITS_PER_BLOCK = 100;
+
+const int PLAYERS = 2;
+
+int creature_count;
+Fish creatures[CREATURE_COUNT];
+Fish* creatures_from_id[CREATURE_COUNT];
+
+int monsters_count;
+Fish* monsters_list[CREATURE_COUNT];
+
+Drone drones[PLAYERS][DRONES_PER_PLAYER];
+Drone* drone_from_id[CREATURE_COUNT];
+
+Fish* visible_creatures[CREATURE_COUNT];
+
+int unvisible_unscanned_creature_count;
+Fish* unvisible_unscanned_creatures[CREATURE_COUNT];
+
+Net fish_nets[CREATURE_COUNT];
+
+const Net fish_borders[4] = {
+    Net(Vector(0, 2500), Vector(WIDTH, 10000)),
+    Net(Vector(0, 2500), Vector(WIDTH, 5000)),
+    Net(Vector(0, 5000), Vector(WIDTH, 7500)),
+    Net(Vector(0, 7500), Vector(WIDTH, 10000))
+};
+#define fish_borders (fish_borders + 1) // -1 indexed
+
+Fish* fish_table[FISH_COLORS][FISH_TYPES];
+
+int monster_count;
+Fish* monsters[CREATURE_COUNT];
 
 #endif // CONST_H

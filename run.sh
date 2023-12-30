@@ -1,0 +1,1 @@
+rm draw && make draw && ./draw

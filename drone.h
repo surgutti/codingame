@@ -4,7 +4,7 @@
 #include <string>
 
 #include "vector.h"
-#include "const.h"
+#include "fish.h"
 
 struct Drone {
     Vector pos;
@@ -16,7 +16,7 @@ struct Drone {
     bool lights; // was light ON on the last turn?
 
     int scan_count;
-    Fish* scans[CREATURE_COUNT];
+    Fish* scans[30];
     
     std::string move;
     std::string msg;

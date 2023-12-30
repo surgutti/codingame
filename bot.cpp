@@ -16,6 +16,7 @@
 #include <cmath>
 #include <vector>
 #include <array>
+#include <chrono>
 
  // *** Start of: /home/olaf/codingame/fish.h *** 
  #ifndef FISH_H
@@ -67,6 +68,10 @@
           return Vector(x + other.x, y + other.y);
       }
   
+      Vector operator- (const Vector &other) const {
+          return Vector(x - other.x, y - other.y);
+      }
+  
       Vector operator* (const double &scalar) const {
           return Vector(x * scalar, y * scalar);
       }
@@ -105,61 +110,6 @@
  
  #include <string>
  
-  // *** Start of: /home/olaf/codingame/const.h *** 
-  #ifndef CONST_H
-  #define CONST_H
-  
-  #include <cmath>
-  
-  int gameTurn;
-  const int WIDTH = 10000;
-  const int HEIGHT = 10000;
-  
-  const int DRONES_PER_PLAYER = 2;
-  
-  const int UGLY_UPPER_Y_LIMIT = 2500;
-  const int DRONE_UPPER_Y_LIMIT = 0;
-  const int DRONE_START_Y = 500;
-  
-  const int COLORS_PER_FISH = 4;
-  const int DRONE_MAX_BATTERY = 30;
-  const int LIGHT_BATTERY_COST = 5;
-  const int DRONE_BATTERY_REGEN = 1;
-  const int DRONE_MAX_SCANS = 1000; // Integer.MAX_VALUE;
-  
-  const int DARK_SCAN_RANGE = 800;
-  const int LIGHT_SCAN_RANGE = 2000;
-  const int UGLY_EAT_RANGE = 300;
-  const int DRONE_HIT_RANGE = 200;
-  const int FISH_HEARING_RANGE = (DARK_SCAN_RANGE + LIGHT_SCAN_RANGE) / 2;
-  
-  const int DRONE_MOVE_SPEED = 600;
-  const int DRONE_SINK_SPEED = 300;
-  const int DRONE_EMERGENCY_SPEED = 300;
-  double DRONE_MOVE_SPEED_LOSS_PER_SCAN = 0;
-  
-  const int FISH_SWIM_SPEED = 200;
-  const int FISH_AVOID_RANGE = 600;
-  const int FISH_FLEE_SPEED = 400;
-  const int UGLY_ATTACK_SPEED = (int) (DRONE_MOVE_SPEED * 0.9);
-  const int UGLY_SEARCH_SPEED = (int) (UGLY_ATTACK_SPEED / 2);
-  
-  const int FISH_X_SPAWN_LIMIT = 1000;
-  const int FISH_SPAWN_MIN_SEP = 1000;
-  
-  const Vector CENTER((WIDTH - 1) / 2.0, (HEIGHT - 1) / 2.0);
-  
-  const int MAX_TURNS = 201;
-  
-  // BOT CONST
-  
-  const int CREATURE_COUNT = 30;
-  
-  const double PI = acos(-1);
-  const double TAU = 2 * PI;
-  
-  #endif // CONST_H
-  // *** End of: /home/olaf/codingame/const.h *** 
  
  struct Drone {
      Vector pos;
@@ -171,7 +121,7 @@
      bool lights; // was light ON on the last turn?
  
      int scan_count;
-     Fish* scans[CREATURE_COUNT];
+     Fish* scans[30];
      
      std::string move;
      std::string msg;
@@ -179,70 +129,164 @@
  
  #endif // DRONE_H
  // *** End of: /home/olaf/codingame/drone.h *** 
- // *** Start of: /home/olaf/codingame/net.h *** 
- #ifndef NET_H
- #define NET_H
+ // *** Start of: /home/olaf/codingame/const.h *** 
+ #ifndef CONST_H
+ #define CONST_H
  
- #include <algorithm>
+ #include <cmath>
  
+  // *** Start of: /home/olaf/codingame/net.h *** 
+  #ifndef NET_H
+  #define NET_H
+  
+  #include <algorithm>
+  #include <cassert>
+  
+  
+  struct Net {
+      Vector LU; // left up
+      Vector RD; // right down
+  
+      Net() {
+  
+      }
+  
+      Net(const Vector &_LU, const Vector &_RD) :
+          LU(_LU), RD(_RD) {
+          assert(LU.x <= RD.x);
+          assert(LU.y <= RD.y);
+      }
+  
+      bool inside(const Vector &point) const {
+          return LU.x <= point.x && point.x <= RD.x &&
+                 LU.y <= point.y && point.y <= RD.y;
+      }
+  
+      Net intersect(const Net &other) const {
+          Net result;
+  
+          result.LU.x = std::max(LU.x, other.LU.x);
+          result.LU.y = std::max(LU.y, other.LU.y);
+  
+          result.RD.x = std::min(RD.x, other.RD.x);
+          result.RD.y = std::min(RD.y, other.RD.y);
+  
+          assert(result.LU.x <= result.RD.x);
+          assert(result.LU.y <= result.RD.y);
+  
+          return result;
+      }
+      
+      void apply_intersection(const Net &other) {
+          (*this) = this->intersect(other);
+      }
+  
+      Vector center() const {
+          return Vector((LU.x + RD.x) * 0.5, (LU.y + RD.y) * 0.5);
+      }
+  
+      void expand(double range) {
+          LU.x -= range;
+          LU.y -= range;
+          RD.x += range;
+          RD.y += range;
+      }
+  
+      bool inRange(const Vector &point, double range) const {
+          return LU.x - range <= point.x && point.x <= RD.x + range &&
+                 LU.y - range <= point.y && point.y <= RD.y + range;
+      }
+  
+      double getArea() const {
+          return (RD.x - LU.x + 1) * (RD.y - LU.y + 1);
+      }
+  };
+  
+  #endif // NET_H
+  // *** End of: /home/olaf/codingame/net.h *** 
  
- struct Net {
-     Vector LU; // left up
-     Vector RD; // right down
+ int gameTurn;
+ const int WIDTH = 10000;
+ const int HEIGHT = 10000;
  
-     Net() {
+ const int DRONES_PER_PLAYER = 2;
  
-     }
+ const int UGLY_UPPER_Y_LIMIT = 2500;
+ const int DRONE_UPPER_Y_LIMIT = 0;
+ const int DRONE_START_Y = 500;
  
-     Net(const Vector &_LU, const Vector &_RD) :
-         LU(_LU), RD(_RD) {
-         assert(LU.x <= RD.x);
-         assert(LU.y <= RD.y);
-     }
+ const int COLORS_PER_FISH = 4;
+ const int DRONE_MAX_BATTERY = 30;
+ const int LIGHT_BATTERY_COST = 5;
+ const int DRONE_BATTERY_REGEN = 1;
+ const int DRONE_MAX_SCANS = 1000; // Integer.MAX_VALUE;
  
-     bool inside(const Vector &point) const {
-         return LU.x <= point.x && point.x <= RD.x &&
-                LU.y <= point.y && point.y <= RD.y;
-     }
+ const int DARK_SCAN_RANGE = 800;
+ const int LIGHT_SCAN_RANGE = 2000;
+ const int UGLY_EAT_RANGE = 300;
+ const int DRONE_HIT_RANGE = 200;
+ const int FISH_HEARING_RANGE = (DARK_SCAN_RANGE + LIGHT_SCAN_RANGE) / 2;
  
-     Net intersect(const Net &other) const {
-         Net result;
+ const int DRONE_MOVE_SPEED = 600;
+ const int DRONE_SINK_SPEED = 300;
+ const int DRONE_EMERGENCY_SPEED = 300;
+ double DRONE_MOVE_SPEED_LOSS_PER_SCAN = 0;
  
-         result.LU.x = std::max(LU.x, other.LU.x);
-         result.LU.y = std::max(LU.y, other.LU.y);
+ const int FISH_SWIM_SPEED = 200;
+ const int FISH_AVOID_RANGE = 600;
+ const int FISH_FLEE_SPEED = 400;
+ const int UGLY_ATTACK_SPEED = (int) (DRONE_MOVE_SPEED * 0.9);
+ const int UGLY_SEARCH_SPEED = (int) (UGLY_ATTACK_SPEED / 2);
  
-         result.RD.x = std::min(RD.x, other.RD.x);
-         result.RD.y = std::min(RD.y, other.RD.y);
+ const int FISH_X_SPAWN_LIMIT = 1000;
+ const int FISH_SPAWN_MIN_SEP = 1000;
  
-         assert(result.LU.x <= result.RD.x);
-         assert(result.LU.y <= result.RD.y);
+ const Vector CENTER((WIDTH - 1) / 2.0, (HEIGHT - 1) / 2.0);
  
-         return result;
-     }
-     
-     void apply_intersection(const Net &other) {
-         (*this) = this->intersect(other);
-     }
+ const int MAX_TURNS = 201;
  
-     Vector center() const {
-         return Vector((LU.x + RD.x) * 0.5, (LU.y + RD.y) * 0.5);
-     }
+ const int CREATURE_COUNT = 30;
  
-     void expand(double range) {
-         LU.x -= range;
-         LU.y -= range;
-         RD.x += range;
-         RD.y += range;
-     }
+ const double PI = acos(-1);
+ const double TAU = 2 * PI;
  
-     bool inRange(const Vector &point, double range) const {
-         return LU.x - range <= point.x && point.x <= RD.x + range &&
-                LU.y - range <= point.y && point.y <= RD.y + range;
-     }
+ const int FISH_TYPES = 4;
+ const int FISH_COLORS = 3;
+ const int UNITS_PER_BLOCK = 100;
+ 
+ const int PLAYERS = 2;
+ 
+ int creature_count;
+ Fish creatures[CREATURE_COUNT];
+ Fish* creatures_from_id[CREATURE_COUNT];
+ 
+ Fish* fish_color_type_table[4][3];
+ 
+ int monsters_count;
+ Fish* monsters_list[CREATURE_COUNT];
+ 
+ Drone drones[PLAYERS][DRONES_PER_PLAYER];
+ Drone* drone_from_id[CREATURE_COUNT];
+ 
+ Fish* visible_creatures[CREATURE_COUNT];
+ 
+ int unvisible_unscanned_creature_count;
+ Fish* unvisible_unscanned_creatures[CREATURE_COUNT];
+ 
+ Net fish_nets[CREATURE_COUNT];
+ 
+ const Net fish_borders[4] = {
+     Net(Vector(0, 2500), Vector(WIDTH, 10000)),
+     Net(Vector(0, 2500), Vector(WIDTH, 5000)),
+     Net(Vector(0, 5000), Vector(WIDTH, 7500)),
+     Net(Vector(0, 7500), Vector(WIDTH, 10000))
  };
+ #define fish_borders (fish_borders + 1) // -1 indexed
  
- #endif // NET_H
- // *** End of: /home/olaf/codingame/net.h *** 
+ Fish* fish_table[FISH_TYPES][FISH_COLORS];
+ 
+ #endif // CONST_H
+ // *** End of: /home/olaf/codingame/const.h *** 
  // *** Start of: /home/olaf/codingame/collision.h *** 
  #ifndef COLLISION_H
  #define COLLISION_H
@@ -308,35 +352,9 @@
  
  #endif // COLLISION_H
  // *** End of: /home/olaf/codingame/collision.h *** 
+// #include "grid.h"
 
-const int PLAYERS = 2;
-
-int creature_count;
-Fish creatures[CREATURE_COUNT];
-Fish* creatures_from_id[CREATURE_COUNT];
-
-Fish* fish_color_type_table[4][3];
-
-int monsters_count;
-Fish* monsters_list[CREATURE_COUNT];
-
-Drone drones[PLAYERS][DRONES_PER_PLAYER];
-Drone* drone_from_id[CREATURE_COUNT];
-
-Fish* visible_creatures[CREATURE_COUNT];
-
-int unvisible_unscanned_creature_count;
-Fish* unvisible_unscanned_creatures[CREATURE_COUNT];
-
-Net fish_nets[CREATURE_COUNT];
-
-const Net fish_borders[4] = {
-    Net(Vector(0, 2500), Vector(WIDTH, 10000)),
-    Net(Vector(0, 2500), Vector(WIDTH, 5000)),
-    Net(Vector(0, 5000), Vector(WIDTH, 7500)),
-    Net(Vector(0, 7500), Vector(WIDTH, 10000))
-};
-#define fish_borders (fish_borders + 1) // -1 indexed
+int last_light[DRONES_PER_PLAYER];
 
 bool inside(const Vector &point) {
     return 0 <= point.x && point.x <= WIDTH &&
@@ -382,6 +400,8 @@ int main() {
         }
     }
 
+    // grid::initialize_probability();
+
     for (int player = 0; player < 2; player++)
         for (int drone = 0; drone < 2; drone++)
             drones[player][drone].battery = 30;
@@ -389,6 +409,9 @@ int main() {
     for (int game_turn = 0; ; game_turn++) {
         int my_score;
         std::cin >> my_score; std::cin.ignore();
+
+        auto start = std::chrono::high_resolution_clock::now();
+
         int foe_score;
         std::cin >> foe_score; std::cin.ignore();
         int my_scan_count;
@@ -415,6 +438,8 @@ int main() {
         }
         int my_drone_count;
         std::cin >> my_drone_count; std::cin.ignore();
+
+        std::vector<Fish*> old_scans[2][2];
         for (int i = 0; i < my_drone_count; i++) {
             int old_battery = drones[0][i].battery;
 
@@ -423,6 +448,10 @@ int main() {
                         drones[0][i].pos.y >>
                         drones[0][i].emergency >>
                         drones[0][i].battery; std::cin.ignore();
+
+            for (int j = 0; j < drones[0][i].scan_count; j++) {
+                old_scans[0][i].push_back(drones[0][i].scans[j]);
+            }
 
             drones[0][i].lights = (drones[0][i].battery < old_battery);
             drones[0][i].scan_count = 0;
@@ -438,6 +467,11 @@ int main() {
                         drones[1][i].pos.y >>
                         drones[1][i].emergency >>
                         drones[1][i].battery; std::cin.ignore();
+
+
+            for (int j = 0; j < drones[1][i].scan_count; j++) {
+                old_scans[1][i].push_back(drones[1][i].scans[j]);
+            }
 
             drones[1][i].lights = (drones[1][i].battery < old_battery);
             drones[1][i].scan_count = 0;
@@ -460,7 +494,6 @@ int main() {
                 creature->is_scanned = true;
             }
 
-            // std::cerr << "SCAN: " << drone_id << ' ' << creature_id << '\n';
         }
         int visible_creature_count;
         std::cin >> visible_creature_count; std::cin.ignore();
@@ -471,12 +504,6 @@ int main() {
                         y >>
                         vx >> 
                         vy; std::cin.ignore();
-             
-            // std::cerr << "I SEE:\n";
-            // std::cerr << " ID   : " << creature_id << '\n';
-            // std::cerr << " POS  : " << Vector(x, y).to_string() << '\n';
-            // std::cerr << " SPEED: " << Vector(vx, vy).to_string() << '\n';
-            // std::cerr << "---\n";
 
             Fish *creature = creatures_from_id[creature_id];
 
@@ -485,15 +512,6 @@ int main() {
             creature->pos = Vector(x, y);
             creature->speed = Vector(vx, vy);
             creature->is_visible = true;
-
-            // if (fish_nets[creature_id].inside(creature->pos) == false) {
-            //     std::cerr << "FISH: " << creature->id << '\n';
-            //     std::cerr << "POS: " << creature->pos.to_string() << '\n';
-            //     std::cerr << "SPEED: " << creature->speed.to_string() << '\n';
-            //     std::cerr << "NET: " << fish_nets[creature_id].LU.to_string() << ' ' << fish_nets[creature_id].RD.to_string() << '\n';
-            //     std::cerr << "FAILED!!!\n";
-            //     assert(false);
-            // }
 
             fish_nets[creature_id].LU = creature->pos;
             fish_nets[creature_id].RD = creature->pos;
@@ -512,8 +530,6 @@ int main() {
 
             double drone_x = drone_from_id[drone_id]->pos.x;
             double drone_y = drone_from_id[drone_id]->pos.y;
-
-            // std::cerr << creature_id << ' ' << drone_id << " x: " << drone_x << " y: " << drone_y << " => " << radar << std::endl;
 
             if (radar == "TL") {
                 fish_nets[creature_id].apply_intersection(
@@ -545,6 +561,30 @@ int main() {
 
         std::cerr << "BLIB: " << radar_blip_count << '\n';
 
+        // new scans by opponent
+        for (int drone = 0; drone < 2; drone++) {
+            for (int i = 0; i < drones[1][drone].scan_count; i++) {
+                Fish *fish = drones[1][drone].scans[i];
+
+                bool is_new = true;
+                for (Fish* other_fish : old_scans[1][drone]) {
+                    if (fish->id == other_fish->id) {
+                        is_new = false;
+                    }
+                }
+
+                if (is_new) {
+                    Vector pos = drones[1][drone].pos;
+                    Net drone_border(pos, pos);
+                    drone_border.expand(drones[1][drone].lights ? LIGHT_SCAN_RANGE : DARK_SCAN_RANGE);
+
+                    std::cerr << "FISH IN FOE DRONE TERITORY: " << fish->id << ' ' << pos.x << ' ' << pos.y << ' ' << drones[1][drone].lights << '\n';
+
+                    fish_nets[fish->id].apply_intersection(drone_border);
+                }
+            }
+        }
+
         unvisible_unscanned_creature_count = 0;
         for (int i = 0; i < CREATURE_COUNT; i++) {
             Fish* creature = creatures_from_id[i];
@@ -568,7 +608,7 @@ int main() {
         Vector best_speed0;
         Vector best_speed1;
 
-        const int REP = 290;
+        const int REP = 500;
 
         std::array<std::vector<Vector>, 2> possible_moves;
 
@@ -590,7 +630,29 @@ int main() {
                     if (monster->isMonster() == false)
                         continue;
                     
-                    if (getCollision(drones[0][drone], *monster) >= 0) {
+                    int monster_final_x = monster->pos.x + monster->speed.x;
+                    int monster_final_y = monster->pos.y + monster->speed.y;
+
+                    if (monster_final_x <= fish_borders[monster->type].LU.x)
+                        monster_final_x = fish_borders[monster->type].LU.x;
+                        
+                    if (monster_final_x >= fish_borders[monster->type].RD.x)
+                        monster_final_x = fish_borders[monster->type].LU.x;
+                        
+                    if (monster_final_y <= fish_borders[monster->type].LU.y)
+                        monster_final_y = fish_borders[monster->type].LU.y;
+                        
+                    if (monster_final_y >= fish_borders[monster->type].RD.y)
+                        monster_final_y = fish_borders[monster->type].RD.y;
+                    
+                    monster_final_x -= drones[0][drone].pos.x + drones[0][drone].speed.x;
+                    monster_final_y -= drones[0][drone].pos.y + drones[0][drone].speed.y;
+
+                    monster_final_x *= monster_final_x;
+                    monster_final_y *= monster_final_y;
+
+                    if (getCollision(drones[0][drone], *monster) >= 0 ||
+                        monster_final_x + monster_final_y <= 500 * 500) {
                         ok = false;
                         break;
                     }
@@ -681,9 +743,6 @@ int main() {
 
         bool rush_raport = (points_on_raport >= 48 && (drones[0][0].scan_count + drones[0][1].scan_count) > 0);
 
-        drones[0][0].msg = std::to_string(points_on_raport);
-        drones[0][1].msg = (rush_raport ? "📈" : "📉");
-
         for (const Vector &speed0 : possible_moves[0]) {
             drones[0][0].speed = speed0;
             for (const Vector &speed1 : possible_moves[1]) {
@@ -712,18 +771,28 @@ int main() {
                         double dd = 2000;
 
                         if (rush_raport == false) {
-                            dd = std::min(dd, d1);
-                        }
-
-                        if (rush_raport == false) {
-                            dd = std::min(dd, d2);
+                            dd = std::min(d1, d2);
                         }
 
                         double weight = creature->type + 1;
-                        if (creature->is_foe_scanned == false)
-                            weight *= 2;
+
+                        if (creature->is_foe_reported == false) {
+                            if (creature->is_foe_scanned == false) {
+                                weight *= 3;
+                            }
+                            else {
+                                weight *= 2;
+                            }
+                        }
+
+                        // uncertanity lines in [0, log(2500 * 10000)] = [0, 17.034] -> get easy fishes early
+                        // double uncertanity = (1 - (log(fish_nets[creature->id].getArea()) / 18));
 
                         score += dd * dd * weight + (d1 + d2 - dd) / 1000;
+                    }
+
+                    if (game_turn < 13) {
+                        score += (drones[0][0].speed.y + drones[0][1].speed.y) / 100;
                     }
                 }
 
@@ -742,27 +811,33 @@ int main() {
         drones[0][0].move = "MOVE " + std::to_string(int(drones[0][0].pos.x + best_speed0.x)) + ' ' + std::to_string(int(drones[0][0].pos.y + best_speed0.y));
         drones[0][1].move = "MOVE " + std::to_string(int(drones[0][1].pos.x + best_speed1.x)) + ' ' + std::to_string(int(drones[0][1].pos.y + best_speed1.y));
 
-        bool unscanned_fish_in_light_radius = false;
+        for (int drone = 0; drone < 2; drone++) {
+            bool unscanned_fish_in_light_radius = false;
 
-        for (int i = 0; i < CREATURE_COUNT; i++) {
-            Fish *creature = creatures_from_id[i];
+            for (int i = 0; i < CREATURE_COUNT; i++) {
+                Fish *creature = creatures_from_id[i];
 
-            if (creature == 0 || creature->isMonster() || creature->is_visible || creature->is_scanned || creature->in_gamezone == false)
-                continue;
+                if (creature == 0 || 
+                    creature->isMonster() || 
+                    creature->is_visible || 
+                    creature->is_scanned || 
+                    creature->is_reported || 
+                    creature->in_gamezone == false)
+                    continue;
 
-            if (fish_nets[creature->id].inRange(drones[0][0].pos, 2000) ||
-                fish_nets[creature->id].inRange(drones[0][1].pos, 2000)) {
-                unscanned_fish_in_light_radius = true;
+                if (fish_nets[creature->id].inRange(drones[0][0].pos, 2000) ||
+                    fish_nets[creature->id].inRange(drones[0][1].pos, 2000)) {
+                    unscanned_fish_in_light_radius = true;
+                }
             }
-        }
 
-        if (game_turn > 5 && unscanned_fish_in_light_radius) {
-            drones[0][0].move += " 1";
-            drones[0][1].move += " 1";
-        }
-        else {
-            drones[0][0].move += " 0";
-            drones[0][1].move += " 0";
+            if (game_turn > 5 && unscanned_fish_in_light_radius) {
+                drones[0][drone].move += " 1";
+                last_light[drone] = game_turn;
+            }
+            else {
+                drones[0][drone].move += " 0";
+            }
         }
 
         // UPDATING FISH NETS
@@ -789,7 +864,7 @@ int main() {
                 }
                 else {
                     // std::cerr << "MONSTER: " << i << " => NORMAL MODE\n";
-                    fish_nets[creature->id].expand(/*270*/127);
+                    fish_nets[creature->id].expand(270);
                 }
             }
             else {
@@ -805,11 +880,11 @@ int main() {
 
                 if (frightenedMode) {
                     // std::cerr << "FISH: " << i << " => FRIGHTENED MODE\n";
-                    fish_nets[creature->id].expand(/*400*/190);
+                    fish_nets[creature->id].expand(400);
                 }
                 else {
                     // std::cerr << "FISH: " << i << " => NORMAL MODE\n";
-                    fish_nets[creature->id].expand(/*200*/90);
+                    fish_nets[creature->id].expand(200);
                 }
             }
         }
@@ -855,6 +930,12 @@ int main() {
             // std::cerr << "BORDER: " << fish_borders[creature->type].LU.to_string() << ' ' << fish_borders[creature->type].RD.to_string() << '\n';
             fish_nets[creature->id].apply_intersection(fish_borders[creature->type]);
         }
+
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+
+        drones[0][0].msg = std::to_string(points_on_raport) + " | " + std::to_string(best_score);
+        drones[0][1].msg = std::string(rush_raport ? "📈" : "📉") + " | " + std::to_string(duration.count()) + "ms";
 
         for (int i = 0; i < my_drone_count; i++) {
             std::cout << drones[0][i].move << ' ' << drones[0][i].msg << std::endl;
