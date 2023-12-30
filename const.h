@@ -52,8 +52,8 @@ const int CREATURE_COUNT = 30;
 const double PI = acos(-1);
 const double TAU = 2 * PI;
 
-const int FISH_TYPES = 4;
-const int FISH_COLORS = 3;
+const int FISH_TYPES = 3;
+const int FISH_COLORS = 4;
 const int UNITS_PER_BLOCK = 100;
 
 const int PLAYERS = 2;

@@ -41,7 +41,10 @@ int main() {
         creatures_from_id[creatures[i].id] = &creatures[i];
 
         if (creatures[i].isMonster() == false) {
-            fish_color_type_table[creatures[i].color][creatures[i].type] = &creatures[i];
+            fish_table[creatures[i].color][creatures[i].type] = &creatures[i];
+        }
+        else {
+            monsters[monster_count++] = &creatures[i];
         }
 
         if (creatures[i].type == 0) {
@@ -278,7 +281,7 @@ int main() {
         Vector best_speed0;
         Vector best_speed1;
 
-        const int REP = 500;
+        const int REP = 400;
 
         std::array<std::vector<Vector>, 2> possible_moves;
 
@@ -345,7 +348,7 @@ int main() {
             bool foe_unreported = false;
 
             for (int type = 0; type < 3; type++) {
-                Fish* creature = fish_color_type_table[color][type];
+                Fish* creature = fish_table[color][type];
 
                 if (creature->is_scanned == false) {
                     all_scanned = false;
@@ -386,7 +389,7 @@ int main() {
             bool foe_unreported = false;
 
             for (int color = 0; color < 4; color++) {
-                Fish* creature = fish_color_type_table[color][type];
+                Fish* creature = fish_table[color][type];
 
                 if (creature->is_scanned == false) {
                     all_scanned = false;
@@ -411,7 +414,16 @@ int main() {
             }
         }
 
-        bool rush_raport = (points_on_raport >= 48 && (drones[0][0].scan_count + drones[0][1].scan_count) > 0);
+        bool rush_raport = (points_on_raport >= 49 && (drones[0][0].scan_count + drones[0][1].scan_count) > 0);
+
+        // if (points_on_raport > 64) {
+        //     int my_speed = std::max(drones[0][0].pos.y, drones[0][1].pos.y) / DRONE_MOVE_SPEED;
+        //     int op_speed = std::min(drones[1][0].pos.y, drones[1][1].pos.y) / DRONE_MOVE_SPEED;
+        
+        //     if (my_speed <= op_speed) {
+        //         rush_raport = true;
+        //     }
+        // }
 
         for (const Vector &speed0 : possible_moves[0]) {
             drones[0][0].speed = speed0;
@@ -421,23 +433,23 @@ int main() {
                 double score = 0;
 
                 if (scans_todo == 0) {
-                    score += (drones[0][0].pos.y + drones[0][0].speed.y - 495) * HEIGHT;
-                    score += (drones[0][1].pos.y + drones[0][1].speed.y - 495) * HEIGHT;
+                    score += (drones[0][0].pos.y + drones[0][0].speed.y - 495);
+                    score += (drones[0][1].pos.y + drones[0][1].speed.y - 495);
                 }
                 else {
                     if (rush_raport && drones[0][0].scan_count > 0) {
-                        score += fabs(drones[0][0].pos.y + drones[0][0].speed.y - 495) * HEIGHT;
+                        score += fabs(drones[0][0].pos.y + drones[0][0].speed.y - 495);
                     }
 
                     if (rush_raport && drones[0][1].scan_count > 0) {
-                        score += fabs(drones[0][1].pos.y + drones[0][1].speed.y - 495) * HEIGHT;
+                        score += fabs(drones[0][1].pos.y + drones[0][1].speed.y - 495);
                     }
 
                     for (int i = 0; i < unvisible_unscanned_creature_count; i++) {
                         const Fish *creature = unvisible_unscanned_creatures[i];
 
-                        double d1 = (drones[0][0].pos + drones[0][0].speed).distance(fish_nets[creature->id].center()) / 1000;
-                        double d2 = (drones[0][1].pos + drones[0][1].speed).distance(fish_nets[creature->id].center()) / 1000;
+                        double d1 = (drones[0][0].pos + drones[0][0].speed).distance(fish_nets[creature->id].center()) / 100;
+                        double d2 = (drones[0][1].pos + drones[0][1].speed).distance(fish_nets[creature->id].center()) / 100;
                         double dd = 2000;
 
                         if (rush_raport == false) {
@@ -448,10 +460,10 @@ int main() {
 
                         if (creature->is_foe_reported == false) {
                             if (creature->is_foe_scanned == false) {
-                                weight *= 3;
+                                weight *= 4;
                             }
                             else {
-                                weight *= 2;
+                                weight *= 2.5;
                             }
                         }
 
@@ -460,6 +472,15 @@ int main() {
 
                         score += dd * dd * weight + (d1 + d2 - dd) / 1000;
                     }
+
+                    // for (int i = 0; i < monster_count; i++) {
+                    //     double d1 = (drones[0][0].pos + drones[0][0].speed).distance(fish_nets[monsters[i]->id].center()) / 3000;
+                    //     double d2 = (drones[0][1].pos + drones[0][1].speed).distance(fish_nets[monsters[i]->id].center()) / 3000;
+                    //     double p = 1 - log(fish_nets[monsters[i]->id].getArea()) / 20;
+
+                    //     score += d1 * p;
+                    //     score += d2 * p;
+                    // }
 
                     if (game_turn < 13) {
                         score += (drones[0][0].speed.y + drones[0][1].speed.y) / 100;
