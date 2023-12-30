@@ -13,7 +13,9 @@ struct Drone {
     int emergency;
     int battery;
     
-    bool lights; // was light ON on the last turn?
+    bool lights_last_turn; // was light ON on the last turn?
+
+    bool lights_on;
 
     int scan_count;
     Fish* scans[30];

@@ -88,4 +88,6 @@ const Net fish_borders[4] = {
 
 Fish* fish_table[FISH_COLORS][FISH_TYPES];
 
+int game_turn;
+
 #endif // CONST_H

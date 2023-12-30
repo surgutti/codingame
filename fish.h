@@ -16,6 +16,9 @@ struct Fish {
     bool is_reported;
     bool is_foe_reported;
 
+    bool is_frightened;
+    bool has_left;
+
     bool isMonster() const {
         return type == -1;
     }
