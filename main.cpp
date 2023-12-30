@@ -281,7 +281,7 @@ int main() {
         Vector best_speed0;
         Vector best_speed1;
 
-        const int REP = 400;
+        const int REP = 600;
 
         std::array<std::vector<Vector>, 2> possible_moves;
 
@@ -460,7 +460,7 @@ int main() {
 
                         if (creature->is_foe_reported == false) {
                             if (creature->is_foe_scanned == false) {
-                                weight *= 4;
+                                weight *= 3.2;
                             }
                             else {
                                 weight *= 2.5;
@@ -554,7 +554,6 @@ int main() {
                     fish_nets[creature->id].expand(540);
                 }
                 else {
-                    // std::cerr << "MONSTER: " << i << " => NORMAL MODE\n";
                     fish_nets[creature->id].expand(270);
                 }
             }

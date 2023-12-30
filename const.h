@@ -75,6 +75,9 @@ Fish* unvisible_unscanned_creatures[CREATURE_COUNT];
 
 Net fish_nets[CREATURE_COUNT];
 
+int monster_count;
+Fish* monsters[CREATURE_COUNT];
+
 const Net fish_borders[4] = {
     Net(Vector(0, 2500), Vector(WIDTH, 10000)),
     Net(Vector(0, 2500), Vector(WIDTH, 5000)),
@@ -84,8 +87,5 @@ const Net fish_borders[4] = {
 #define fish_borders (fish_borders + 1) // -1 indexed
 
 Fish* fish_table[FISH_COLORS][FISH_TYPES];
-
-int monster_count;
-Fish* monsters[CREATURE_COUNT];
 
 #endif // CONST_H
