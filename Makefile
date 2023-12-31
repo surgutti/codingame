@@ -1,6 +1,6 @@
 CC=g++
-FLAGS=-std=c++17 -fsanitize=undefined,address -Wall -Wshadow -DLOCAL -pedantic
-# FLAGS=-std=c++17 -O3
+# FLAGS=-std=c++17 -fsanitize=undefined,address -Wall -Wshadow -DLOCAL -pedantic
+FLAGS=-std=c++17 -O3
 DRAW_FLAGS=-lsfml-graphics -lsfml-window -lsfml-system
 
 all:
