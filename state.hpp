@@ -7,6 +7,8 @@
 #include "minigames/diving.hpp"
 
 #include <algorithm>
+#include <vector>
+#include <string>
 
 struct State {
 
@@ -17,22 +19,88 @@ struct State {
     int archery_score;
 
     // RollerSkating roller_skating;
-    // int roller_skating_score;
+    int roller_skating_score;
 
     Diving diving;
     int diving_score;
 
-    // p0 is the player; p1,p2 are enemies
+    bool is_terminal() const {
+        return hurdle_race.end ||
+               archery.end ||
+               diving.end;
+    }
+
+    // return how much does a player earn from games
+    void get_stats(int r1, int r2, int r3) const {
+
+    }
+
+    void init(const std::vector<std::string>& gpu,
+              const std::vector<std::vector<int>> reg,
+              int player_idx) {
+        int enemy1_idx = (player_idx + 1) % 3;
+        int enemy2_idx = (player_idx + 2) % 3;
+
+        { // hurdle_race
+            for (int i = 0; i < (int) gpu[0].size(); i++) {
+                hurdle_race.track[i] = gpu[0][i];
+            }
+
+            for (int i = 0; i < 3; i++) {
+                hurdle_race.pos[i] = reg[0][i];
+                hurdle_race.stun[i] = reg[0][i + 3];
+                hurdle_race.places[i] = -1;
+            }
+
+            hurdle_race.end = false;
+        }
+
+        { // archery
+            archery.wind_index = (int) gpu[1].size() - 1;
+            for (int i = 0; i < (int) gpu[1].size(); i++) {
+                archery.wind[archery.wind_index - i] = int(gpu[1][i] - '0');
+            }
+
+            for (int i = 0; i < 3; i++) {
+                archery.x[i] = reg[1][2 * i + 0];
+                archery.y[i] = reg[1][2 * i + 1];
+
+                archery.scores[i] = 0;
+                archery.places[i] = -1;
+            }
+
+            archery.end = false;
+        }
+
+        { // roller_skating
+
+        }
+
+        { // diving
+            diving.goal_index = (int) gpu[3].size() - 1;
+            for (int i = 0; i < (int) gpu[3].size(); i++) {
+                diving.goal[diving.goal_index - i] = to_move_index(gpu[3][i]);
+            }
+        }
+    }
+
+    /* p0 is the player; p1,p2 are enemies
+        TODO: 
+            -> score normalization for each of minigames (make them equaly important in some sense)
+                (expecting: some value of game normalized between [-1000, +1000] * (sum of other games))
+            -> big reward for winning
+            -> some reward for second place
+            -> penalty for losing
+            -> for rollerskates just give reward for bigger jump and penalty for big risk in first move
+    */
     int evaluate() const {
-        int score_sum = hurdle_race_score +
-                        archery_score +
-                        diving_score + 1;
 
         int score = 0;
 
         if (hurdle_race.end) {
-            // penalty for not being 1st
-            // reward for being 1st
+            int score_sum = archery_score +
+                            roller_skating_score +
+                            diving_score + 1;
 
             int mult = (hurdle_race_score == 0 ? 5 : 1);
 
@@ -47,6 +115,10 @@ struct State {
             }
         }
         else {
+            int score_sum = archery_score +
+                            roller_skating_score +
+                            diving_score + 1;
+
             int mult = (hurdle_race_score == 0 ? 5 : 1);
 
             if (hurdle_race.proven_win(0)) {
@@ -68,20 +140,28 @@ struct State {
         }
 
         if (archery.end) {
+            int score_sum = hurdle_race_score +
+                            roller_skating_score +
+                            diving_score + 1;
+
             int mult = (archery_score == 0 ? 5 : 1);
 
             if (archery.places[0] == 1) {
-                score += mult * 3;
+                score += mult * 3 * score_sum;
             }
             else
             if (archery.places[0] == 2) {
-                score += mult * 1;
+                score += mult * 1 * score_sum;
             }
             else {
-                score -= mult * 3;
+                score -= mult * 3 * score_sum;
             }
         }
         else {
+            int score_sum = hurdle_race_score +
+                            roller_skating_score +
+                            diving_score + 1;
+
             int mult = (archery_score == 0 ? 5 : 1);
 
             if (archery.proven_win(0)) {
@@ -114,9 +194,28 @@ struct State {
         // }
 
         if (diving.end) {
+            int score_sum = hurdle_race_score +
+                            archery_score +
+                            roller_skating_score + 1;
 
+            int mult = (diving_score == 0 ? 5 : 1);
+
+            if (diving.places[0] == 1) {
+                score += mult * 3 * score_sum;
+            }
+            else
+            if (diving.places[0] == 2) {
+                score += mult * 1 * score_sum;
+            }
+            else {
+                score -= mult * 3 * score_sum;
+            }
         }
         else {
+            int score_sum = hurdle_race_score +
+                            archery_score +
+                            roller_skating_score + 1;
+
             int mult = (diving_score == 0 ? 5 : 1);
 
             if (diving.proven_win(0)) {
