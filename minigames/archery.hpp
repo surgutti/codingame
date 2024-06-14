@@ -16,6 +16,18 @@ struct Archery {
     int scores[3];
     int places[3];
 
+    void debug() const {
+        std::cerr << "wind_index: " << wind_index << '\n';
+        std::cerr << "wind: ";
+        for (int i = wind_index; i >= 0; i--) {
+            std::cerr << wind[i] << ' ';
+        }
+        std::cerr << '\n';
+        for (int i = 0; i < 3; i++) {
+            std::cerr << "i: " << i << " => " << x[i] << ' ' << y[i] << '\n';
+        }
+    }
+
     void play(const int* move) {
         if (end) {
             return;
@@ -27,13 +39,19 @@ struct Archery {
         for (int i = 0; i < 3; i++) {
             x[i] += wind[wind_index] * dx[move[i]];
             y[i] += wind[wind_index] * dy[move[i]];
+        
+            if (x[i] < -20) x[i] = -20;
+            if (x[i] > +20) x[i] = +20;
+
+            if (y[i] < -20) y[i] = -20;
+            if (y[i] > +20) y[i] = +20;
         }
 
         if (wind_index == 0) {
             for (int i = 0; i < 3; i++) {
                 scores[i] = x[i] * x[i] + y[i] * y[i]; 
             }
-            
+
             for (int i = 0; i < 3; i++) {
                 if (scores[i] <= scores[(i + 1) % 3] && scores[i] <= scores[(i + 2) % 3]) {
                     places[i] = 1;

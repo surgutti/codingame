@@ -23,10 +23,6 @@ struct MCTSNode {
 
     unsigned node_vis;
 
-    bool is_leaf() const {
-        return first_son == -1;
-    }
-
     void init(const uint8_t& _last_moves) {
         last_moves = _last_moves;
         first_son = -1;
@@ -130,24 +126,28 @@ int      MCTSNode::last_node = 0;
 struct MCTS {
     MCTSNode* root;
 
-    void rollout(State& state, float& r1, float& r2, float& r3) {
+    void rollout(State& state, float& r0, float& r1, float& r2) {
         do {
             state.play(fast_rand() & 3, fast_rand() & 3, fast_rand() & 3);
         } while (!state.is_terminal());
 
-        state.get_stats(r1, r2, r3);
+        state.get_stats(r0, r1, r2);
     }
 
-    void mcts(MCTSNode* node, State& state, float& r1, float& r2, float& r3) {
+    void mcts(MCTSNode* node, State& state, float& r0, float& r1, float& r2) {
         if (state.is_terminal()) {
-            state.get_stats(r1, r2, r3);
+            state.get_stats(r0, r1, r2);
             return;
         }
 
-        if (node->is_leaf()) {
-            node->expand();
-            rollout(state, r1, r2, r3);
+        if (node->node_vis == 0) {
+            rollout(state, r0, r1, r2);
+            node->node_vis++;
             return;
+        }
+
+        if (node->first_son == -1) {
+            node->expand();
         }
 
         MCTSNode* child = node->select();
@@ -158,9 +158,9 @@ struct MCTS {
 
         state.play(m0, m1, m2);
 
-        mcts(child, state, r1, r2, r3);
+        mcts(child, state, r0, r1, r2);
 
-        node->apply(child->last_moves, r1, r2, r3);
+        node->apply(child->last_moves, r0, r1, r2);
     }
 
     void reset() {
@@ -180,12 +180,16 @@ struct MCTS {
 
     void run(const State& root_state, int timeout) {
         reset();
+
+        // root_state.debug();
+        // return;
+
         do {
             State state = root_state;
-            float r1, r2, r3;
-
-            mcts(root, state, r1, r2, r3);
-        } while (timer.get_elapsed() < timeout);
+            float r0, r1, r2;
+            mcts(root, state, r0, r1, r2);
+        } while (timer.get_elapsed() < timeout &&
+                 MCTSNode::last_node + 80 < MCTSNODE_POOL);
     }
 };
 

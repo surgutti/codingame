@@ -26,12 +26,15 @@
    const int ARCHERY_LENGTH = 15;
    const int DIVING_LENGTH = 12 + 4;
    
-   const int MCTSNODE_POOL = 7'000'000;
+   const int MCTSNODE_POOL = 9'000'000;
    
    const float C = 1.4f;
    
    #endif // CONST_HPP
    // *** End of: /home/olaf/codingame/const.hpp *** 
+  
+  #include <iostream>
+  #include <cassert>
   
   struct HurdleRace {
       char track[TRACK_LENGTH + 3];
@@ -42,6 +45,18 @@
   
       int places[3];
   
+      void debug() const {
+          std::cerr << "TRACK: ";
+          for (int i = 0; i < TRACK_LENGTH; i++) {
+              std::cerr << track[i];
+          }
+          std::cerr << "|\n";
+  
+          for (int i = 0; i < 3; i++) {
+              std::cerr << "i: " << i << " => " << pos[i] << ' ' << stun[i] << '\n';
+          }
+      }
+  
       void play(const int* move) {
           if (end) {
               return;
@@ -51,31 +66,16 @@
               if (stun[i]) {
                   stun[i]--;
               }
-              else
-              if (move[i] == 1) {
-                  pos[i]++;
-              }
-              else
-              if (move[i] == 0) {
-                  pos[i] += 2;
-              }
-              else
-              if (move[i] == 2) {
-                  pos[i]++;
-                  if (track[pos[i]] == '#') {
-                      stun[i] = 2;
-                  }
-                  else {
+              else {
+                  if (move[i] == 1) {
                       pos[i]++;
                   }
-              }
-              else
-              if (move[i] == 3) {
-                  pos[i]++;
-                  if (track[pos[i]] == '#') {
-                      stun[i] = 2;
+                  else
+                  if (move[i] == 0) {
+                      pos[i] += 2;
                   }
-                  else {
+                  else
+                  if (move[i] == 2) {
                       pos[i]++;
                       if (track[pos[i]] == '#') {
                           stun[i] = 2;
@@ -84,15 +84,36 @@
                           pos[i]++;
                       }
                   }
+                  else
+                  if (move[i] == 3) {
+                      pos[i]++;
+                      if (track[pos[i]] == '#') {
+                          stun[i] = 2;
+                      }
+                      else {
+                          pos[i]++;
+                          if (track[pos[i]] == '#') {
+                              stun[i] = 2;
+                          }
+                          else {
+                              pos[i]++;
+                          }
+                      }
+                  }
+                  else {
+                      assert(false);
+                  }
+  
+                  if (track[pos[i]] == '#') {
+                      stun[i] = 2;
+                  }
+  
+                  if (pos[i] >= TRACK_LENGTH) {
+                      end = true;
+                  }
               }
   
-              if (track[pos[i]] == '#') {
-                  stun[i] = 2;
-              }
-  
-              if (pos[i] >= TRACK_LENGTH) {
-                  end = true;
-              }
+              // std::cerr << "after: " << pos[i] << ' ' << stun[i] << '\n';
           }
   
           if (end) {
@@ -140,6 +161,18 @@
       int scores[3];
       int places[3];
   
+      void debug() const {
+          std::cerr << "wind_index: " << wind_index << '\n';
+          std::cerr << "wind: ";
+          for (int i = wind_index; i >= 0; i--) {
+              std::cerr << wind[i] << ' ';
+          }
+          std::cerr << '\n';
+          for (int i = 0; i < 3; i++) {
+              std::cerr << "i: " << i << " => " << x[i] << ' ' << y[i] << '\n';
+          }
+      }
+  
       void play(const int* move) {
           if (end) {
               return;
@@ -151,13 +184,19 @@
           for (int i = 0; i < 3; i++) {
               x[i] += wind[wind_index] * dx[move[i]];
               y[i] += wind[wind_index] * dy[move[i]];
+          
+              if (x[i] < -20) x[i] = -20;
+              if (x[i] > +20) x[i] = +20;
+  
+              if (y[i] < -20) y[i] = -20;
+              if (y[i] > +20) y[i] = +20;
           }
   
           if (wind_index == 0) {
               for (int i = 0; i < 3; i++) {
                   scores[i] = x[i] * x[i] + y[i] * y[i]; 
               }
-              
+  
               for (int i = 0; i < 3; i++) {
                   if (scores[i] <= scores[(i + 1) % 3] && scores[i] <= scores[(i + 2) % 3]) {
                       places[i] = 1;
@@ -234,6 +273,18 @@
   
       bool end;
   
+      void debug() const {
+          std::cerr << "goal_index: " << goal_index << '\n';
+          std::cerr << "goal: ";
+          for (int i = goal_index; i >= 0; i--) {
+              std::cerr << goal[i] << ' ';
+          }
+          std::cerr << '\n';
+          for (int i = 0; i < 3; i++) {
+              std::cerr << "i: " << i << " => " << score[i] << ' ' << combo[i] << '\n';
+          }
+      }
+  
       void play(const int* move) {
           if (end) {
               return;
@@ -308,6 +359,7 @@
   #endif // UTILS_HPP
   // *** End of: /home/olaf/codingame/utils.hpp *** 
  
+ #include <iostream>
  #include <algorithm>
  #include <vector>
  #include <string>
@@ -389,6 +441,9 @@
          }
          else { // archery
              archery.wind_index = (int) gpu[1].size() - 1;
+ 
+             assert(archery.wind_index < ARCHERY_LENGTH);
+ 
              for (int i = 0; i < (int) gpu[1].size(); i++) {
                  archery.wind[archery.wind_index - i] = int(gpu[1][i] - '0');
              }
@@ -437,6 +492,13 @@
          archery.play(move);
          // roller_skating.play(move);
          diving.play(move);
+     }
+ 
+     void debug() const {
+         std::cerr << "state: " << hurdle_race.end << ' ' << archery.end << ' ' << diving.end << '\n';
+         hurdle_race.debug();
+         archery.debug();
+         diving.debug();
      }
  
  };
@@ -516,10 +578,6 @@
      unsigned vis[3][4];
  
      unsigned node_vis;
- 
-     bool is_leaf() const {
-         return first_son == -1;
-     }
  
      void init(const uint8_t& _last_moves) {
          last_moves = _last_moves;
@@ -624,24 +682,28 @@
  struct MCTS {
      MCTSNode* root;
  
-     void rollout(State& state, float& r1, float& r2, float& r3) {
+     void rollout(State& state, float& r0, float& r1, float& r2) {
          do {
              state.play(fast_rand() & 3, fast_rand() & 3, fast_rand() & 3);
          } while (!state.is_terminal());
  
-         state.get_stats(r1, r2, r3);
+         state.get_stats(r0, r1, r2);
      }
  
-     void mcts(MCTSNode* node, State& state, float& r1, float& r2, float& r3) {
+     void mcts(MCTSNode* node, State& state, float& r0, float& r1, float& r2) {
          if (state.is_terminal()) {
-             state.get_stats(r1, r2, r3);
+             state.get_stats(r0, r1, r2);
              return;
          }
  
-         if (node->is_leaf()) {
-             node->expand();
-             rollout(state, r1, r2, r3);
+         if (node->node_vis == 0) {
+             rollout(state, r0, r1, r2);
+             node->node_vis++;
              return;
+         }
+ 
+         if (node->first_son == -1) {
+             node->expand();
          }
  
          MCTSNode* child = node->select();
@@ -652,9 +714,9 @@
  
          state.play(m0, m1, m2);
  
-         mcts(child, state, r1, r2, r3);
+         mcts(child, state, r0, r1, r2);
  
-         node->apply(child->last_moves, r1, r2, r3);
+         node->apply(child->last_moves, r0, r1, r2);
      }
  
      void reset() {
@@ -674,12 +736,16 @@
  
      void run(const State& root_state, int timeout) {
          reset();
+ 
+         // root_state.debug();
+         // return;
+ 
          do {
              State state = root_state;
-             float r1, r2, r3;
- 
-             mcts(root, state, r1, r2, r3);
-         } while (timer.get_elapsed() < timeout);
+             float r0, r1, r2;
+             mcts(root, state, r0, r1, r2);
+         } while (timer.get_elapsed() < timeout &&
+                  MCTSNode::last_node + 80 < MCTSNODE_POOL);
      }
  };
  
@@ -755,10 +821,13 @@ int main() {
 
         timer.start();
 
-        mcts.run(current_state, (TURN == 0 ? 990 : 45));
+        std::cerr << "MCTS START\n";
+        mcts.run(current_state, (TURN == 0 ? 950 : 45));
 
         mcts.debug();
         std::cerr << "timer: " << timer.get_elapsed() << '\n';
+        std::cerr << "pool: " << (float) MCTSNode::last_node / MCTSNODE_POOL << '\n';
+        std::cerr << "last: " << MCTSNode::last_node << '\n';
 
         int move = mcts.best_move(PLAYER_IDX);
         

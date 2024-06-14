@@ -80,10 +80,13 @@ int main() {
 
         timer.start();
 
+        std::cerr << "MCTS START\n";
         mcts.run(current_state, (TURN == 0 ? 950 : 45));
 
         mcts.debug();
         std::cerr << "timer: " << timer.get_elapsed() << '\n';
+        std::cerr << "pool: " << (float) MCTSNode::last_node / MCTSNODE_POOL << '\n';
+        std::cerr << "last: " << MCTSNode::last_node << '\n';
 
         int move = mcts.best_move(PLAYER_IDX);
         

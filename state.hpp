@@ -8,6 +8,7 @@
 
 #include "utils.hpp"
 
+#include <iostream>
 #include <algorithm>
 #include <vector>
 #include <string>
@@ -89,6 +90,9 @@ struct State {
         }
         else { // archery
             archery.wind_index = (int) gpu[1].size() - 1;
+
+            assert(archery.wind_index < ARCHERY_LENGTH);
+
             for (int i = 0; i < (int) gpu[1].size(); i++) {
                 archery.wind[archery.wind_index - i] = int(gpu[1][i] - '0');
             }
@@ -137,6 +141,13 @@ struct State {
         archery.play(move);
         // roller_skating.play(move);
         diving.play(move);
+    }
+
+    void debug() const {
+        std::cerr << "state: " << hurdle_race.end << ' ' << archery.end << ' ' << diving.end << '\n';
+        hurdle_race.debug();
+        archery.debug();
+        diving.debug();
     }
 
 };

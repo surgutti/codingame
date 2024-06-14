@@ -15,6 +15,18 @@ struct Diving {
 
     bool end;
 
+    void debug() const {
+        std::cerr << "goal_index: " << goal_index << '\n';
+        std::cerr << "goal: ";
+        for (int i = goal_index; i >= 0; i--) {
+            std::cerr << goal[i] << ' ';
+        }
+        std::cerr << '\n';
+        for (int i = 0; i < 3; i++) {
+            std::cerr << "i: " << i << " => " << score[i] << ' ' << combo[i] << '\n';
+        }
+    }
+
     void play(const int* move) {
         if (end) {
             return;
