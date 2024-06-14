@@ -1,0 +1,903 @@
+--------------------------------------------------------------------------------
+Profile data file 'callgrind.out.259921' (creator: callgrind-3.19.0)
+--------------------------------------------------------------------------------
+I1 cache: 
+D1 cache: 
+LL cache: 
+Timerange: Basic block 0 - 19056197
+Trigger: Program termination
+Profiled target:  ./main (PID 259921, part 1)
+Events recorded:  Ir
+Events shown:     Ir
+Event sort order: Ir
+Thresholds:       99
+Include dirs:     
+User annotated:   
+Auto-annotation:  on
+
+--------------------------------------------------------------------------------
+Ir                   
+--------------------------------------------------------------------------------
+115,643,806 (100.0%)  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+Ir                   file:function
+--------------------------------------------------------------------------------
+30,685,848 (26.53%)  minigames/roller_skating.hpp:State::play(signed char, signed char, signed char)
+14,621,030 (12.64%)  mcts.hpp:MCTS::run(State const&, int) [/home/olaf/codingame/main]
+13,763,260 (11.90%)  minigames/archery.hpp:State::play(signed char, signed char, signed char)
+12,933,192 (11.18%)  minigames/hurdle_race.hpp:State::play(signed char, signed char, signed char)
+ 8,565,720 ( 7.41%)  minigames/../random.hpp:State::play(signed char, signed char, signed char)
+ 8,390,527 ( 7.26%)  minigames/../random.hpp:MCTS::run(State const&, int)
+ 6,965,424 ( 6.02%)  ./math/../sysdeps/ieee754/dbl-64/e_log.c:__ieee754_log_fma [/usr/lib/x86_64-linux-gnu/libm.so.6]
+ 6,190,245 ( 5.35%)  minigames/diving.hpp:State::play(signed char, signed char, signed char)
+ 3,342,720 ( 2.89%)  /usr/include/c++/12/bits/move.h:State::play(signed char, signed char, signed char)
+ 2,490,090 ( 2.15%)  /usr/include/c++/12/cmath:MCTS::run(State const&, int)
+ 2,325,780 ( 2.01%)  state.hpp:State::play(signed char, signed char, signed char) [/home/olaf/codingame/main]
+ 1,519,289 ( 1.31%)  state.hpp:MCTS::run(State const&, int)
+   806,595 ( 0.70%)  ./math/./w_log_template.c:log@@GLIBC_2.29 [/usr/lib/x86_64-linux-gnu/libm.so.6]
+   495,632 ( 0.43%)  ./elf/../sysdeps/generic/dl-new-hash.h:_dl_lookup_symbol_x
+   491,059 ( 0.42%)  ./elf/./elf/dl-lookup.c:do_lookup_x [/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2]
+   403,912 ( 0.35%)  /usr/include/c++/12/bits/stl_algobase.h:MCTS::run(State const&, int)
+   174,322 ( 0.15%)  ./elf/./elf/dl-lookup.c:_dl_lookup_symbol_x [/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2]
+   161,319 ( 0.14%)  ./math/../sysdeps/ieee754/dbl-64/math_config.h:__ieee754_log_fma
+   139,304 ( 0.12%)  ???:std::chrono::_V2::steady_clock::now() [/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.30]
+   139,300 ( 0.12%)  ./time/../sysdeps/unix/sysv/linux/clock_gettime.c:clock_gettime@@GLIBC_2.17 [/usr/lib/x86_64-linux-gnu/libc.so.6]
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source: state.hpp
+--------------------------------------------------------------------------------
+Ir               
+
+-- line 23 ----------------------------------------
+      .           
+      .               RollerSkating roller_skating;
+      .               uint8_t roller_skating_score[3];
+      .           
+      .               Diving diving;
+      .               uint8_t diving_score[3];
+      .           
+      .               bool is_terminal() const {
+ 29,878 ( 0.03%)          return hurdle_race.end &&
+ 29,740 ( 0.03%)                 archery.end &&
+749,343 ( 0.65%)                 roller_skating.end &&
+      .                          diving.end;
+      .               }
+      .           
+      .               // return how much does a player earn from games
+      .               void get_stats(float& r0, float& r1, float& r2) {
+      .           
+      .                   for (int i = 0; i < 3; i++) {
+ 83,568 ( 0.07%)              hurdle_race_score[i] += hurdle_race.places[i];
+ 83,568 ( 0.07%)              archery_score[i] += archery.places[i];
+ 83,568 ( 0.07%)              roller_skating_score[i] += roller_skating.places[i];
+ 83,568 ( 0.07%)              diving_score[i] += diving.places[i];
+      .                   }
+      .           
+ 41,784 ( 0.04%)          int score0 = std::max<int>(1, hurdle_race_score[0]) * std::max<int>(1, archery_score[0]) * std::max<int>(1, roller_skating_score[0]) * std::max<int>(1, diving_score[0]);
+ 41,784 ( 0.04%)          int score1 = std::max<int>(1, hurdle_race_score[1]) * std::max<int>(1, archery_score[1]) * std::max<int>(1, roller_skating_score[1]) * std::max<int>(1, diving_score[1]);
+ 41,784 ( 0.04%)          int score2 = std::max<int>(1, hurdle_race_score[2]) * std::max<int>(1, archery_score[2]) * std::max<int>(1, roller_skating_score[2]) * std::max<int>(1, diving_score[2]);
+      .           
+ 27,856 ( 0.02%)          int sum = score0 + score1 + score2;
+      .           
+ 83,568 ( 0.07%)          r0 = (float) (score0 - score1 - score2) / sum;
+ 83,568 ( 0.07%)          r1 = (float) (score1 - score0 - score2) / sum;
+ 55,712 ( 0.05%)          r2 = (float) (score2 - score0 - score1) / sum;
+      .               }
+      .           
+      8 ( 0.00%)      void init(const std::vector<std::string>& gpu,
+      .                         const std::vector<std::vector<int>> reg) {
+      .           
+      2 ( 0.00%)          if (gpu[0] == "GAME_OVER") {
+      1 ( 0.00%)              hurdle_race.end = true;
+      .                   }
+      .                   else { // hurdle_race
+      1 ( 0.00%)              hurdle_race.track = 0;
+    122 ( 0.00%)              for (int i = 0; i < (int) gpu[0].size(); i++) {
+     60 ( 0.00%)                  if (gpu[0][i] == '#') {
+      8 ( 0.00%)                      hurdle_race.track |= uint32_t(1) << i;
+      .                           }
+      .                       }
+      .           
+      1 ( 0.00%)              for (int i = 0; i < 3; i++) {
+      9 ( 0.00%)                  hurdle_race.pos[i] = reg[0][i];
+      9 ( 0.00%)                  hurdle_race.stun[i] = reg[0][i + 3];
+      3 ( 0.00%)                  hurdle_race.places[i] = -1;
+      .                       }
+      .           
+      .                       hurdle_race.end = false;
+      .                   }
+      .           
+      2 ( 0.00%)          if (gpu[1] == "GAME_OVER") {
+      1 ( 0.00%)              archery.end = true;
+      .                   }
+      .                   else { // archery
+      3 ( 0.00%)              archery.wind_index = (int) gpu[1].size() - 1;
+      .                       
+     31 ( 0.00%)              for (int i = 0; i < (int) gpu[1].size(); i++) {
+     84 ( 0.00%)                  archery.wind[archery.wind_index - i] = int(gpu[1][i] - '0');
+      .                       }
+      .           
+      1 ( 0.00%)              for (int i = 0; i < 3; i++) {
+      9 ( 0.00%)                  archery.x[i] = reg[1][2 * i + 0];
+      9 ( 0.00%)                  archery.y[i] = reg[1][2 * i + 1];
+      3 ( 0.00%)                  archery.places[i] = -1;
+      .                       }
+      .           
+      .                       archery.end = false;
+      .                   }
+      .           
+      2 ( 0.00%)          if (gpu[2] == "GAME_OVER") {
+      1 ( 0.00%)              roller_skating.end = true;
+      .                   }
+      .                   else { // roller_skating
+      .                       for (int i = 0; i < 4; i++) {
+     12 ( 0.00%)                  roller_skating.order[to_move_index(gpu[2][i])] = i;
+      .                       }
+      .           
+      .                       for (int i = 0; i < 3; i++) {
+      9 ( 0.00%)                  roller_skating.dist[i] = reg[2][i];
+      9 ( 0.00%)                  roller_skating.risk[i] = reg[2][i + 3];
+      .                       }
+      .           
+      5 ( 0.00%)              roller_skating.turns_left = reg[2][6];
+      .           
+      .                       roller_skating.end = false;
+      .                   }
+      .           
+      2 ( 0.00%)          if (gpu[3] == "GAME_OVER") {
+      1 ( 0.00%)              diving.end = true;
+      .                   }
+      .                   else { // diving
+      2 ( 0.00%)              diving.goals_left = (int8_t) gpu[3].size();
+      .           
+      1 ( 0.00%)              diving.goal = 0;
+     60 ( 0.00%)              for (int i = 0; i < (int) gpu[3].size(); i++) {
+     55 ( 0.00%)                  diving.goal |= uint32_t(to_move_index(gpu[3][i])) << (2 * i);
+      .                       }
+      .                       
+      1 ( 0.00%)              for (int i = 0; i < 3; i++) {
+      9 ( 0.00%)                  diving.score[i] = reg[3][i];
+      9 ( 0.00%)                  diving.combo[i] = reg[3][i + 3];
+      3 ( 0.00%)                  diving.places[i] = -1;
+      .                       }
+      .           
+      .                       diving.end = false;
+      .                   }
+      6 ( 0.00%)      }
+      .           
+775,260 ( 0.67%)      void play(int8_t p0, int8_t p1, int8_t p2) {
+775,260 ( 0.67%)          const int8_t move[3] = {p0, p1, p2};
+      .           
+      .                   hurdle_race.play(move);
+      .                   archery.play(move);
+      .                   roller_skating.play(move);
+      .                   diving.play(move);
+775,260 ( 0.67%)      }
+      .           
+      .               void debug() const {
+      .                   std::cerr << "state: " << hurdle_race.end << ' ' << archery.end << ' ' << roller_skating.end << ' ' << diving.end << '\n';
+      .                   hurdle_race.debug();
+      .                   archery.debug();
+      .                   roller_skating.debug();
+      .                   diving.debug();
+      .               }
+-- line 154 ----------------------------------------
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source: /usr/include/c++/12/bits/move.h
+--------------------------------------------------------------------------------
+Ir                 
+
+-- line 196 ----------------------------------------
+        .               swap(_Tp& __a, _Tp& __b)
+        .               _GLIBCXX_NOEXCEPT_IF(__and_<is_nothrow_move_constructible<_Tp>,
+        .           				is_nothrow_move_assignable<_Tp>>::value)
+        .               {
+        .           #if __cplusplus < 201103L
+        .                 // concept requirements
+        .                 __glibcxx_function_requires(_SGIAssignableConcept<_Tp>)
+        .           #endif
+  626,760 ( 0.54%)        _Tp __tmp = _GLIBCXX_MOVE(__a);
+1,880,280 ( 1.63%)        __a = _GLIBCXX_MOVE(__b);
+  626,760 ( 0.54%)        __b = _GLIBCXX_MOVE(__tmp);
+  208,920 ( 0.18%)      }
+        .           
+        .             // _GLIBCXX_RESOLVE_LIB_DEFECTS
+        .             // DR 809. std::swap should be overloaded for array types.
+        .             /// Swap the contents of two arrays.
+        .             template<typename _Tp, size_t _Nm>
+        .               _GLIBCXX20_CONSTEXPR
+        .               inline
+        .           #if __cplusplus >= 201103L
+-- line 215 ----------------------------------------
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source: minigames/archery.hpp
+--------------------------------------------------------------------------------
+Ir                 
+
+-- line 23 ----------------------------------------
+        .                   }
+        .                   std::cerr << '\n';
+        .                   for (int i = 0; i < 3; i++) {
+        .                       std::cerr << "i: " << i << " => " << int(x[i]) << ' ' << int(y[i]) << '\n';
+        .                   }
+        .               }
+        .           
+        .               void play(const int8_t* move) {
+  516,840 ( 0.45%)          if (end) {
+        .                       return;
+        .                   }
+        .           
+        .                   static constexpr int8_t dx[4] = {0, -1, 0, +1};
+        .                   static constexpr int8_t dy[4] = {-1, 0, +1, 0};
+        .           
+  389,984 ( 0.34%)          const int8_t wind_strength = wind[wind_index];
+        .           
+        .                   for (int i = 0; i < 3; i++) {
+3,899,840 ( 3.37%)              x[i] += wind_strength * dx[move[i]];
+2,729,888 ( 2.36%)              y[i] += wind_strength * dy[move[i]];
+        .                   
+1,170,227 ( 1.01%)              if (x[i] < -20) x[i] = -20;
+        .                       else
+1,182,027 ( 1.02%)              if (x[i] > +20) x[i] = +20;
+        .           
+1,204,094 ( 1.04%)              if (y[i] < -20) y[i] = -20;
+        .                       else
+1,129,006 ( 0.98%)              if (y[i] > +20) y[i] = +20;
+        .                   }
+        .           
+  389,984 ( 0.34%)          if (wind_index == 0) {
+        .           
+        .                       int16_t scores[3];
+        .                       for (int i = 0; i < 3; i++) {
+  376,056 ( 0.33%)                  scores[i] = (int16_t) x[i] * x[i] + (int16_t) y[i] * y[i]; 
+        .                       }
+        .           
+        .                       for (int i = 0; i < 3; i++) {
+  143,814 ( 0.12%)                  if (scores[i] <= scores[(i + 1) % 3] && scores[i] <= scores[(i + 2) % 3]) {
+        .                               places[i] = 3;
+        .                           }
+        .                           else
+   32,596 ( 0.03%)                  if (scores[i] > scores[(i + 1) % 3] && scores[i] > scores[(i + 2) % 3]) {
+   41,784 ( 0.04%)                      places[i] = 0;
+        .                           }
+        .                           else {
+        .                               places[i] = 1;
+        .                           }
+        .                       }
+        .           
+   13,928 ( 0.01%)              end = true;
+        .                   }
+        .                   else {
+  543,192 ( 0.47%)              wind_index--;
+        .                   }
+        .               }
+        .               
+        .               bool proven_win(int p_idx) const {
+        .                   return false;
+        .               }
+        .           
+        .               bool proven_lost(int p_idx) const {
+-- line 84 ----------------------------------------
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source: minigames/hurdle_race.hpp
+--------------------------------------------------------------------------------
+Ir                 
+
+-- line 25 ----------------------------------------
+        .                   std::cerr << "|\n";
+        .           
+        .                   for (int i = 0; i < 3; i++) {
+        .                       std::cerr << "i: " << i << " => " << int(pos[i]) << ' ' << int(stun[i]) << '\n';
+        .                   }
+        .               }
+        .           
+        .               void play(const int8_t* move) {
+  516,840 ( 0.45%)          if (end) {
+        .                       return;
+        .                   }
+        .           
+        .                   for (int i = 0; i < 3; i++) {
+2,316,681 ( 2.00%)              if (stun[i]) {
+  392,372 ( 0.34%)                  stun[i]--;
+        .                       }
+        .                       else {
+1,152,082 ( 1.00%)                  if (move[i] == 1) {
+  996,992 ( 0.86%)                      pos[i]++;
+        .                           }
+        .                           else
+  871,448 ( 0.75%)                  if (move[i] == 0) {
+  317,682 ( 0.27%)                      pos[i] += 2;
+        .                           }
+        .                           else
+  553,766 ( 0.48%)                  if (move[i] == 2) {
+  553,766 ( 0.48%)                      pos[i]++;
+  558,441 ( 0.48%)                      if (track & (1U << pos[i])) {
+        .                                   stun[i] = 2;
+        .                               }
+        .                               else {
+  374,304 ( 0.32%)                          pos[i]++;
+        .                               }
+        .                           }
+        .                           else {
+        .                           // if (move[i] == 3) {
+        .                               pos[i]++;
+  272,208 ( 0.24%)                      if (track & (1U << pos[i])) {
+        .                                   stun[i] = 2;
+        .                               }
+        .                               else {
+  144,624 ( 0.13%)                          pos[i]++;
+  241,812 ( 0.21%)                          if (track & (1U << pos[i])) {
+        .                                       stun[i] = 2;
+        .                                   }
+        .                                   else {
+  327,141 ( 0.28%)                              pos[i]++;
+        .                                   }
+        .                               }
+        .                           }
+        .                           // else {
+        .                           //     assert(false);
+        .                           // }
+        .           
+1,365,104 ( 1.18%)                  if (track & (1U << pos[i])) {
+  196,402 ( 0.17%)                      stun[i] = 2;
+        .                           }
+        .                           else
+  955,680 ( 0.83%)                  if (pos[i] >= TRACK_LENGTH - 1) {
+   27,847 ( 0.02%)                      end = true;
+        .                           }
+        .                       }
+        .                   }
+        .           
+  509,117 ( 0.44%)          if (end) {
+        .                       for (int i = 0; i < 3; i++) {
+  126,954 ( 0.11%)                  if (pos[i] >= TRACK_LENGTH - 1) {
+   41,784 ( 0.04%)                      places[i] = 3;
+        .                           }
+        .                           else
+  120,145 ( 0.10%)                  if (pos[i] < pos[(i + 1) % 3] && pos[i] < pos[(i + 2) % 3]) {
+        .                               places[i] = 0;
+        .                           }
+        .                           else {
+        .                               places[i] = 1;
+        .                           }
+        .                       }
+        .                   }
+        .               }
+-- line 103 ----------------------------------------
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source: minigames/roller_skating.hpp
+--------------------------------------------------------------------------------
+Ir                 
+
+-- line 27 ----------------------------------------
+        .                   std::cerr << "order: ";
+        .                   for (int i = 0; i < 4; i++) {
+        .                       std::cerr << int(order[i]) << ' ';
+        .                   }
+        .                   std::cerr << '\n';
+        .               }
+        .           
+        .               void play(const int8_t* move) {
+  516,840 ( 0.45%)          if (end) {
+        .                       return;
+        .                   }
+        .           
+        .                   for (int i = 0; i < 3; i++) {
+2,005,632 ( 1.73%)              if (risk[i] < 0) {
+  291,230 ( 0.25%)                  risk[i]++;
+        .                       }
+        .                       else
+1,805,156 ( 1.56%)              if (order[move[i]] == 0) {
+  658,667 ( 0.57%)                  dist[i] += 1;
+  311,067 ( 0.27%)                  risk[i] -= 1;
+        .                       }
+        .                       else
+  695,200 ( 0.60%)              if (order[move[i]] == 1) {
+  348,312 ( 0.30%)                  dist[i] += 2;
+        .                       }
+        .                       else
+  462,992 ( 0.40%)              if (order[move[i]] == 2) {
+  244,183 ( 0.21%)                  dist[i] += 2;
+  421,027 ( 0.36%)                  risk[i] += 1;
+        .                       }
+        .                       else {
+  254,220 ( 0.22%)                  dist[i] += 3;
+  381,330 ( 0.33%)                  risk[i] += 2;
+        .                       }
+        .                   }
+        .                   
+  810,560 ( 0.70%)          if (risk[0] >= 0 &&
+4,851,316 ( 4.20%)              (dist[0] % 10 == dist[1] % 10 ||
+1,743,096 ( 1.51%)               dist[0] % 10 == dist[2] % 10)) {
+  120,008 ( 0.10%)              risk[0] += 2;
+        .                   }
+        .           
+  606,474 ( 0.52%)          if (risk[1] >= 0 &&
+2,167,068 ( 1.87%)              (dist[1] % 10 == dist[0] % 10 ||
+  568,282 ( 0.49%)              dist[1] % 10 == dist[2] % 10)) {
+  134,404 ( 0.12%)              risk[1] += 2;
+        .                   }
+        .           
+  808,862 ( 0.70%)          if (risk[2] >= 0 &&
+4,656,064 ( 4.03%)              (dist[2] % 10 == dist[0] % 10 ||
+1,490,360 ( 1.29%)              dist[2] % 10 == dist[1] % 10)) {
+  126,560 ( 0.11%)              risk[2] += 2;
+        .                   }
+        .           
+        .                   for (int i = 0; i < 3; i++) {
+1,337,088 ( 1.16%)              if (risk[i] >= 5) {
+  106,539 ( 0.09%)                  risk[i] = -2;
+        .                       }
+        .                   }
+        .           
+  668,544 ( 0.58%)          if (turns_left == 0) {
+        .                       for (int i = 0; i < 3; i++) {
+  133,989 ( 0.12%)                  if (dist[i] >= dist[(i + 1) % 3] && dist[i] >= dist[(i + 2) % 3]) {
+        .                               places[i] = 3;
+        .                           }
+        .                           else
+   22,371 ( 0.02%)                  if (dist[i] < dist[(i + 1) % 3] && dist[i] < dist[(i + 2) % 3]) {
+   44,199 ( 0.04%)                      places[i] = 0;
+        .                           }
+        .                           else {
+        .                               places[i] = 1;
+        .                           }
+        .                       }
+        .           
+   13,928 ( 0.01%)              end = true;
+        .                   }
+        .                   else {
+  417,840 ( 0.36%)              turns_left--;
+        .           
+        .                       // new order
+        .                       std::swap(order[3], order[fast_rand() % 4]);
+1,462,440 ( 1.26%)              std::swap(order[2], order[fast_rand() % 3]);
+        .                       std::swap(order[1], order[fast_rand() % 2]);
+        .                   }
+        .               }
+        .           
+        .           };
+        .           
+        .           #endif // ROLLER_SPEED_SKATING
+--------------------------------------------------------------------------------
+-- Auto-annotated source: minigames/../random.hpp
+--------------------------------------------------------------------------------
+Ir                 
+
+-- line 5 ----------------------------------------
+        .           
+        .           static unsigned int g_seed = 2137;
+        .           
+        .           inline void fast_srand(int seed) {
+        .           	g_seed = seed;
+        .           }
+        .           
+        .           inline int fast_rand() {
+2,067,835 ( 1.79%)  	unsigned int z = (g_seed += 0x39A3689AU);
+4,962,804 ( 4.29%)  	z = (z ^ (z >> 14)) * 0x108E8AB8;
+4,962,804 ( 4.29%)  	z = (z ^ (z >> 13)) * 0x2CD01FD6;
+4,962,804 ( 4.29%)  	return int((z ^ (z >> 15)) >> 1);
+        .           }
+        .           
+        .           inline int fast_rand(int a, int b) {
+        .               return a + fast_rand() % (b - a + 1);
+        .           }
+        .           
+        .           #endif
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source: /usr/include/c++/12/bits/stl_algobase.h
+--------------------------------------------------------------------------------
+Ir               
+
+-- line 251 ----------------------------------------
+      .             template<typename _Tp>
+      .               _GLIBCXX14_CONSTEXPR
+      .               inline const _Tp&
+      .               max(const _Tp& __a, const _Tp& __b)
+      .               {
+      .                 // concept requirements
+      .                 __glibcxx_function_requires(_LessThanComparableConcept<_Tp>)
+      .                 //return  __a < __b ? __b : __a;
+403,920 ( 0.35%)        if (__a < __b)
+      .           	return __b;
+      .                 return __a;
+      .               }
+      .           
+      .             /**
+      .              *  @brief This does what you think it does.
+      .              *  @ingroup sorting_algorithms
+      .              *  @param  __a  A thing of arbitrary type.
+-- line 267 ----------------------------------------
+-- line 421 ----------------------------------------
+      .           	{
+      .           #if __cplusplus >= 201103L
+      .           	  using __assignable = __conditional_t<_IsMove,
+      .           					       is_move_assignable<_Tp>,
+      .           					       is_copy_assignable<_Tp>>;
+      .           	  // trivial types can have deleted assignment
+      .           	  static_assert( __assignable::value, "type must be assignable" );
+      .           #endif
+      8 ( 0.00%)  	  const ptrdiff_t _Num = __last - __first;
+      8 ( 0.00%)  	  if (_Num)
+     24 ( 0.00%)  	    __builtin_memmove(__result, __first, sizeof(_Tp) * _Num);
+    826 ( 0.00%)  => ./elf/../sysdeps/x86_64/dl-trampoline.h:_dl_runtime_resolve_xsave (1x)
+     40 ( 0.00%)  => ./string/../sysdeps/x86_64/multiarch/memmove-vec-unaligned-erms.S:__memcpy_avx_unaligned_erms (4x)
+      8 ( 0.00%)  	  return __result + _Num;
+      .           	}
+      .               };
+      .           
+      .           _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
+      .           
+      .             template<typename _Tp, typename _Ref, typename _Ptr>
+      .               struct _Deque_iterator;
+      .           
+-- line 440 ----------------------------------------
+-- line 914 ----------------------------------------
+      .               _GLIBCXX20_CONSTEXPR
+      .               inline typename
+      .               __gnu_cxx::__enable_if<__is_scalar<_Tp>::__value, void>::__type
+      .               __fill_a1(_ForwardIterator __first, _ForwardIterator __last,
+      .           	      const _Tp& __value)
+      .               {
+      .                 const _Tp __tmp = __value;
+      .                 for (; __first != __last; ++__first)
+     36 ( 0.00%)  	*__first = __tmp;
+    780 ( 0.00%)  => ./elf/../sysdeps/x86_64/dl-trampoline.h:_dl_runtime_resolve_xsave (1x)
+     40 ( 0.00%)  => ./string/../sysdeps/x86_64/multiarch/memset-vec-unaligned-erms.S:__memset_avx2_unaligned_erms (4x)
+      .               }
+      .           
+      .             // Specialization: for char types we can use memset.
+      .             template<typename _Tp>
+      .               _GLIBCXX20_CONSTEXPR
+      .               inline typename
+      .               __gnu_cxx::__enable_if<__is_byte<_Tp>::__value, void>::__type
+      .               __fill_a1(_Tp* __first, _Tp* __last, const _Tp& __c)
+-- line 930 ----------------------------------------
+-- line 1106 ----------------------------------------
+      .               _GLIBCXX20_CONSTEXPR
+      .               inline _OutputIterator
+      .               __fill_n_a(_OutputIterator __first, _Size __n, const _Tp& __value,
+      .           	       std::random_access_iterator_tag)
+      .               {
+      .           #if __cplusplus >= 201103L
+      .                 static_assert(is_integral<_Size>{}, "fill_n must pass integral size");
+      .           #endif
+      8 ( 0.00%)        if (__n <= 0)
+      .           	return __first;
+      .           
+      .                 __glibcxx_requires_can_increment(__first, __n);
+      .           
+      4 ( 0.00%)        std::__fill_a(__first, __first + __n, __value);
+      .                 return __first + __n;
+      .               }
+      .           
+      .             /**
+      .              *  @brief Fills the range [first,first+n) with copies of value.
+      .              *  @ingroup mutating_algorithms
+      .              *  @param  __first  An output iterator.
+      .              *  @param  __n      The count of copies to perform.
+-- line 1127 ----------------------------------------
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source: mcts.hpp
+--------------------------------------------------------------------------------
+Ir                 
+
+-- line 19 ----------------------------------------
+        .               uint8_t last_moves;
+        .           
+        .               float avg[3][4];
+        .               unsigned vis[3][4];
+        .           
+        .               unsigned node_vis;
+        .           
+        .               void init(const uint8_t& _last_moves) {
+  190,018 ( 0.16%)          last_moves = _last_moves;
+  190,017 ( 0.16%)          first_son = -1;
+  190,017 ( 0.16%)          node_vis = 0;
+        .           
+        .                   for (int i = 0; i < 3; i++) {
+        .                       for (int j = 0; j < 4; j++) {
+  385,974 ( 0.33%)                  avg[i][j] = 0;
+  385,974 ( 0.33%)                  vis[i][j] = 0;
+        .                       }
+        .                   }
+        .               }
+        .           
+        .               void expand() {
+   20,783 ( 0.02%)          first_son = last_node;
+  763,033 ( 0.66%)          for (uint8_t moves = 0; moves < 64; moves++) {
+    8,907 ( 0.01%)              pool[last_node++].init(moves);
+        .                   }
+        .               }
+        .           
+        .               int best_move_per_player(int player_idx) const {
+        .                   float best_score = -INF;
+        .                   int best_move = -1;
+        .           
+        4 ( 0.00%)          for (int move = 0; move < 4; move++) {
+       17 ( 0.00%)              float node_score = vis[player_idx][move]; // avg[player_idx][move];
+        .           
+        8 ( 0.00%)              if (best_score < node_score) {
+        .                           best_score = node_score;
+        .                           best_move = move;
+        .                       }
+        .                   }
+        .           
+        .                   return best_move;
+        .               }
+        .           
+        .               int select_per_player(int player_idx) const {
+        .                   float best_score = -INF;
+        .                   int best_move = -1;
+        .                   
+  164,288 ( 0.14%)          float log_node_vis = std::log(node_vis);
+  755,727 ( 0.65%)          for (int move = 0; move < 4; move++) {
+1,977,699 ( 1.71%)              if (vis[player_idx][move] == 0) {
+        .                           return move;
+        .                       }
+        .           
+3,040,885 ( 2.63%)              float node_score = avg[player_idx][move] + C * std::sqrt(log_node_vis / vis[player_idx][move]);
+        .                   
+1,068,730 ( 0.92%)              if (best_score < node_score) {
+        .                           best_score = node_score;
+        .                           best_move = move;
+        .                       }
+        .                   }
+        .           
+        .                   return best_move;
+        .               }
+        .           
+        .               MCTSNode* select() const {
+   56,742 ( 0.05%)          return &pool[first_son + select_per_player(0) * 1
+   53,773 ( 0.05%)                                 + select_per_player(1) * 4
+  322,638 ( 0.28%)                                 + select_per_player(2) * 16];
+        .               }
+        .           
+        .               void apply(uint8_t moves, float r0, float r1, float r2) {
+        .                   int m0 = (moves >> 0) & 3;
+  215,092 ( 0.19%)          int m1 = (moves >> 2) & 3;
+   53,773 ( 0.05%)          int m2 = (moves >> 4) & 3;
+        .           
+  322,638 ( 0.28%)          avg[0][m0] *= vis[0][m0];
+   53,773 ( 0.05%)          avg[0][m0] += r0;
+  107,546 ( 0.09%)          vis[0][m0] += 1;
+  161,319 ( 0.14%)          avg[0][m0] /= vis[0][m0];
+        .           
+  215,092 ( 0.19%)          avg[1][m1] *= vis[1][m1];
+   53,773 ( 0.05%)          avg[1][m1] += r1;
+  107,546 ( 0.09%)          vis[1][m1] += 1;
+  215,092 ( 0.19%)          avg[1][m1] /= vis[1][m1];
+        .           
+  161,319 ( 0.14%)          avg[2][m2] *= vis[2][m2];
+   53,773 ( 0.05%)          avg[2][m2] += r2;
+  107,546 ( 0.09%)          vis[2][m2] += 1;
+  215,092 ( 0.19%)          avg[2][m2] /= vis[2][m2];
+        .           
+   53,773 ( 0.05%)          node_vis += 1;
+        .               }
+        .           
+        8 ( 0.00%)      void debug() const {
+        .                   std::cerr << "NODE VIS: " << node_vis << '\n';
+       15 ( 0.00%)          for (int i = 0; i < 3; i++) {
+       22 ( 0.00%)              std::cerr << "PLAYER: " << i << '\n';
+    4,102 ( 0.00%)  => ???:std::ostream::operator<<(int) (3x)
+      752 ( 0.00%)  => ./elf/../sysdeps/x86_64/dl-trampoline.h:_dl_runtime_resolve_xsave (1x)
+       42 ( 0.00%)              for (int move = 0; move < 4; move++) {
+        .                           std::cerr << avg[i][move] << '/' << vis[i][move] << ' ';
+        .                       }
+        .                       std::cerr << '\n';
+        .                   }
+        8 ( 0.00%)      }
+        .           };
+        .           
+        .           MCTSNode MCTSNode::pool[MCTSNODE_POOL];
+        .           int      MCTSNode::last_node = 0;
+        .           
+        .           struct MCTS {
+        .               MCTSNode* root;
+        .           
+        .               void rollout(State& state, float& r0, float& r1, float& r2) {
+        .                   do {
+1,023,235 ( 0.88%)              state.play(fast_rand() & 3, fast_rand() & 3, fast_rand() & 3);
+58,409,366 (50.51%)  => /home/olaf/codingame/state.hpp:State::play(signed char, signed char, signed char) (204,647x)
+   27,856 ( 0.02%)          } while (!state.is_terminal());
+        .           
+        .                   state.get_stats(r0, r1, r2);
+        .               }
+        .           
+        .               void mcts(MCTSNode* node, State& state) {
+        .                   static MCTSNode* stack[33];
+   13,928 ( 0.01%)          MCTSNode** head = stack + 32;
+        .           
+   13,928 ( 0.01%)          *head = node;
+        .           
+        .                   float r0, r1, r2;
+        .           
+        .                   for (;;) {
+        .                       if (state.is_terminal()) {
+        .                           state.get_stats(r0, r1, r2);
+        .                           break;
+        .                       }
+        .           
+  203,103 ( 0.18%)              if ((*head)->node_vis == 0) {
+        .                           rollout(state, r0, r1, r2);
+   13,928 ( 0.01%)                  (*head)->node_vis++;
+        .                           break;
+        .                       }
+        .           
+  161,319 ( 0.14%)              if ((*head)->first_son == -1) {
+        .                           (*head)->expand();
+        .                       }
+        .           
+        .                       MCTSNode* child = (*head)->select();
+  322,638 ( 0.28%)              state.play((child->last_moves >> 0) & 3,
+19,397,399 (16.77%)  => /home/olaf/codingame/state.hpp:State::play(signed char, signed char, signed char) (53,773x)
+  107,546 ( 0.09%)                         (child->last_moves >> 2) & 3,
+  161,319 ( 0.14%)                         (child->last_moves >> 4) & 3);
+        .           
+  107,546 ( 0.09%)              *(--head) = child;
+   53,773 ( 0.05%)          }
+        .           
+  270,804 ( 0.23%)          while (head != (stack + 32)) {
+        .                       MCTSNode* child = *head;
+        .                       head++;
+  161,319 ( 0.14%)              (*head)->apply(child->last_moves, r0, r1, r2);
+        .                   }
+        .               }
+        .           
+        .               void reset() {
+        .                   MCTSNode::last_node = 0;
+        .                   MCTSNode::pool[MCTSNode::last_node].init(0);
+        1 ( 0.00%)          root = &MCTSNode::pool[MCTSNode::last_node];
+        1 ( 0.00%)          MCTSNode::last_node++;
+        1 ( 0.00%)      }
+        .           
+        .               int best_move(int player_idx) const {
+        .                   return root->best_move_per_player(player_idx);
+        .               }
+        .           
+        .               void debug() {
+        3 ( 0.00%)          root->debug();
+   73,574 ( 0.06%)  => mcts.hpp:MCTSNode::debug() const (1x)
+        .               }
+        .           
+       11 ( 0.00%)      void run(const State& root_state, int timeout) {
+        .                   reset();
+        .           
+        .                   // root_state.debug();
+        .                   // return;
+        .           
+        .                   do {
+  181,064 ( 0.16%)              State state = root_state;
+   41,781 ( 0.04%)              mcts(root, state);
+   83,568 ( 0.07%)          } while (timer.get_elapsed() < timeout &&
+        .                            MCTSNode::last_node + 64 < MCTSNODE_POOL);
+        9 ( 0.00%)      }
+        .           };
+        .           
+        .           #endif // MCTS_HPP
+--------------------------------------------------------------------------------
+-- Auto-annotated source: minigames/diving.hpp
+--------------------------------------------------------------------------------
+Ir                 
+
+-- line 23 ----------------------------------------
+        .                   }
+        .                   std::cerr << '\n';
+        .                   for (int i = 0; i < 3; i++) {
+        .                       std::cerr << "i: " << i << " => " << int(score[i]) << ' ' << int(combo[i]) << '\n';
+        .                   }
+        .               }
+        .           
+        .               void play(const int8_t* move) {
+  516,840 ( 0.45%)          if (end) {
+        .                       return;
+        .                   }
+        .                   
+        .                   for (int i = 0; i < 3; i++) {
+2,653,499 ( 2.29%)              if (move[i] == (goal & 3)) {
+  366,288 ( 0.32%)                  combo[i]++;
+  366,288 ( 0.32%)                  score[i] += combo[i];
+        .                       }
+        .                       else {
+  584,976 ( 0.51%)                  combo[i] = 0;
+        .                       }
+        .                   }
+        .           
+  725,295 ( 0.63%)          if (goals_left == 1) {
+   13,928 ( 0.01%)              end = true;
+        .           
+        .                       for (int i = 0; i < 3; i++) {
+  154,385 ( 0.13%)                  if (score[i] >= score[(i + 1) % 3] && score[i] >= score[(i + 2) % 3]) {
+        .                               places[i] = 3;
+        .                           }
+        .                           else
+   42,706 ( 0.04%)                  if (score[i] < score[(i + 1) % 3] && score[i] < score[(i + 2) % 3]) {
+   41,784 ( 0.04%)                      places[i] = 0;
+        .                           }
+        .                           else {
+        .                               places[i] = 1;
+        .                           }
+        .                       }
+        .                   }
+        .                   else {
+  362,128 ( 0.31%)              goal >>= 2;
+  362,128 ( 0.31%)              goals_left--;
+        .                   }
+        .               }
+        .           
+        .               bool proven_win(int p_idx) const {
+        .                   return false;
+        .               }
+        .           
+        .               bool proven_lost(int p_idx) const {
+-- line 71 ----------------------------------------
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source: /usr/include/c++/12/cmath
+--------------------------------------------------------------------------------
+Ir                 
+
+-- line 343 ----------------------------------------
+        .             { return __builtin_logl(__x); }
+        .           #endif
+        .           
+        .             template<typename _Tp>
+        .               inline _GLIBCXX_CONSTEXPR
+        .               typename __gnu_cxx::__enable_if<__is_integer<_Tp>::__value, 
+        .                                               double>::__type
+        .               log(_Tp __x)
+  591,507 ( 0.51%)      { return __builtin_log(__x); }
+7,933,338 ( 6.86%)  => ./math/./w_log_template.c:log@@GLIBC_2.29 (161,319x)
+      718 ( 0.00%)  => ./elf/../sysdeps/x86_64/dl-trampoline.h:_dl_runtime_resolve_xsave (1x)
+        .           
+        .             using ::log10;
+        .           
+        .           #ifndef __CORRECT_ISO_CPP_MATH_H_PROTO
+        .             inline _GLIBCXX_CONSTEXPR float
+        .             log10(float __x)
+        .             { return __builtin_log10f(__x); }
+        .           
+-- line 359 ----------------------------------------
+-- line 456 ----------------------------------------
+        .               sinh(_Tp __x)
+        .               { return __builtin_sinh(__x); }
+        .           
+        .             using ::sqrt;
+        .           
+        .           #ifndef __CORRECT_ISO_CPP_MATH_H_PROTO
+        .             inline _GLIBCXX_CONSTEXPR float
+        .             sqrt(float __x)
+1,898,583 ( 1.64%)    { return __builtin_sqrtf(__x); }
+        .           
+        .             inline _GLIBCXX_CONSTEXPR long double
+        .             sqrt(long double __x)
+        .             { return __builtin_sqrtl(__x); }
+        .           #endif
+        .           
+        .             template<typename _Tp>
+        .               inline _GLIBCXX_CONSTEXPR
+-- line 472 ----------------------------------------
+
+--------------------------------------------------------------------------------
+The following files chosen for auto-annotation could not be found:
+--------------------------------------------------------------------------------
+  ./elf/../sysdeps/generic/dl-new-hash.h
+  ./elf/./elf/dl-lookup.c
+  ./math/../sysdeps/ieee754/dbl-64/e_log.c
+  ./math/../sysdeps/ieee754/dbl-64/math_config.h
+  ./math/./w_log_template.c
+  ./time/../sysdeps/unix/sysv/linux/clock_gettime.c
+
+--------------------------------------------------------------------------------
+Ir                   
+--------------------------------------------------------------------------------
+105,232,398 (91.00%)  events annotated
+

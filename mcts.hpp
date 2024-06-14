@@ -63,14 +63,14 @@ struct MCTSNode {
         float best_score = -INF;
         int best_move = -1;
         
-        float log_node_vis = std::log(node_vis);
+        float sqrt_log_node_vis = C * fastsqrtf(fastlogf(node_vis));
         for (int move = 0; move < 4; move++) {
             if (vis[player_idx][move] == 0) {
                 return move;
             }
 
-            float node_score = avg[player_idx][move] + C * std::sqrt(log_node_vis / vis[player_idx][move]);
-        
+            float node_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]);
+
             if (best_score < node_score) {
                 best_score = node_score;
                 best_move = move;
@@ -80,16 +80,16 @@ struct MCTSNode {
         return best_move;
     }
 
-    MCTSNode* select() const {
+    inline MCTSNode* select() const {
         return &pool[first_son + select_per_player(0) * 1
                                + select_per_player(1) * 4
                                + select_per_player(2) * 16];
     }
 
-    void apply(uint8_t moves, float r0, float r1, float r2) {
-        int m0 = (moves >> 0) & 3;
-        int m1 = (moves >> 2) & 3;
-        int m2 = (moves >> 4) & 3;
+    inline void apply(uint8_t moves, float r0, float r1, float r2) {
+        uint8_t m0 = (moves >> 0) & 3;
+        uint8_t m1 = (moves >> 2) & 3;
+        uint8_t m2 = (moves >> 4) & 3;
 
         avg[0][m0] *= vis[0][m0];
         avg[0][m0] += r0;
@@ -127,39 +127,49 @@ int      MCTSNode::last_node = 0;
 struct MCTS {
     MCTSNode* root;
 
-    void rollout(State& state, float& r0, float& r1, float& r2) {
-        do {
-            state.play(fast_rand() & 3, fast_rand() & 3, fast_rand() & 3);
-        } while (!state.is_terminal());
+    void mcts(MCTSNode* node, State& state) {
+        static MCTSNode* stack[33];
+        MCTSNode** head = stack + 32;
+        MCTSNode* child;
 
-        state.get_stats(r0, r1, r2);
-    }
+        *head = node;
 
-    void mcts(MCTSNode* node, State& state, float& r0, float& r1, float& r2) {
-        if (state.is_terminal()) {
-            state.get_stats(r0, r1, r2);
-            return;
+        float r0, r1, r2;
+
+        for (;;) {
+            if (state.is_terminal()) {
+                state.get_stats(r0, r1, r2);
+                break;
+            }
+
+            if ((*head)->node_vis == 0) {
+                do {
+                    uint8_t moves = fast_rand() & 0b111111;
+                    state.play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
+                } while (!state.is_terminal());
+
+                state.get_stats(r0, r1, r2);
+                (*head)->node_vis++;
+                break;
+            }
+
+            if ((*head)->first_son == -1) {
+                (*head)->expand();
+            }
+
+            child = (*head)->select();
+            state.play((child->last_moves >> 0) & 3,
+                       (child->last_moves >> 2) & 3,
+                       (child->last_moves >> 4) & 3);
+
+            *(--head) = child;
         }
 
-        if (node->node_vis == 0) {
-            rollout(state, r0, r1, r2);
-            node->node_vis++;
-            return;
+        while (head != (stack + 32)) {
+            child = *head;
+            head++;
+            (*head)->apply(child->last_moves, r0, r1, r2);
         }
-
-        if (node->first_son == -1) {
-            node->expand();
-        }
-
-        MCTSNode* child = node->select();
-
-        state.play((child->last_moves >> 0) & 3, 
-                   (child->last_moves >> 2) & 3,
-                   (child->last_moves >> 4) & 3);
-
-        mcts(child, state, r0, r1, r2);
-
-        node->apply(child->last_moves, r0, r1, r2);
     }
 
     void reset() {
@@ -185,8 +195,7 @@ struct MCTS {
 
         do {
             State state = root_state;
-            float r0, r1, r2;
-            mcts(root, state, r0, r1, r2);
+            mcts(root, state);
         } while (timer.get_elapsed() < timeout &&
                  MCTSNode::last_node + 64 < MCTSNODE_POOL);
     }

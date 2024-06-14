@@ -32,17 +32,22 @@ struct Archery {
             return;
         }
 
-        static const int8_t dx[4] = {0, -1, 0, +1};
-        static const int8_t dy[4] = {-1, 0, +1, 0};
+        static constexpr int8_t dx[4] = {0, -1, 0, +1};
+        static constexpr int8_t dy[4] = {-1, 0, +1, 0};
+
+        const int8_t wind_strength = wind[wind_index];
 
         for (int i = 0; i < 3; i++) {
-            x[i] += wind[wind_index] * dx[move[i]];
-            y[i] += wind[wind_index] * dy[move[i]];
-        
+            x[i] += wind_strength * dx[move[i]];
+
             if (x[i] < -20) x[i] = -20;
+            else
             if (x[i] > +20) x[i] = +20;
+            
+            y[i] += wind_strength * dy[move[i]];
 
             if (y[i] < -20) y[i] = -20;
+            else
             if (y[i] > +20) y[i] = +20;
         }
 
