@@ -52,7 +52,7 @@ struct MCTSNode {
         int best_move = -1;
 
         for (int move = 0; move < 4; move++) {
-            float node_score = avg[player_idx][move];
+            float node_score = vis[player_idx][move]; // avg[player_idx][move];
 
             if (best_score < node_score) {
                 best_score = node_score;
@@ -117,7 +117,7 @@ struct MCTSNode {
         for (int i = 0; i < 3; i++) {
             std::cerr << "PLAYER: " << i << '\n';
             for (int move = 0; move < 4; move++) {
-                std::cerr << avg[i][move] << ' ';
+                std::cerr << avg[i][move] << '/' << vis[i][move] << ' ';
             }
             std::cerr << '\n';
         }

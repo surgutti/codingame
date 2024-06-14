@@ -49,29 +49,15 @@ struct State {
             diving_score[i] += place_to_score(diving.places[i]);
         }
 
-        r0 = hurdle_race_score[0] * archery_score[0] * diving_score[0];
-        r0 = hurdle_race_score[0] * archery_score[0] * diving_score[0];
-        r0 = hurdle_race_score[0] * archery_score[0] * diving_score[0]; 
+        int score0 = std::max(1, hurdle_race_score[0]) * std::max(1, archery_score[0]) * std::max(1, diving_score[0]);
+        int score1 = std::max(1, hurdle_race_score[1]) * std::max(1, archery_score[1]) * std::max(1, diving_score[1]);
+        int score2 = std::max(1, hurdle_race_score[2]) * std::max(1, archery_score[2]) * std::max(1, diving_score[2]);
 
-        r0 = place_to_score(hurdle_race.places[0]) * (archery_score[0] + roller_skating_score[0] + diving_score[0]) +
-             place_to_score(archery.places[0]) * (hurdle_race_score[0] + roller_skating_score[0] + diving_score[0]) +
-             place_to_score(diving.places[0]) * (hurdle_race_score[0] + archery_score[0] + roller_skating_score[0]);
+        int sum = score0 + score1 + score2;
 
-        r1 = place_to_score(hurdle_race.places[1]) * (archery_score[1] + roller_skating_score[1] + diving_score[1]) +
-             place_to_score(archery.places[1]) * (hurdle_race_score[1] + roller_skating_score[1] + diving_score[1]) +
-             place_to_score(diving.places[1]) * (hurdle_race_score[1] + archery_score[1] + roller_skating_score[1]);
-
-        r2 = place_to_score(hurdle_race.places[2]) * (archery_score[2] + roller_skating_score[2] + diving_score[2]) +
-             place_to_score(archery.places[2]) * (hurdle_race_score[2] + roller_skating_score[2] + diving_score[2]) +
-             place_to_score(diving.places[2]) * (hurdle_race_score[2] + archery_score[2] + roller_skating_score[2]);
-        
-        int sum = r0 + r1 + r2;
-
-        if (sum != 0) {
-            r0 /= sum;
-            r1 /= sum;
-            r2 /= sum;
-        }
+        r0 = (float) (score0 - score1 - score2) / sum;
+        r1 = (float) (score1 - score0 - score2) / sum;
+        r2 = (float) (score2 - score0 - score1) / sum;
     }
 
     void init(const std::vector<std::string>& gpu,
@@ -83,6 +69,10 @@ struct State {
         else { // hurdle_race
             for (int i = 0; i < (int) gpu[0].size(); i++) {
                 hurdle_race.track[i] = gpu[0][i];
+            }
+
+            for (int i = (int) gpu[0].size(); i < TRACK_LENGTH; i++) {
+                hurdle_race.track[i] = '.';
             }
 
             for (int i = 0; i < 3; i++) {
@@ -129,6 +119,14 @@ struct State {
             for (int i = 0; i < (int) gpu[3].size(); i++) {
                 diving.goal[diving.goal_index - i] = to_move_index(gpu[3][i]);
             }
+            
+            for (int i = 0; i < 3; i++) {
+                diving.score[i] = reg[3][i];
+                diving.combo[i] = reg[3][i + 3];
+                diving.places[i] = -1;
+            }
+
+            diving.end = false;
         }
     }
 

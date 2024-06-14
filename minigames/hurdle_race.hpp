@@ -18,6 +18,10 @@ struct HurdleRace {
         }
 
         for (int i = 0; i < 3; i++) {
+            if (stun[i]) {
+                stun[i]--;
+            }
+            else
             if (move[i] == 1) {
                 pos[i]++;
             }
@@ -29,7 +33,7 @@ struct HurdleRace {
             if (move[i] == 2) {
                 pos[i]++;
                 if (track[pos[i]] == '#') {
-                    stun[i] = 3;
+                    stun[i] = 2;
                 }
                 else {
                     pos[i]++;
@@ -39,12 +43,12 @@ struct HurdleRace {
             if (move[i] == 3) {
                 pos[i]++;
                 if (track[pos[i]] == '#') {
-                    stun[i] = 3;
+                    stun[i] = 2;
                 }
                 else {
                     pos[i]++;
                     if (track[pos[i]] == '#') {
-                        stun[i] = 3;
+                        stun[i] = 2;
                     }
                     else {
                         pos[i]++;
@@ -53,7 +57,7 @@ struct HurdleRace {
             }
 
             if (track[pos[i]] == '#') {
-                stun[i] = 3;
+                stun[i] = 2;
             }
 
             if (pos[i] >= TRACK_LENGTH) {

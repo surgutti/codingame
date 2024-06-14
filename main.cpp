@@ -80,9 +80,10 @@ int main() {
 
         timer.start();
 
-        mcts.run(current_state, 45);
+        mcts.run(current_state, (TURN == 0 ? 950 : 45));
 
         mcts.debug();
+        std::cerr << "timer: " << timer.get_elapsed() << '\n';
 
         int move = mcts.best_move(PLAYER_IDX);
         

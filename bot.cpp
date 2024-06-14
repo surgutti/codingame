@@ -48,6 +48,10 @@
           }
   
           for (int i = 0; i < 3; i++) {
+              if (stun[i]) {
+                  stun[i]--;
+              }
+              else
               if (move[i] == 1) {
                   pos[i]++;
               }
@@ -59,7 +63,7 @@
               if (move[i] == 2) {
                   pos[i]++;
                   if (track[pos[i]] == '#') {
-                      stun[i] = 3;
+                      stun[i] = 2;
                   }
                   else {
                       pos[i]++;
@@ -69,12 +73,12 @@
               if (move[i] == 3) {
                   pos[i]++;
                   if (track[pos[i]] == '#') {
-                      stun[i] = 3;
+                      stun[i] = 2;
                   }
                   else {
                       pos[i]++;
                       if (track[pos[i]] == '#') {
-                          stun[i] = 3;
+                          stun[i] = 2;
                       }
                       else {
                           pos[i]++;
@@ -83,7 +87,7 @@
               }
   
               if (track[pos[i]] == '#') {
-                  stun[i] = 3;
+                  stun[i] = 2;
               }
   
               if (pos[i] >= TRACK_LENGTH) {
@@ -337,27 +341,23 @@
      }
  
      // return how much does a player earn from games
-     void get_stats(float& r0, float& r1, float& r2) const {
+     void get_stats(float& r0, float& r1, float& r2) {
  
-         r0 = place_to_score(hurdle_race.places[0]) * (archery_score[0] + roller_skating_score[0] + diving_score[0]) +
-              place_to_score(archery.places[0]) * (hurdle_race_score[0] + roller_skating_score[0] + diving_score[0]) +
-              place_to_score(diving.places[0]) * (hurdle_race_score[0] + archery_score[0] + roller_skating_score[0]);
- 
-         r1 = place_to_score(hurdle_race.places[1]) * (archery_score[1] + roller_skating_score[1] + diving_score[1]) +
-              place_to_score(archery.places[1]) * (hurdle_race_score[1] + roller_skating_score[1] + diving_score[1]) +
-              place_to_score(diving.places[1]) * (hurdle_race_score[1] + archery_score[1] + roller_skating_score[1]);
- 
-         r2 = place_to_score(hurdle_race.places[2]) * (archery_score[2] + roller_skating_score[2] + diving_score[2]) +
-              place_to_score(archery.places[2]) * (hurdle_race_score[2] + roller_skating_score[2] + diving_score[2]) +
-              place_to_score(diving.places[2]) * (hurdle_race_score[2] + archery_score[2] + roller_skating_score[2]);
-         
-         int sum = r0 + r1 + r2;
- 
-         if (sum != 0) {
-             r0 /= sum;
-             r1 /= sum;
-             r2 /= sum;
+         for (int i = 0; i < 3; i++) {
+             hurdle_race_score[i] += place_to_score(hurdle_race.places[i]);
+             archery_score[i] += place_to_score(archery.places[i]);
+             diving_score[i] += place_to_score(diving.places[i]);
          }
+ 
+         int score0 = std::max(1, hurdle_race_score[0]) * std::max(1, archery_score[0]) * std::max(1, diving_score[0]);
+         int score1 = std::max(1, hurdle_race_score[1]) * std::max(1, archery_score[1]) * std::max(1, diving_score[1]);
+         int score2 = std::max(1, hurdle_race_score[2]) * std::max(1, archery_score[2]) * std::max(1, diving_score[2]);
+ 
+         int sum = score0 + score1 + score2;
+ 
+         r0 = (float) (score0 - score1 - score2) / sum;
+         r1 = (float) (score1 - score0 - score2) / sum;
+         r2 = (float) (score2 - score0 - score1) / sum;
      }
  
      void init(const std::vector<std::string>& gpu,
@@ -369,6 +369,10 @@
          else { // hurdle_race
              for (int i = 0; i < (int) gpu[0].size(); i++) {
                  hurdle_race.track[i] = gpu[0][i];
+             }
+ 
+             for (int i = (int) gpu[0].size(); i < TRACK_LENGTH; i++) {
+                 hurdle_race.track[i] = '.';
              }
  
              for (int i = 0; i < 3; i++) {
@@ -415,6 +419,14 @@
              for (int i = 0; i < (int) gpu[3].size(); i++) {
                  diving.goal[diving.goal_index - i] = to_move_index(gpu[3][i]);
              }
+             
+             for (int i = 0; i < 3; i++) {
+                 diving.score[i] = reg[3][i];
+                 diving.combo[i] = reg[3][i + 3];
+                 diving.places[i] = -1;
+             }
+ 
+             diving.end = false;
          }
      }
  
@@ -534,7 +546,7 @@
          int best_move = -1;
  
          for (int move = 0; move < 4; move++) {
-             float node_score = avg[player_idx][move];
+             float node_score = vis[player_idx][move]; // avg[player_idx][move];
  
              if (best_score < node_score) {
                  best_score = node_score;
@@ -599,7 +611,7 @@
          for (int i = 0; i < 3; i++) {
              std::cerr << "PLAYER: " << i << '\n';
              for (int move = 0; move < 4; move++) {
-                 std::cerr << avg[i][move] << ' ';
+                 std::cerr << avg[i][move] << '/' << vis[i][move] << ' ';
              }
              std::cerr << '\n';
          }
@@ -743,9 +755,10 @@ int main() {
 
         timer.start();
 
-        mcts.run(current_state, 45);
+        mcts.run(current_state, (TURN == 0 ? 990 : 45));
 
         mcts.debug();
+        std::cerr << "timer: " << timer.get_elapsed() << '\n';
 
         int move = mcts.best_move(PLAYER_IDX);
         
