@@ -6,6 +6,33 @@
 #include <iostream>
 #include <algorithm>
 
+constexpr int8_t all_permutations[24][4] = {
+    {0, 1, 2, 3},
+    {0, 1, 3, 2},
+    {0, 2, 1, 3},
+    {0, 2, 3, 1},
+    {0, 3, 1, 2},
+    {0, 3, 2, 1},
+    {1, 0, 2, 3},
+    {1, 0, 3, 2},
+    {1, 2, 0, 3},
+    {1, 2, 3, 0},
+    {1, 3, 0, 2},
+    {1, 3, 2, 0},
+    {2, 0, 1, 3},
+    {2, 0, 3, 1},
+    {2, 1, 0, 3},
+    {2, 1, 3, 0},
+    {2, 3, 0, 1},
+    {2, 3, 1, 0},
+    {3, 0, 1, 2},
+    {3, 0, 2, 1},
+    {3, 1, 0, 2},
+    {3, 1, 2, 0},
+    {3, 2, 0, 1},
+    {3, 2, 1, 0}
+};
+
 struct RollerSkating {
 
     int8_t turns_left;
@@ -15,7 +42,7 @@ struct RollerSkating {
 
     int8_t places[3];
 
-    int8_t order[4];
+    const int8_t* order;
 
     bool end;
 
@@ -59,22 +86,20 @@ struct RollerSkating {
                 risk[i] += 2;
             }
         }
+
+        const bool p01 = (dist[0] % 10 == dist[1] % 10);
+        const bool p02 = (dist[0] % 10 == dist[2] % 10);
+        const bool p12 = (dist[1] % 10 == dist[2] % 10);
         
-        if (risk[0] >= 0 &&
-            (dist[0] % 10 == dist[1] % 10 ||
-             dist[0] % 10 == dist[2] % 10)) {
+        if (risk[0] >= 0 && (p01 || p02)) {
             risk[0] += 2;
         }
 
-        if (risk[1] >= 0 &&
-            (dist[1] % 10 == dist[0] % 10 ||
-            dist[1] % 10 == dist[2] % 10)) {
+        if (risk[1] >= 0 && (p01 || p12)) {
             risk[1] += 2;
         }
 
-        if (risk[2] >= 0 &&
-            (dist[2] % 10 == dist[0] % 10 ||
-            dist[2] % 10 == dist[1] % 10)) {
+        if (risk[2] >= 0 && (p12 || p02)) {
             risk[2] += 2;
         }
 
@@ -103,10 +128,11 @@ struct RollerSkating {
         else {
             turns_left--;
 
-            // new order
-            std::swap(order[3], order[fast_rand() % 4]);
-            std::swap(order[2], order[fast_rand() % 3]);
-            std::swap(order[1], order[fast_rand() % 2]);
+            order = all_permutations[fast_rand() % 24];
+
+            // std::swap(order[3], order[fast_rand() % 4]);
+            // std::swap(order[2], order[fast_rand() % 3]);
+            // std::swap(order[1], order[fast_rand() % 2]);
         }
     }
 

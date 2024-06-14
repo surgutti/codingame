@@ -40,15 +40,15 @@ struct Archery {
         for (int i = 0; i < 3; i++) {
             x[i] += wind_strength * dx[move[i]];
 
-            if (x[i] < -20) x[i] = -20;
-            else
             if (x[i] > +20) x[i] = +20;
+            else
+            if (x[i] < -20) x[i] = -20;
             
             y[i] += wind_strength * dy[move[i]];
-
-            if (y[i] < -20) y[i] = -20;
-            else
+        
             if (y[i] > +20) y[i] = +20;
+            else
+            if (y[i] < -20) y[i] = -20;
         }
 
         if (wind_index == 0) {

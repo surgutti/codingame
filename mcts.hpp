@@ -59,16 +59,18 @@ struct MCTSNode {
         return best_move;
     }
 
-    int select_per_player(int player_idx) const {
+    inline int select_per_player(int player_idx) const {
+        for (int move = 0; move < 4; move++) {
+            if (vis[player_idx][move] == 0) {
+                return move;
+            }
+        }
+
         float best_score = -INF;
         int best_move = -1;
         
         float sqrt_log_node_vis = C * fastsqrtf(fastlogf(node_vis));
         for (int move = 0; move < 4; move++) {
-            if (vis[player_idx][move] == 0) {
-                return move;
-            }
-
             float node_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]);
 
             if (best_score < node_score) {
@@ -172,7 +174,7 @@ struct MCTS {
         }
     }
 
-    void reset() {
+    inline void reset() {
         MCTSNode::last_node = 0;
         MCTSNode::pool[MCTSNode::last_node].init(0);
         root = &MCTSNode::pool[MCTSNode::last_node];
@@ -183,7 +185,7 @@ struct MCTS {
         return root->best_move_per_player(player_idx);
     }
 
-    void debug() {
+    void debug() const {
         root->debug();
     }
 

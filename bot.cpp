@@ -937,7 +937,7 @@ int main() {
 
         std::cout << move_list[move] << std::endl;
 
-        // return 0;
+        return 0;
     }
 
 }

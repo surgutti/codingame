@@ -101,8 +101,19 @@ struct State {
             roller_skating.end = true;
         }
         else { // roller_skating
-            for (int i = 0; i < 4; i++) {
-                roller_skating.order[to_move_index(gpu[2][i])] = i;
+            for (int i = 0; i < 24; i++) {
+                bool ok = true;
+                for (int j = 0; j < 4; j++) {
+                    if (all_permutations[i][j] != to_move_index(gpu[2][j])) {
+                        ok = false;
+                        break;
+                    }
+                }
+
+                if (ok) {
+                    roller_skating.order = all_permutations[i];
+                    break;
+                }
             }
 
             for (int i = 0; i < 3; i++) {
