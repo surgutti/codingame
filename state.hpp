@@ -16,16 +16,16 @@
 struct State {
 
     HurdleRace hurdle_race;
-    int hurdle_race_score[3];
+    int8_t hurdle_race_score[3];
 
     Archery archery;
-    int archery_score[3];
+    int8_t archery_score[3];
 
     // RollerSkating roller_skating;
-    int roller_skating_score[3];
+    int8_t roller_skating_score[3];
 
     Diving diving;
-    int diving_score[3];
+    int8_t diving_score[3];
 
     bool is_terminal() const {
         return hurdle_race.end &&
@@ -33,7 +33,7 @@ struct State {
                diving.end;
     }
 
-    int place_to_score(int place) const {
+    int8_t place_to_score(int place) const {
         if (place == 1)
             return 3;
         if (place == 2)
@@ -50,9 +50,9 @@ struct State {
             diving_score[i] += place_to_score(diving.places[i]);
         }
 
-        int score0 = std::max(1, hurdle_race_score[0]) * std::max(1, archery_score[0]) * std::max(1, diving_score[0]);
-        int score1 = std::max(1, hurdle_race_score[1]) * std::max(1, archery_score[1]) * std::max(1, diving_score[1]);
-        int score2 = std::max(1, hurdle_race_score[2]) * std::max(1, archery_score[2]) * std::max(1, diving_score[2]);
+        int score0 = std::max<int>(1, hurdle_race_score[0]) * std::max<int>(1, archery_score[0]) * std::max<int>(1, diving_score[0]);
+        int score1 = std::max<int>(1, hurdle_race_score[1]) * std::max<int>(1, archery_score[1]) * std::max<int>(1, diving_score[1]);
+        int score2 = std::max<int>(1, hurdle_race_score[2]) * std::max<int>(1, archery_score[2]) * std::max<int>(1, diving_score[2]);
 
         int sum = score0 + score1 + score2;
 
@@ -68,12 +68,11 @@ struct State {
             hurdle_race.end = true;
         }
         else { // hurdle_race
+            hurdle_race.track = 0U;
             for (int i = 0; i < (int) gpu[0].size(); i++) {
-                hurdle_race.track[i] = gpu[0][i];
-            }
-
-            for (int i = (int) gpu[0].size(); i < TRACK_LENGTH; i++) {
-                hurdle_race.track[i] = '.';
+                if (gpu[0][i] == '#') {
+                    hurdle_race.track |= 1U << i;
+                }
             }
 
             for (int i = 0; i < 3; i++) {
@@ -100,8 +99,6 @@ struct State {
             for (int i = 0; i < 3; i++) {
                 archery.x[i] = reg[1][2 * i + 0];
                 archery.y[i] = reg[1][2 * i + 1];
-
-                archery.scores[i] = 0;
                 archery.places[i] = -1;
             }
 
@@ -119,9 +116,9 @@ struct State {
             diving.end = true;
         }
         else { // diving
-            diving.goal_index = (int) gpu[3].size() - 1;
+            diving.goals_left = (int) gpu[3].size();
             for (int i = 0; i < (int) gpu[3].size(); i++) {
-                diving.goal[diving.goal_index - i] = to_move_index(gpu[3][i]);
+                diving.goal |= uint32_t(to_move_index(gpu[3][i])) << (2 * i);
             }
             
             for (int i = 0; i < 3; i++) {

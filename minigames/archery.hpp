@@ -5,26 +5,25 @@
 
 struct Archery {
 
-    int wind[ARCHERY_LENGTH];
-    int wind_index;
+    int8_t wind[ARCHERY_LENGTH];
+    int8_t wind_index;
 
-    int x[3];
-    int y[3];
+    int8_t x[3];
+    int8_t y[3];
 
     bool end;
 
-    int scores[3];
-    int places[3];
+    int8_t places[3];
 
     void debug() const {
         std::cerr << "wind_index: " << wind_index << '\n';
         std::cerr << "wind: ";
         for (int i = wind_index; i >= 0; i--) {
-            std::cerr << wind[i] << ' ';
+            std::cerr << int(wind[i]) << ' ';
         }
         std::cerr << '\n';
         for (int i = 0; i < 3; i++) {
-            std::cerr << "i: " << i << " => " << x[i] << ' ' << y[i] << '\n';
+            std::cerr << "i: " << i << " => " << int(x[i]) << ' ' << int(y[i]) << '\n';
         }
     }
 
@@ -33,8 +32,8 @@ struct Archery {
             return;
         }
 
-        static const int dx[4] = {0, -1, 0, +1};
-        static const int dy[4] = {-1, 0, +1, 0};
+        static const int8_t dx[4] = {0, -1, 0, +1};
+        static const int8_t dy[4] = {-1, 0, +1, 0};
 
         for (int i = 0; i < 3; i++) {
             x[i] += wind[wind_index] * dx[move[i]];
@@ -48,8 +47,10 @@ struct Archery {
         }
 
         if (wind_index == 0) {
+
+            int16_t scores[3];
             for (int i = 0; i < 3; i++) {
-                scores[i] = x[i] * x[i] + y[i] * y[i]; 
+                scores[i] = (int16_t) x[i] * x[i] + (int16_t) y[i] * y[i]; 
             }
 
             for (int i = 0; i < 3; i++) {

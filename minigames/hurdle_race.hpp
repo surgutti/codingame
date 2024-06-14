@@ -7,23 +7,25 @@
 #include <cassert>
 
 struct HurdleRace {
-    char track[TRACK_LENGTH + 3];
+    
+    uint32_t track;
 
-    int pos[3], stun[3];
-
-    bool end;
-
-    int places[3];
+    int8_t pos[3], stun[3];
+    int8_t end;
+    int8_t places[3];
 
     void debug() const {
         std::cerr << "TRACK: ";
         for (int i = 0; i < TRACK_LENGTH; i++) {
-            std::cerr << track[i];
+            if (track & (1u << i))
+                std::cerr << '#';
+            else
+                std::cerr << '.';
         }
         std::cerr << "|\n";
 
         for (int i = 0; i < 3; i++) {
-            std::cerr << "i: " << i << " => " << pos[i] << ' ' << stun[i] << '\n';
+            std::cerr << "i: " << i << " => " << int(pos[i]) << ' ' << int(stun[i]) << '\n';
         }
     }
 
@@ -47,22 +49,22 @@ struct HurdleRace {
                 else
                 if (move[i] == 2) {
                     pos[i]++;
-                    if (track[pos[i]] == '#') {
+                    if (track & (1U << pos[i])) {
                         stun[i] = 2;
                     }
                     else {
                         pos[i]++;
                     }
                 }
-                else
-                if (move[i] == 3) {
+                else {
+                // if (move[i] == 3) {
                     pos[i]++;
-                    if (track[pos[i]] == '#') {
+                    if (track & (1U << pos[i])) {
                         stun[i] = 2;
                     }
                     else {
                         pos[i]++;
-                        if (track[pos[i]] == '#') {
+                        if (track & (1U << pos[i])) {
                             stun[i] = 2;
                         }
                         else {
@@ -70,25 +72,23 @@ struct HurdleRace {
                         }
                     }
                 }
-                else {
-                    assert(false);
-                }
+                // else {
+                //     assert(false);
+                // }
 
-                if (track[pos[i]] == '#') {
+                if (track & (1U << pos[i])) {
                     stun[i] = 2;
                 }
-
-                if (pos[i] >= TRACK_LENGTH) {
+                else
+                if (pos[i] >= TRACK_LENGTH - 1) {
                     end = true;
                 }
             }
-
-            // std::cerr << "after: " << pos[i] << ' ' << stun[i] << '\n';
         }
 
         if (end) {
             for (int i = 0; i < 3; i++) {
-                if (pos[i] >= TRACK_LENGTH) {
+                if (pos[i] >= TRACK_LENGTH - 1) {
                     places[i] = 1;
                 }
                 else

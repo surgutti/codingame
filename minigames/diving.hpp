@@ -5,25 +5,25 @@
 
 struct Diving {
 
-    int goal[DIVING_LENGTH];
-    int goal_index;
+    int64_t goal;
+    int8_t goals_left;
 
-    int score[3];
-    int combo[3];
+    uint8_t score[3];
+    int8_t combo[3];
 
-    int places[3];
+    int8_t places[3];
 
     bool end;
 
     void debug() const {
-        std::cerr << "goal_index: " << goal_index << '\n';
+        std::cerr << "goals_left: " << goals_left << '\n';
         std::cerr << "goal: ";
-        for (int i = goal_index; i >= 0; i--) {
-            std::cerr << goal[i] << ' ';
+        for (int i = 0; i < goals_left; i++) {
+            std::cerr << int((goal >> (i * 2)) & 3) << ' ';
         }
         std::cerr << '\n';
         for (int i = 0; i < 3; i++) {
-            std::cerr << "i: " << i << " => " << score[i] << ' ' << combo[i] << '\n';
+            std::cerr << "i: " << i << " => " << int(score[i]) << ' ' << int(combo[i]) << '\n';
         }
     }
 
@@ -33,7 +33,7 @@ struct Diving {
         }
         
         for (int i = 0; i < 3; i++) {
-            if (move[i] == goal[goal_index]) {
+            if (move[i] == (goal & 3)) {
                 combo[i]++;
                 score[i] += combo[i];
             }
@@ -42,7 +42,7 @@ struct Diving {
             }
         }
 
-        if (goal_index == 0) {
+        if (goals_left == 1) {
             end = true;
 
             for (int i = 0; i < 3; i++) {
@@ -59,7 +59,8 @@ struct Diving {
             }
         }
         else {
-            goal_index--;
+            goal >>= 2;
+            goals_left--;
         }
     }
 
