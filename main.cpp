@@ -28,6 +28,8 @@ int main() {
     std::cin >> NB_GAMES;
     std::cin.ignore();
 
+    timer.start();
+
     MCTS mcts;
 
     for (TURN = 0; ; TURN++) {
@@ -63,7 +65,9 @@ int main() {
             }
         }
 
-        timer.start();
+        if (TURN != 0) {
+            timer.start();
+        }
 
         {
             std::vector<std::string> gpu(NB_GAMES);
@@ -83,6 +87,7 @@ int main() {
         }
 
         std::cerr << "MCTS START\n";
+
         mcts.run(current_state, (TURN == 0 ? 950 : 45));
 
         mcts.debug();
@@ -97,6 +102,8 @@ int main() {
         };
 
         std::cout << move_list[move] << std::endl;
+
+        // return 0;
     }
 
 }

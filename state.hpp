@@ -21,7 +21,7 @@ struct State {
     Archery archery;
     uint8_t archery_score[3];
 
-    // RollerSkating roller_skating;
+    RollerSkating roller_skating;
     uint8_t roller_skating_score[3];
 
     Diving diving;
@@ -30,6 +30,7 @@ struct State {
     bool is_terminal() const {
         return hurdle_race.end &&
                archery.end &&
+               roller_skating.end &&
                diving.end;
     }
 
@@ -39,12 +40,13 @@ struct State {
         for (int i = 0; i < 3; i++) {
             hurdle_race_score[i] += hurdle_race.places[i];
             archery_score[i] += archery.places[i];
+            roller_skating_score[i] += roller_skating.places[i];
             diving_score[i] += diving.places[i];
         }
 
-        int score0 = std::max<int>(1, hurdle_race_score[0]) * std::max<int>(1, archery_score[0]) * std::max<int>(1, diving_score[0]);
-        int score1 = std::max<int>(1, hurdle_race_score[1]) * std::max<int>(1, archery_score[1]) * std::max<int>(1, diving_score[1]);
-        int score2 = std::max<int>(1, hurdle_race_score[2]) * std::max<int>(1, archery_score[2]) * std::max<int>(1, diving_score[2]);
+        int score0 = std::max<int>(1, hurdle_race_score[0]) * std::max<int>(1, archery_score[0]) * std::max<int>(1, roller_skating_score[0]) * std::max<int>(1, diving_score[0]);
+        int score1 = std::max<int>(1, hurdle_race_score[1]) * std::max<int>(1, archery_score[1]) * std::max<int>(1, roller_skating_score[1]) * std::max<int>(1, diving_score[1]);
+        int score2 = std::max<int>(1, hurdle_race_score[2]) * std::max<int>(1, archery_score[2]) * std::max<int>(1, roller_skating_score[2]) * std::max<int>(1, diving_score[2]);
 
         int sum = score0 + score1 + score2;
 
@@ -96,10 +98,21 @@ struct State {
         }
 
         if (gpu[2] == "GAME_OVER") {
-
+            roller_skating.end = true;
         }
         else { // roller_skating
+            for (int i = 0; i < 4; i++) {
+                roller_skating.order[to_move_index(gpu[2][i])] = i;
+            }
 
+            for (int i = 0; i < 3; i++) {
+                roller_skating.dist[i] = reg[2][i];
+                roller_skating.risk[i] = reg[2][i + 3];
+            }
+
+            roller_skating.turns_left = reg[2][6];
+
+            roller_skating.end = false;
         }
 
         if (gpu[3] == "GAME_OVER") {
@@ -128,14 +141,15 @@ struct State {
 
         hurdle_race.play(move);
         archery.play(move);
-        // roller_skating.play(move);
+        roller_skating.play(move);
         diving.play(move);
     }
 
     void debug() const {
-        std::cerr << "state: " << hurdle_race.end << ' ' << archery.end << ' ' << diving.end << '\n';
+        std::cerr << "state: " << hurdle_race.end << ' ' << archery.end << ' ' << roller_skating.end << ' ' << diving.end << '\n';
         hurdle_race.debug();
         archery.debug();
+        roller_skating.debug();
         diving.debug();
     }
 

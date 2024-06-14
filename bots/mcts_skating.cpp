@@ -569,15 +569,15 @@
          }
          else { // roller_skating
              for (int i = 0; i < 4; i++) {
-                 roller_skating.order[to_move_index(gpu[2][i])] = i;
+                 roller_skating.order[to_move_index(gpu[3][i])] = i;
              }
  
              for (int i = 0; i < 3; i++) {
-                 roller_skating.dist[i] = reg[2][i];
-                 roller_skating.risk[i] = reg[2][i + 3];
+                 roller_skating.dist[i] = reg[3][i];
+                 roller_skating.risk[i] = reg[3][i + 3];
              }
  
-             roller_skating.turns_left = reg[2][6];
+             roller_skating.turns_left = reg[3][6];
  
              roller_skating.end = false;
          }
