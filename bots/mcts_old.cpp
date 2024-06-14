@@ -822,7 +822,11 @@ int main() {
         timer.start();
 
         std::cerr << "MCTS START\n";
+#ifdef PSYLEAGUE
+        mcts.run(current_state, 45);
+#else
         mcts.run(current_state, (TURN == 0 ? 950 : 45));
+#endif // PSYLEAGUE
 
         mcts.debug();
         std::cerr << "timer: " << timer.get_elapsed() << '\n';
