@@ -11,7 +11,7 @@ struct HurdleRace {
     uint32_t track;
 
     int8_t pos[3], stun[3];
-    int8_t end;
+    bool end;
     int8_t places[3];
 
     void debug() const {
@@ -29,7 +29,7 @@ struct HurdleRace {
         }
     }
 
-    void play(const int* move) {
+    void play(const int8_t* move) {
         if (end) {
             return;
         }
@@ -89,14 +89,14 @@ struct HurdleRace {
         if (end) {
             for (int i = 0; i < 3; i++) {
                 if (pos[i] >= TRACK_LENGTH - 1) {
-                    places[i] = 1;
+                    places[i] = 3;
                 }
                 else
                 if (pos[i] < pos[(i + 1) % 3] && pos[i] < pos[(i + 2) % 3]) {
-                    places[i] = 3;
+                    places[i] = 0;
                 }
                 else {
-                    places[i] = 2;
+                    places[i] = 1;
                 }
             }
         }

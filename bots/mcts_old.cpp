@@ -24,11 +24,11 @@
    
    const int TRACK_LENGTH = 30;
    const int ARCHERY_LENGTH = 15;
-   const int DIVING_LENGTH = 12 + 4;
+   const int DIVING_LENGTH = 12 + 3;
    
    const int MCTSNODE_POOL = 9'000'000;
    
-   const float C = 1.0f;
+   const float C = 1.4f;
    
    #endif // CONST_HPP
    // *** End of: /home/olaf/codingame/const.hpp *** 
@@ -108,7 +108,7 @@
                       stun[i] = 2;
                   }
   
-                  if (pos[i] >= TRACK_LENGTH) {
+                  if (pos[i] >= TRACK_LENGTH - 1) {
                       end = true;
                   }
               }
@@ -118,7 +118,7 @@
   
           if (end) {
               for (int i = 0; i < 3; i++) {
-                  if (pos[i] >= TRACK_LENGTH) {
+                  if (pos[i] >= TRACK_LENGTH - 1) {
                       places[i] = 1;
                   }
                   else
@@ -802,8 +802,6 @@ int main() {
             }
         }
 
-        timer.start();
-
         {
             std::vector<std::string> gpu(NB_GAMES);
             std::vector<std::vector<int>> reg(NB_GAMES);
@@ -820,6 +818,8 @@ int main() {
 
             current_state.init(gpu, reg);
         }
+
+        timer.start();
 
         std::cerr << "MCTS START\n";
         mcts.run(current_state, (TURN == 0 ? 950 : 45));

@@ -5,7 +5,7 @@
 
 struct Diving {
 
-    int64_t goal;
+    int32_t goal;
     int8_t goals_left;
 
     uint8_t score[3];
@@ -27,7 +27,7 @@ struct Diving {
         }
     }
 
-    void play(const int* move) {
+    void play(const int8_t* move) {
         if (end) {
             return;
         }
@@ -47,14 +47,14 @@ struct Diving {
 
             for (int i = 0; i < 3; i++) {
                 if (score[i] >= score[(i + 1) % 3] && score[i] >= score[(i + 2) % 3]) {
-                    places[i] = 1;
+                    places[i] = 3;
                 }
                 else
                 if (score[i] < score[(i + 1) % 3] && score[i] < score[(i + 2) % 3]) {
-                    places[i] = 2;
+                    places[i] = 0;
                 }
                 else {
-                    places[i] = 3;
+                    places[i] = 1;
                 }
             }
         }

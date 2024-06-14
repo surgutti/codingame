@@ -63,12 +63,13 @@ struct MCTSNode {
         float best_score = -INF;
         int best_move = -1;
         
+        float log_node_vis = std::log(node_vis);
         for (int move = 0; move < 4; move++) {
             if (vis[player_idx][move] == 0) {
                 return move;
             }
 
-            float node_score = avg[player_idx][move] + C * std::sqrt(std::log(node_vis) / vis[player_idx][move]);
+            float node_score = avg[player_idx][move] + C * std::sqrt(log_node_vis / vis[player_idx][move]);
         
             if (best_score < node_score) {
                 best_score = node_score;
@@ -85,23 +86,23 @@ struct MCTSNode {
                                + select_per_player(2) * 16];
     }
 
-    void apply(uint8_t moves, float r1, float r2, float r3) {
+    void apply(uint8_t moves, float r0, float r1, float r2) {
         int m0 = (moves >> 0) & 3;
         int m1 = (moves >> 2) & 3;
         int m2 = (moves >> 4) & 3;
 
         avg[0][m0] *= vis[0][m0];
-        avg[0][m0] += r1;
+        avg[0][m0] += r0;
         vis[0][m0] += 1;
         avg[0][m0] /= vis[0][m0];
 
         avg[1][m1] *= vis[1][m1];
-        avg[1][m1] += r2;
+        avg[1][m1] += r1;
         vis[1][m1] += 1;
         avg[1][m1] /= vis[1][m1];
 
         avg[2][m2] *= vis[2][m2];
-        avg[2][m2] += r3;
+        avg[2][m2] += r2;
         vis[2][m2] += 1;
         avg[2][m2] /= vis[2][m2];
 
@@ -152,11 +153,9 @@ struct MCTS {
 
         MCTSNode* child = node->select();
 
-        int m0 = (child->last_moves >> 0) & 3;
-        int m1 = (child->last_moves >> 2) & 3;
-        int m2 = (child->last_moves >> 4) & 3;
-
-        state.play(m0, m1, m2);
+        state.play((child->last_moves >> 0) & 3, 
+                   (child->last_moves >> 2) & 3,
+                   (child->last_moves >> 4) & 3);
 
         mcts(child, state, r0, r1, r2);
 
@@ -189,7 +188,7 @@ struct MCTS {
             float r0, r1, r2;
             mcts(root, state, r0, r1, r2);
         } while (timer.get_elapsed() < timeout &&
-                 MCTSNode::last_node + 80 < MCTSNODE_POOL);
+                 MCTSNode::last_node + 64 < MCTSNODE_POOL);
     }
 };
 

@@ -21,11 +21,6 @@ int NB_GAMES;
 
 int main() {
 
-    int8_t a = 120;
-    int8_t b = 208;
-
-    std::cerr << int(a + b) << '\n';
-
     std::cerr << sizeof(State) << '\n';
 
     std::cin >> PLAYER_IDX;

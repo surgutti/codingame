@@ -23,12 +23,12 @@
    const int INF = 1'000'000;
    
    const int TRACK_LENGTH = 30;
-   const int ARCHERY_LENGTH = 15;
-   const int DIVING_LENGTH = 12 + 4;
+   const int ARCHERY_LENGTH = 12 + 3; // 12 + random.nextInt(4);
+   const int DIVING_LENGTH = 12 + 3; // 12 + random.nextInt(4);
    
-   const int MCTSNODE_POOL = 9'000'000;
+   const int MCTSNODE_POOL = 8'500'000;
    
-   const float C = 1.0f;
+   const float C = 1.4f;
    
    #endif // CONST_HPP
    // *** End of: /home/olaf/codingame/const.hpp *** 
@@ -37,27 +37,29 @@
   #include <cassert>
   
   struct HurdleRace {
-      char track[TRACK_LENGTH + 3];
+      
+      uint32_t track;
   
-      int pos[3], stun[3];
-  
+      int8_t pos[3], stun[3];
       bool end;
-  
-      int places[3];
+      int8_t places[3];
   
       void debug() const {
           std::cerr << "TRACK: ";
           for (int i = 0; i < TRACK_LENGTH; i++) {
-              std::cerr << track[i];
+              if (track & (1u << i))
+                  std::cerr << '#';
+              else
+                  std::cerr << '.';
           }
           std::cerr << "|\n";
   
           for (int i = 0; i < 3; i++) {
-              std::cerr << "i: " << i << " => " << pos[i] << ' ' << stun[i] << '\n';
+              std::cerr << "i: " << i << " => " << int(pos[i]) << ' ' << int(stun[i]) << '\n';
           }
       }
   
-      void play(const int* move) {
+      void play(const int8_t* move) {
           if (end) {
               return;
           }
@@ -77,22 +79,22 @@
                   else
                   if (move[i] == 2) {
                       pos[i]++;
-                      if (track[pos[i]] == '#') {
+                      if (track & (1U << pos[i])) {
                           stun[i] = 2;
                       }
                       else {
                           pos[i]++;
                       }
                   }
-                  else
-                  if (move[i] == 3) {
+                  else {
+                  // if (move[i] == 3) {
                       pos[i]++;
-                      if (track[pos[i]] == '#') {
+                      if (track & (1U << pos[i])) {
                           stun[i] = 2;
                       }
                       else {
                           pos[i]++;
-                          if (track[pos[i]] == '#') {
+                          if (track & (1U << pos[i])) {
                               stun[i] = 2;
                           }
                           else {
@@ -100,33 +102,31 @@
                           }
                       }
                   }
-                  else {
-                      assert(false);
-                  }
+                  // else {
+                  //     assert(false);
+                  // }
   
-                  if (track[pos[i]] == '#') {
+                  if (track & (1U << pos[i])) {
                       stun[i] = 2;
                   }
-  
-                  if (pos[i] >= TRACK_LENGTH) {
+                  else
+                  if (pos[i] >= TRACK_LENGTH - 1) {
                       end = true;
                   }
               }
-  
-              // std::cerr << "after: " << pos[i] << ' ' << stun[i] << '\n';
           }
   
           if (end) {
               for (int i = 0; i < 3; i++) {
-                  if (pos[i] >= TRACK_LENGTH) {
-                      places[i] = 1;
+                  if (pos[i] >= TRACK_LENGTH - 1) {
+                      places[i] = 3;
                   }
                   else
                   if (pos[i] < pos[(i + 1) % 3] && pos[i] < pos[(i + 2) % 3]) {
-                      places[i] = 3;
+                      places[i] = 0;
                   }
                   else {
-                      places[i] = 2;
+                      places[i] = 1;
                   }
               }
           }
@@ -150,36 +150,35 @@
   
   struct Archery {
   
-      int wind[ARCHERY_LENGTH];
-      int wind_index;
+      int8_t wind[ARCHERY_LENGTH];
+      int8_t wind_index;
   
-      int x[3];
-      int y[3];
+      int8_t x[3];
+      int8_t y[3];
   
       bool end;
   
-      int scores[3];
-      int places[3];
+      int8_t places[3];
   
       void debug() const {
           std::cerr << "wind_index: " << wind_index << '\n';
           std::cerr << "wind: ";
           for (int i = wind_index; i >= 0; i--) {
-              std::cerr << wind[i] << ' ';
+              std::cerr << int(wind[i]) << ' ';
           }
           std::cerr << '\n';
           for (int i = 0; i < 3; i++) {
-              std::cerr << "i: " << i << " => " << x[i] << ' ' << y[i] << '\n';
+              std::cerr << "i: " << i << " => " << int(x[i]) << ' ' << int(y[i]) << '\n';
           }
       }
   
-      void play(const int* move) {
+      void play(const int8_t* move) {
           if (end) {
               return;
           }
   
-          static const int dx[4] = {0, -1, 0, +1};
-          static const int dy[4] = {-1, 0, +1, 0};
+          static const int8_t dx[4] = {0, -1, 0, +1};
+          static const int8_t dy[4] = {-1, 0, +1, 0};
   
           for (int i = 0; i < 3; i++) {
               x[i] += wind[wind_index] * dx[move[i]];
@@ -193,20 +192,22 @@
           }
   
           if (wind_index == 0) {
+  
+              int16_t scores[3];
               for (int i = 0; i < 3; i++) {
-                  scores[i] = x[i] * x[i] + y[i] * y[i]; 
+                  scores[i] = (int16_t) x[i] * x[i] + (int16_t) y[i] * y[i]; 
               }
   
               for (int i = 0; i < 3; i++) {
                   if (scores[i] <= scores[(i + 1) % 3] && scores[i] <= scores[(i + 2) % 3]) {
-                      places[i] = 1;
+                      places[i] = 3;
                   }
                   else
                   if (scores[i] > scores[(i + 1) % 3] && scores[i] > scores[(i + 2) % 3]) {
-                      places[i] = 3;
+                      places[i] = 0;
                   }
                   else {
-                      places[i] = 2;
+                      places[i] = 1;
                   }
               }
   
@@ -235,22 +236,22 @@
   
   struct RollerSkating {
   
-      int turns_left;
+      // int turns_left;
   
-      int dist[3];
-      int risk[3];
+      // int dist[3];
+      // int risk[3];
   
-      int places[3];
+      // int places[3];
   
-      bool end;
+      // bool end;
   
-      void play(const int* move) {
-          if (end) {
-              return;
-          }
+      // void play(const int8_t* move) {
+      //     if (end) {
+      //         return;
+      //     }
           
-          end = true;
-      }
+      //     end = true;
+      // }
   
   };
   
@@ -263,35 +264,35 @@
   
   struct Diving {
   
-      int goal[DIVING_LENGTH];
-      int goal_index;
+      int32_t goal;
+      int8_t goals_left;
   
-      int score[3];
-      int combo[3];
+      uint8_t score[3];
+      int8_t combo[3];
   
-      int places[3];
+      int8_t places[3];
   
       bool end;
   
       void debug() const {
-          std::cerr << "goal_index: " << goal_index << '\n';
+          std::cerr << "goals_left: " << goals_left << '\n';
           std::cerr << "goal: ";
-          for (int i = goal_index; i >= 0; i--) {
-              std::cerr << goal[i] << ' ';
+          for (int i = 0; i < goals_left; i++) {
+              std::cerr << int((goal >> (i * 2)) & 3) << ' ';
           }
           std::cerr << '\n';
           for (int i = 0; i < 3; i++) {
-              std::cerr << "i: " << i << " => " << score[i] << ' ' << combo[i] << '\n';
+              std::cerr << "i: " << i << " => " << int(score[i]) << ' ' << int(combo[i]) << '\n';
           }
       }
   
-      void play(const int* move) {
+      void play(const int8_t* move) {
           if (end) {
               return;
           }
           
           for (int i = 0; i < 3; i++) {
-              if (move[i] == goal[goal_index]) {
+              if (move[i] == (goal & 3)) {
                   combo[i]++;
                   score[i] += combo[i];
               }
@@ -300,24 +301,25 @@
               }
           }
   
-          if (goal_index == 0) {
+          if (goals_left == 1) {
               end = true;
   
               for (int i = 0; i < 3; i++) {
                   if (score[i] >= score[(i + 1) % 3] && score[i] >= score[(i + 2) % 3]) {
-                      places[i] = 1;
+                      places[i] = 3;
                   }
                   else
                   if (score[i] < score[(i + 1) % 3] && score[i] < score[(i + 2) % 3]) {
-                      places[i] = 2;
+                      places[i] = 0;
                   }
                   else {
-                      places[i] = 3;
+                      places[i] = 1;
                   }
               }
           }
           else {
-              goal_index--;
+              goal >>= 2;
+              goals_left--;
           }
       }
   
@@ -367,16 +369,16 @@
  struct State {
  
      HurdleRace hurdle_race;
-     int hurdle_race_score[3];
+     uint8_t hurdle_race_score[3];
  
      Archery archery;
-     int archery_score[3];
+     uint8_t archery_score[3];
  
      // RollerSkating roller_skating;
-     int roller_skating_score[3];
+     uint8_t roller_skating_score[3];
  
      Diving diving;
-     int diving_score[3];
+     uint8_t diving_score[3];
  
      bool is_terminal() const {
          return hurdle_race.end &&
@@ -384,26 +386,18 @@
                 diving.end;
      }
  
-     int place_to_score(int place) const {
-         if (place == 1)
-             return 3;
-         if (place == 2)
-             return 1;
-         return 0;
-     }
- 
      // return how much does a player earn from games
      void get_stats(float& r0, float& r1, float& r2) {
  
          for (int i = 0; i < 3; i++) {
-             hurdle_race_score[i] += place_to_score(hurdle_race.places[i]);
-             archery_score[i] += place_to_score(archery.places[i]);
-             diving_score[i] += place_to_score(diving.places[i]);
+             hurdle_race_score[i] += hurdle_race.places[i];
+             archery_score[i] += archery.places[i];
+             diving_score[i] += diving.places[i];
          }
  
-         int score0 = std::max(1, hurdle_race_score[0]) * std::max(1, archery_score[0]) * std::max(1, diving_score[0]);
-         int score1 = std::max(1, hurdle_race_score[1]) * std::max(1, archery_score[1]) * std::max(1, diving_score[1]);
-         int score2 = std::max(1, hurdle_race_score[2]) * std::max(1, archery_score[2]) * std::max(1, diving_score[2]);
+         int score0 = std::max<int>(1, hurdle_race_score[0]) * std::max<int>(1, archery_score[0]) * std::max<int>(1, diving_score[0]);
+         int score1 = std::max<int>(1, hurdle_race_score[1]) * std::max<int>(1, archery_score[1]) * std::max<int>(1, diving_score[1]);
+         int score2 = std::max<int>(1, hurdle_race_score[2]) * std::max<int>(1, archery_score[2]) * std::max<int>(1, diving_score[2]);
  
          int sum = score0 + score1 + score2;
  
@@ -419,12 +413,11 @@
              hurdle_race.end = true;
          }
          else { // hurdle_race
+             hurdle_race.track = 0;
              for (int i = 0; i < (int) gpu[0].size(); i++) {
-                 hurdle_race.track[i] = gpu[0][i];
-             }
- 
-             for (int i = (int) gpu[0].size(); i < TRACK_LENGTH; i++) {
-                 hurdle_race.track[i] = '.';
+                 if (gpu[0][i] == '#') {
+                     hurdle_race.track |= uint32_t(1) << i;
+                 }
              }
  
              for (int i = 0; i < 3; i++) {
@@ -441,9 +434,7 @@
          }
          else { // archery
              archery.wind_index = (int) gpu[1].size() - 1;
- 
-             assert(archery.wind_index < ARCHERY_LENGTH);
- 
+             
              for (int i = 0; i < (int) gpu[1].size(); i++) {
                  archery.wind[archery.wind_index - i] = int(gpu[1][i] - '0');
              }
@@ -451,8 +442,6 @@
              for (int i = 0; i < 3; i++) {
                  archery.x[i] = reg[1][2 * i + 0];
                  archery.y[i] = reg[1][2 * i + 1];
- 
-                 archery.scores[i] = 0;
                  archery.places[i] = -1;
              }
  
@@ -470,9 +459,11 @@
              diving.end = true;
          }
          else { // diving
-             diving.goal_index = (int) gpu[3].size() - 1;
+             diving.goals_left = (int8_t) gpu[3].size();
+ 
+             diving.goal = 0;
              for (int i = 0; i < (int) gpu[3].size(); i++) {
-                 diving.goal[diving.goal_index - i] = to_move_index(gpu[3][i]);
+                 diving.goal |= uint32_t(to_move_index(gpu[3][i])) << (2 * i);
              }
              
              for (int i = 0; i < 3; i++) {
@@ -485,8 +476,8 @@
          }
      }
  
-     void play(int p0, int p1, int p2) {
-         const int move[3] = {p0, p1, p2};
+     void play(int8_t p0, int8_t p1, int8_t p2) {
+         const int8_t move[3] = {p0, p1, p2};
  
          hurdle_race.play(move);
          archery.play(move);
@@ -619,12 +610,13 @@
          float best_score = -INF;
          int best_move = -1;
          
+         float log_node_vis = std::log(node_vis);
          for (int move = 0; move < 4; move++) {
              if (vis[player_idx][move] == 0) {
                  return move;
              }
  
-             float node_score = avg[player_idx][move] + C * std::sqrt(std::log(node_vis) / vis[player_idx][move]);
+             float node_score = avg[player_idx][move] + C * std::sqrt(log_node_vis / vis[player_idx][move]);
          
              if (best_score < node_score) {
                  best_score = node_score;
@@ -641,23 +633,23 @@
                                 + select_per_player(2) * 16];
      }
  
-     void apply(uint8_t moves, float r1, float r2, float r3) {
+     void apply(uint8_t moves, float r0, float r1, float r2) {
          int m0 = (moves >> 0) & 3;
          int m1 = (moves >> 2) & 3;
          int m2 = (moves >> 4) & 3;
  
          avg[0][m0] *= vis[0][m0];
-         avg[0][m0] += r1;
+         avg[0][m0] += r0;
          vis[0][m0] += 1;
          avg[0][m0] /= vis[0][m0];
  
          avg[1][m1] *= vis[1][m1];
-         avg[1][m1] += r2;
+         avg[1][m1] += r1;
          vis[1][m1] += 1;
          avg[1][m1] /= vis[1][m1];
  
          avg[2][m2] *= vis[2][m2];
-         avg[2][m2] += r3;
+         avg[2][m2] += r2;
          vis[2][m2] += 1;
          avg[2][m2] /= vis[2][m2];
  
@@ -708,11 +700,9 @@
  
          MCTSNode* child = node->select();
  
-         int m0 = (child->last_moves >> 0) & 3;
-         int m1 = (child->last_moves >> 2) & 3;
-         int m2 = (child->last_moves >> 4) & 3;
- 
-         state.play(m0, m1, m2);
+         state.play((child->last_moves >> 0) & 3, 
+                    (child->last_moves >> 2) & 3,
+                    (child->last_moves >> 4) & 3);
  
          mcts(child, state, r0, r1, r2);
  
@@ -745,7 +735,7 @@
              float r0, r1, r2;
              mcts(root, state, r0, r1, r2);
          } while (timer.get_elapsed() < timeout &&
-                  MCTSNode::last_node + 80 < MCTSNODE_POOL);
+                  MCTSNode::last_node + 64 < MCTSNODE_POOL);
      }
  };
  
@@ -761,6 +751,8 @@ int PLAYER_IDX;
 int NB_GAMES;
 
 int main() {
+
+    std::cerr << sizeof(State) << '\n';
 
     std::cin >> PLAYER_IDX;
     std::cin.ignore();
@@ -822,7 +814,7 @@ int main() {
         }
 
         std::cerr << "MCTS START\n";
-        mcts.run(current_state, (TURN == 0 ? 950 : 45));
+        mcts.run(current_state, (TURN == 0 ? 960 : 47));
 
         mcts.debug();
         std::cerr << "timer: " << timer.get_elapsed() << '\n';

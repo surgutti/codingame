@@ -3,22 +3,22 @@
 
 struct RollerSkating {
 
-    int turns_left;
+    // int turns_left;
 
-    int dist[3];
-    int risk[3];
+    // int dist[3];
+    // int risk[3];
 
-    int places[3];
+    // int places[3];
 
-    bool end;
+    // bool end;
 
-    void play(const int* move) {
-        if (end) {
-            return;
-        }
+    // void play(const int8_t* move) {
+    //     if (end) {
+    //         return;
+    //     }
         
-        end = true;
-    }
+    //     end = true;
+    // }
 
 };
 
