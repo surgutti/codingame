@@ -61,6 +61,8 @@ int main() {
             }
         }
 
+        timer.start();
+
         {
             std::vector<std::string> gpu(NB_GAMES);
             std::vector<std::vector<int>> reg(NB_GAMES);
@@ -77,8 +79,6 @@ int main() {
 
             current_state.init(gpu, reg);
         }
-
-        timer.start();
 
         std::cerr << "MCTS START\n";
         mcts.run(current_state, (TURN == 0 ? 950 : 45));
