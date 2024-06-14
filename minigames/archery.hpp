@@ -1,7 +1,7 @@
 #ifndef ARCHERY_HPP
 #define ARCHERY_HPP
 
-#include "const.hpp"
+#include "../const.hpp"
 
 struct Archery {
 
@@ -21,7 +21,7 @@ struct Archery {
             return;
         }
 
-        static const int dx[4] = {0, +1, 0, -1};
+        static const int dx[4] = {0, -1, 0, +1};
         static const int dy[4] = {-1, 0, +1, 0};
 
         for (int i = 0; i < 3; i++) {
@@ -33,7 +33,7 @@ struct Archery {
             for (int i = 0; i < 3; i++) {
                 scores[i] = x[i] * x[i] + y[i] * y[i]; 
             }
-
+            
             for (int i = 0; i < 3; i++) {
                 if (scores[i] <= scores[(i + 1) % 3] && scores[i] <= scores[(i + 2) % 3]) {
                     places[i] = 1;

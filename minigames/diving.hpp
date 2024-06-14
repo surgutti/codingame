@@ -1,7 +1,7 @@
 #ifndef DIVING_HPP
 #define DIVING_HPP
 
-#include "const.hpp"
+#include "../const.hpp"
 
 struct Diving {
 
@@ -38,7 +38,7 @@ struct Diving {
                     places[i] = 1;
                 }
                 else
-                if (score[i] < score[(i = 1) % 3] && score[i] < score[(i + 2) % 3]) {
+                if (score[i] < score[(i + 1) % 3] && score[i] < score[(i + 2) % 3]) {
                     places[i] = 2;
                 }
                 else {

@@ -18,11 +18,11 @@ struct HurdleRace {
         }
 
         for (int i = 0; i < 3; i++) {
-            if (move[i] == 0) {
+            if (move[i] == 1) {
                 pos[i]++;
             }
             else
-            if (move[i] == 1) {
+            if (move[i] == 0) {
                 pos[i] += 2;
             }
             else

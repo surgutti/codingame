@@ -1,5 +1,15 @@
+#ifndef LOCAL
+    #undef _GLIBCXX_DEBUG
+    #pragma GCC optimize("Ofast,inline")
+    #pragma GCC target("bmi,bmi2,lzcnt,popcnt")
+    #pragma GCC target("movbe")
+    #pragma GCC target("aes,pclmul,rdrnd")
+    #pragma GCC target("avx,avx2,f16c,fma,sse3,ssse3,sse4.1,sse4.2")
+#endif // LOCAL
+
 #include "state.hpp"
-#include "search.hpp"
+// #include "search.hpp"
+#include "mcts.hpp"
 
 #include <iostream>
 #include <string>
@@ -16,6 +26,8 @@ int main() {
     std::cin >> NB_GAMES;
     std::cin.ignore();
 
+    MCTS mcts;
+
     for (TURN = 0; ; TURN++) {
         State current_state;
         
@@ -23,37 +35,29 @@ int main() {
             int final_score;
             std::cin >> final_score;
 
-            if (i == PLAYER_IDX) {
-                {
-                    int gold, silver, bronze;
-                    std::cin >> gold >> silver >> bronze;
+            {
+                int gold, silver, bronze;
+                std::cin >> gold >> silver >> bronze;
 
-                    current_state.hurdle_race_score = 3 * gold + silver;
-                }
-                {
-                    int gold, silver, bronze;
-                    std::cin >> gold >> silver >> bronze;
-
-                    current_state.archery_score = 3 * gold + silver;
-                }
-                {
-                    int gold, silver, bronze;
-                    std::cin >> gold >> silver >> bronze;
-
-                    current_state.roller_skating_score = 3 * gold + silver;
-                }
-                {
-                    int gold, silver, bronze;
-                    std::cin >> gold >> silver >> bronze;
-
-                    current_state.diving_score = 3 * gold + silver;
-                }
+                current_state.hurdle_race_score[i] = 3 * gold + silver;
             }
-            else {
-                for (int j = 0; j < NB_GAMES; j++) {
-                    int gold, silver, bronze;
-                    std::cin >> gold >> silver >> bronze;
-                }
+            {
+                int gold, silver, bronze;
+                std::cin >> gold >> silver >> bronze;
+
+                current_state.archery_score[i] = 3 * gold + silver;
+            }
+            {
+                int gold, silver, bronze;
+                std::cin >> gold >> silver >> bronze;
+
+                current_state.roller_skating_score[i] = 3 * gold + silver;
+            }
+            {
+                int gold, silver, bronze;
+                std::cin >> gold >> silver >> bronze;
+
+                current_state.diving_score[i] = 3 * gold + silver;
             }
         }
 
@@ -73,11 +77,17 @@ int main() {
 
             current_state.init(gpu, reg);
         }
-        
-        int move = best_move(current_state, 1);
 
+        timer.start();
+
+        mcts.run(current_state, 45);
+
+        mcts.debug();
+
+        int move = mcts.best_move(PLAYER_IDX);
+        
         std::vector<std::string> move_list = {
-            "UP", "RIGHT", "DOWN", "LEFT"
+            "UP", "LEFT", "DOWN", "RIGHT"
         };
 
         std::cout << move_list[move] << std::endl;
