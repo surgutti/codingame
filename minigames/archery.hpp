@@ -45,7 +45,7 @@ struct Archery {
         }
     }
 
-    void play(const int8_t* move) {
+    inline void play(const int8_t* move) {
         if (end) {
             return;
         }
@@ -76,15 +76,6 @@ struct Archery {
             wind_index--;
         }
     }
-    
-    bool proven_win(int p_idx) const {
-        return false;
-    }
-
-    bool proven_lost(int p_idx) const {
-        return false;
-    }
-
 };
 
 #endif // ARCHERY_HPP

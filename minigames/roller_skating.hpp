@@ -6,32 +6,61 @@
 #include <iostream>
 #include <algorithm>
 
-constexpr int8_t all_permutations[24][4] = {
-    {0, 1, 2, 3},
-    {0, 1, 3, 2},
-    {0, 2, 1, 3},
-    {0, 2, 3, 1},
-    {0, 3, 1, 2},
-    {0, 3, 2, 1},
-    {1, 0, 2, 3},
-    {1, 0, 3, 2},
-    {1, 2, 0, 3},
-    {1, 2, 3, 0},
-    {1, 3, 0, 2},
-    {1, 3, 2, 0},
-    {2, 0, 1, 3},
-    {2, 0, 3, 1},
-    {2, 1, 0, 3},
-    {2, 1, 3, 0},
-    {2, 3, 0, 1},
-    {2, 3, 1, 0},
-    {3, 0, 1, 2},
-    {3, 0, 2, 1},
-    {3, 1, 0, 2},
-    {3, 1, 2, 0},
-    {3, 2, 0, 1},
-    {3, 2, 1, 0}
+constexpr uint8_t all_permutations[24] = {
+    27,
+    30,
+    39,
+    45,
+    54,
+    57,
+    75,
+    78,
+    99,
+    108,
+    114,
+    120,
+    135,
+    141,
+    147,
+    156,
+    177,
+    180,
+    198,
+    201,
+    210,
+    216,
+    225,
+    228,
 };
+
+// constexpr int8_t all_permutations[24][4] = {
+//     {0, 1, 2, 3},
+//     {0, 1, 3, 2},
+//     {0, 2, 1, 3},
+//     {0, 2, 3, 1},
+//     {0, 3, 1, 2},
+//     {0, 3, 2, 1},
+//     {1, 0, 2, 3},
+//     {1, 0, 3, 2},
+//     {1, 2, 0, 3},
+//     {1, 2, 3, 0},
+//     {1, 3, 0, 2},
+//     {1, 3, 2, 0},
+//     {2, 0, 1, 3},
+//     {2, 0, 3, 1},
+//     {2, 1, 0, 3},
+//     {2, 1, 3, 0},
+//     {2, 3, 0, 1},
+//     {2, 3, 1, 0},
+//     {3, 0, 1, 2},
+//     {3, 0, 2, 1},
+//     {3, 1, 0, 2},
+//     {3, 1, 2, 0},
+//     {3, 2, 0, 1},
+//     {3, 2, 1, 0}
+// };
+
+// (order >> move[i]) & 3 == 0
 
 struct RollerSkating {
 
@@ -39,8 +68,8 @@ struct RollerSkating {
 
     int8_t dist[3];
     int8_t risk[3];
-    
-    const int8_t* order;
+
+    uint8_t order;
 
     bool end;
 
@@ -51,7 +80,7 @@ struct RollerSkating {
         }
         std::cerr << "order: ";
         for (int i = 0; i < 4; i++) {
-            std::cerr << int(order[i]) << ' ';
+            std::cerr << int((order >> (i << 1)) & 3) << ' ';
         }
         std::cerr << '\n';
     }
@@ -75,7 +104,7 @@ struct RollerSkating {
     // after few turns (5?) just take the places as dist shows
     // gather some statistics on starting positions
     // the most important fact is that players will jump on max and get higest risk
-    void play(const int8_t* move) {
+    inline void play(const int8_t* move) {
         if (end) {
             return;
         }
@@ -84,29 +113,34 @@ struct RollerSkating {
             if (risk[i] < 0) {
                 risk[i]++;
             }
-            else
-            if (order[move[i]] == 0) {
-                dist[i] += 1;
-                risk[i] -= 1;
-            }
-            else
-            if (order[move[i]] == 1) {
-                dist[i] += 2;
-            }
-            else
-            if (order[move[i]] == 2) {
-                dist[i] += 2;
-                risk[i] += 1;
-            }
             else {
-                dist[i] += 3;
-                risk[i] += 2;
+                const int8_t index = (order >> (move[i] << 1)) & 3;
+                
+                dist[i] += 2;
+
+                if (index == 0) {
+                    dist[i]--;
+                    risk[i]--;
+                }
+                else
+                if (index == 2) {
+                    risk[i]++;
+                }
+                else
+                if (index == 3) {
+                    dist[i]++;
+                    risk[i] += 2;
+                }
             }
         }
 
-        const bool p01 = (dist[0] % 10 == dist[1] % 10);
-        const bool p02 = (dist[0] % 10 == dist[2] % 10);
-        const bool p12 = (dist[1] % 10 == dist[2] % 10);
+        const int8_t d0 = dist[0] % 10;
+        const int8_t d1 = dist[1] % 10;
+        const int8_t d2 = dist[2] % 10;
+
+        const bool p01 = (d0 == d1);
+        const bool p02 = (d0 == d2);
+        const bool p12 = (d1 == d2);
         
         if (risk[0] >= 0 && (p01 || p02)) {
             risk[0] += 2;
@@ -133,13 +167,8 @@ struct RollerSkating {
             turns_left--;
 
             order = all_permutations[fast_rand() % 24];
-
-            // std::swap(order[3], order[fast_rand() % 4]);
-            // std::swap(order[2], order[fast_rand() % 3]);
-            // std::swap(order[1], order[fast_rand() % 2]);
         }
     }
-
 };
 
 #endif // ROLLER_SPEED_SKATING

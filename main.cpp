@@ -21,6 +21,8 @@ int NB_GAMES;
 
 int main() {
 
+    std::cerr << sizeof(MCTSNode) << '\n';
+
     std::cin >> PLAYER_IDX;
     std::cin.ignore();
     std::cin >> NB_GAMES;

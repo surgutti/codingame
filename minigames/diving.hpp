@@ -40,7 +40,7 @@ struct Diving {
         }
     }
 
-    void play(const int8_t* move) {
+    inline void play(const int8_t* move) {
         if (end) {
             return;
         }
@@ -62,14 +62,6 @@ struct Diving {
             goal >>= 2;
             goals_left--;
         }
-    }
-
-    bool proven_win(int p_idx) const {
-        return false;
-    }
-
-    bool proven_lost(int p_idx) const {
-        return false;
     }
 };
 
