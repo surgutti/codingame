@@ -4,7 +4,7 @@
 #include <cassert>
 #include <x86intrin.h>
 
-int to_move_index(char c) {
+inline int to_move_index(char c) {
     if (c == 'U') {
         return 0;
     }

@@ -9,6 +9,6 @@ const int DIVING_LENGTH = 12 + 3; // 12 + random.nextInt(4);
 
 const int MCTSNODE_POOL = 8'500'000;
 
-const float C = 0.8f;
+const float C = 0.5f;
 
 #endif // CONST_HPP

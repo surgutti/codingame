@@ -37,17 +37,31 @@ struct State {
     // return how much does a player earn from games
     void get_stats(float& r0, float& r1, float& r2) {
 
+        int8_t places[3];
+        
+        hurdle_race.generate_places(places);
         for (int i = 0; i < 3; i++) {
-            hurdle_race_score[i] += hurdle_race.places[i];
-            archery_score[i] += archery.places[i];
-            roller_skating_score[i] += roller_skating.places[i];
-            diving_score[i] += diving.places[i];
+            hurdle_race_score[i] += places[i];
+        }
+        archery.generate_places(places);
+        for (int i = 0; i < 3; i++) {
+            archery_score[i] += places[i];
+        }
+        roller_skating.generate_places(places);
+        for (int i = 0; i < 3; i++) {
+            roller_skating_score[i] += places[i];
+        }
+        diving.generate_places(places);
+        for (int i = 0; i < 3; i++) {
+            diving_score[i] += places[i];
         }
 
         int score0 = std::max<int>(1, hurdle_race_score[0]) * std::max<int>(1, archery_score[0]) * std::max<int>(1, roller_skating_score[0]) * std::max<int>(1, diving_score[0]);
         int score1 = std::max<int>(1, hurdle_race_score[1]) * std::max<int>(1, archery_score[1]) * std::max<int>(1, roller_skating_score[1]) * std::max<int>(1, diving_score[1]);
         int score2 = std::max<int>(1, hurdle_race_score[2]) * std::max<int>(1, archery_score[2]) * std::max<int>(1, roller_skating_score[2]) * std::max<int>(1, diving_score[2]);
 
+        // maybe change the enemy to win with him?
+        // get some values from gameplay? (with whom likely to win at the end)
         int sum = score0 + score1 + score2;
 
         r0 = (float) (score0 - score1 - score2) / sum;
@@ -72,7 +86,6 @@ struct State {
             for (int i = 0; i < 3; i++) {
                 hurdle_race.pos[i] = reg[0][i];
                 hurdle_race.stun[i] = reg[0][i + 3];
-                hurdle_race.places[i] = -1;
             }
 
             hurdle_race.end = false;
@@ -91,7 +104,6 @@ struct State {
             for (int i = 0; i < 3; i++) {
                 archery.x[i] = reg[1][2 * i + 0];
                 archery.y[i] = reg[1][2 * i + 1];
-                archery.places[i] = -1;
             }
 
             archery.end = false;
@@ -140,7 +152,6 @@ struct State {
             for (int i = 0; i < 3; i++) {
                 diving.score[i] = reg[3][i];
                 diving.combo[i] = reg[3][i + 3];
-                diving.places[i] = -1;
             }
 
             diving.end = false;

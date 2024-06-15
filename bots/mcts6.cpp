@@ -28,7 +28,7 @@
    
    const int MCTSNODE_POOL = 8'500'000;
    
-   const float C = 0.5f;
+   const float C = 0.8f;
    
    #endif // CONST_HPP
    // *** End of: /home/olaf/codingame/const.hpp *** 

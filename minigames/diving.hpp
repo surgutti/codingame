@@ -11,8 +11,6 @@ struct Diving {
     uint8_t score[3];
     int8_t combo[3];
 
-    int8_t places[3];
-
     bool end;
 
     void debug() const {
@@ -24,6 +22,21 @@ struct Diving {
         std::cerr << '\n';
         for (int i = 0; i < 3; i++) {
             std::cerr << "i: " << i << " => " << int(score[i]) << ' ' << int(combo[i]) << '\n';
+        }
+    }
+
+    void generate_places(int8_t* places) const {
+        for (int i = 0; i < 3; i++) {
+            if (score[i] >= score[(i + 1) % 3] && score[i] >= score[(i + 2) % 3]) {
+                places[i] = 3;
+            }
+            else
+            if (score[i] < score[(i + 1) % 3] && score[i] < score[(i + 2) % 3]) {
+                places[i] = 0;
+            }
+            else {
+                places[i] = 1;
+            }
         }
     }
 
@@ -44,19 +57,6 @@ struct Diving {
 
         if (goals_left == 1) {
             end = true;
-
-            for (int i = 0; i < 3; i++) {
-                if (score[i] >= score[(i + 1) % 3] && score[i] >= score[(i + 2) % 3]) {
-                    places[i] = 3;
-                }
-                else
-                if (score[i] < score[(i + 1) % 3] && score[i] < score[(i + 2) % 3]) {
-                    places[i] = 0;
-                }
-                else {
-                    places[i] = 1;
-                }
-            }
         }
         else {
             goal >>= 2;

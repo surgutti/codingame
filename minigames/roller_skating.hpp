@@ -39,9 +39,7 @@ struct RollerSkating {
 
     int8_t dist[3];
     int8_t risk[3];
-
-    int8_t places[3];
-
+    
     const int8_t* order;
 
     bool end;
@@ -58,6 +56,25 @@ struct RollerSkating {
         std::cerr << '\n';
     }
 
+    void generate_places(int8_t* places) {
+        for (int i = 0; i < 3; i++) {
+            if (dist[i] >= dist[(i + 1) % 3] && dist[i] >= dist[(i + 2) % 3]) {
+                places[i] = 3;
+            }
+            else
+            if (dist[i] < dist[(i + 1) % 3] && dist[i] < dist[(i + 2) % 3]) {
+                places[i] = 0;
+            }
+            else {
+                places[i] = 1;
+            }
+        }
+    }
+
+    // TODO:
+    // after few turns (5?) just take the places as dist shows
+    // gather some statistics on starting positions
+    // the most important fact is that players will jump on max and get higest risk
     void play(const int8_t* move) {
         if (end) {
             return;
@@ -110,19 +127,6 @@ struct RollerSkating {
         }
 
         if (turns_left == 0) {
-            for (int i = 0; i < 3; i++) {
-                if (dist[i] >= dist[(i + 1) % 3] && dist[i] >= dist[(i + 2) % 3]) {
-                    places[i] = 3;
-                }
-                else
-                if (dist[i] < dist[(i + 1) % 3] && dist[i] < dist[(i + 2) % 3]) {
-                    places[i] = 0;
-                }
-                else {
-                    places[i] = 1;
-                }
-            }
-
             end = true;
         }
         else {

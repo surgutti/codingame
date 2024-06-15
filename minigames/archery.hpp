@@ -13,8 +13,6 @@ struct Archery {
 
     bool end;
 
-    int8_t places[3];
-
     void debug() const {
         std::cerr << "wind_index: " << wind_index << '\n';
         std::cerr << "wind: ";
@@ -24,6 +22,26 @@ struct Archery {
         std::cerr << '\n';
         for (int i = 0; i < 3; i++) {
             std::cerr << "i: " << i << " => " << int(x[i]) << ' ' << int(y[i]) << '\n';
+        }
+    }
+
+    void generate_places(int8_t* places) const {
+        int16_t scores[3];
+        for (int i = 0; i < 3; i++) {
+            scores[i] = (int16_t) x[i] * x[i] + (int16_t) y[i] * y[i]; 
+        }
+
+        for (int i = 0; i < 3; i++) {
+            if (scores[i] <= scores[(i + 1) % 3] && scores[i] <= scores[(i + 2) % 3]) {
+                places[i] = 3;
+            }
+            else
+            if (scores[i] > scores[(i + 1) % 3] && scores[i] > scores[(i + 2) % 3]) {
+                places[i] = 0;
+            }
+            else {
+                places[i] = 1;
+            }
         }
     }
 
@@ -52,25 +70,6 @@ struct Archery {
         }
 
         if (wind_index == 0) {
-
-            int16_t scores[3];
-            for (int i = 0; i < 3; i++) {
-                scores[i] = (int16_t) x[i] * x[i] + (int16_t) y[i] * y[i]; 
-            }
-
-            for (int i = 0; i < 3; i++) {
-                if (scores[i] <= scores[(i + 1) % 3] && scores[i] <= scores[(i + 2) % 3]) {
-                    places[i] = 3;
-                }
-                else
-                if (scores[i] > scores[(i + 1) % 3] && scores[i] > scores[(i + 2) % 3]) {
-                    places[i] = 0;
-                }
-                else {
-                    places[i] = 1;
-                }
-            }
-
             end = true;
         }
         else {

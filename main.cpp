@@ -21,9 +21,6 @@ int NB_GAMES;
 
 int main() {
 
-    std::cerr << sizeof(State) << '\n';
-    std::cerr << sizeof(bool) << '\n';
-
     std::cin >> PLAYER_IDX;
     std::cin.ignore();
     std::cin >> NB_GAMES;
@@ -108,7 +105,9 @@ int main() {
 
         std::cout << move_list[move] << std::endl;
 
-        return 0;
+        if (TURN == 1) {
+            return 0;
+        }
     }
 
 }

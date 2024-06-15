@@ -12,7 +12,6 @@ struct HurdleRace {
 
     int8_t pos[3], stun[3];
     bool end;
-    int8_t places[3];
 
     void debug() const {
         std::cerr << "TRACK: ";
@@ -26,6 +25,21 @@ struct HurdleRace {
 
         for (int i = 0; i < 3; i++) {
             std::cerr << "i: " << i << " => " << int(pos[i]) << ' ' << int(stun[i]) << '\n';
+        }
+    }
+
+    void generate_places(int8_t* places) const {
+        for (int i = 0; i < 3; i++) {
+            if (pos[i] >= TRACK_LENGTH - 1) {
+                places[i] = 3;
+            }
+            else
+            if (pos[i] < pos[(i + 1) % 3] && pos[i] < pos[(i + 2) % 3]) {
+                places[i] = 0;
+            }
+            else {
+                places[i] = 1;
+            }
         }
     }
 
@@ -57,7 +71,6 @@ struct HurdleRace {
                     }
                 }
                 else {
-                // if (move[i] == 3) {
                     pos[i]++;
                     if (track & (1U << pos[i])) {
                         stun[i] = 2;
@@ -72,9 +85,6 @@ struct HurdleRace {
                         }
                     }
                 }
-                // else {
-                //     assert(false);
-                // }
 
                 if (track & (1U << pos[i])) {
                     stun[i] = 2;
@@ -82,21 +92,6 @@ struct HurdleRace {
                 else
                 if (pos[i] >= TRACK_LENGTH - 1) {
                     end = true;
-                }
-            }
-        }
-
-        if (end) {
-            for (int i = 0; i < 3; i++) {
-                if (pos[i] >= TRACK_LENGTH - 1) {
-                    places[i] = 3;
-                }
-                else
-                if (pos[i] < pos[(i + 1) % 3] && pos[i] < pos[(i + 2) % 3]) {
-                    places[i] = 0;
-                }
-                else {
-                    places[i] = 1;
                 }
             }
         }
