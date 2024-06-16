@@ -68,9 +68,9 @@ struct MCTSNode {
         float best_score = -INF;
         int8_t best_move = -1;
         
-        float sqrt_log_node_vis = C * fastsqrtf(fastlogf(node_vis));
+        float log_node_vis = std::log(node_vis);
         for (int8_t move = 0; move < 4; move++) {
-            float node_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]);
+            float node_score = avg[player_idx][move] + C * std::sqrt(log_node_vis / vis[player_idx][move]);
 
             if (best_score < node_score) {
                 best_score = node_score;
@@ -136,51 +136,42 @@ int      MCTSNode::last_node = 0;
 struct MCTS {
     MCTSNode* root;
 
-    void mcts(MCTSNode* node, State& state) {
-        static MCTSNode* stack[33];
-        MCTSNode** head = stack + 32;
-        MCTSNode* child;
+    void mcts(MCTSNode* node, State& state, float& r0, float& r1, float& r2) {
+        
+        if (state.is_terminal()) {
+            state.get_stats(r0, r1, r2);
+            return;
+        }
 
-        *head = node;
-
-        float r0, r1, r2;
-
-        for (;;) {
-            if (state.is_terminal()) {
-                state.get_stats(r0, r1, r2);
-                (*head)->node_vis++;
-                break;
-            }
-
-            if ((*head)->node_vis == 0) {
-                // TODO: smarter rollouts?
-                do {
-                    uint8_t moves = fast_rand() & 0b111111;
+        if (node->node_vis == 0) {
+            do {
+                if (state.still_playing()) {
+                    state.play_greedy();
+                }
+                else {
+                    uint8_t moves = fast_rand();
                     state.play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
-                } while (!state.is_terminal());
+                }
+            } while (!state.is_terminal());
 
-                state.get_stats(r0, r1, r2);
-                (*head)->node_vis++;
-                break;
-            }
-
-            if ((*head)->first_son == -1) {
-                (*head)->expand();
-            }
-
-            child = (*head)->select();
-            state.play((child->last_moves >> 0) & 3,
-                       (child->last_moves >> 2) & 3,
-                       (child->last_moves >> 4) & 3);
-
-            *(--head) = child;
+            state.get_stats(r0, r1, r2);
+            node->node_vis++;
+            return;
         }
 
-        while (head != (stack + 32)) {
-            child = *head;
-            head++;
-            (*head)->apply(child->last_moves, r0, r1, r2);
+        if (node->first_son == -1) {
+            node->expand();
         }
+
+        MCTSNode* child = node->select();
+
+        state.play((child->last_moves >> 0) & 3,
+                   (child->last_moves >> 2) & 3,
+                   (child->last_moves >> 4) & 3);
+        
+        mcts(child, state, r0, r1, r2);
+
+        node->apply(child->last_moves, r0, r1, r2);
     }
 
     inline void reset() {
@@ -205,7 +196,8 @@ struct MCTS {
 
         do {
             State state = root_state;
-            mcts(root, state);
+            float r0, r1, r2;
+            mcts(root, state, r0, r1, r2);
         } while (timer.get_elapsed() < timeout &&
                  MCTSNode::last_node + 64 < MCTSNODE_POOL);
     }

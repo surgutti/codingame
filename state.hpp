@@ -27,11 +27,14 @@ struct State {
     Diving diving;
     uint8_t diving_score[3];
 
+    int turn;
+
     bool is_terminal() const {
-        return hurdle_race.end &&
-               archery.end &&
-               roller_skating.end &&
-               diving.end;
+        return (hurdle_race.end &&
+                archery.end &&
+                roller_skating.end &&
+                diving.end) ||
+               turn >= 100;
     }
 
     // return how much does a player earn from games
@@ -39,34 +42,55 @@ struct State {
 
         int8_t places[3];
 
-        hurdle_race.generate_places(places);
-        for (int i = 0; i < 3; i++) {
-            hurdle_race_score[i] += places[i];
-        }
-        archery.generate_places(places);
-        for (int i = 0; i < 3; i++) {
-            archery_score[i] += places[i];
-        }
-        roller_skating.generate_places(places);
-        for (int i = 0; i < 3; i++) {
-            roller_skating_score[i] += places[i];
-        }
-        diving.generate_places(places);
-        for (int i = 0; i < 3; i++) {
-            diving_score[i] += places[i];
+        if (hurdle_race.end) {
+            hurdle_race.generate_places(places);
+            for (int i = 0; i < 3; i++) {
+                hurdle_race_score[i] += places[i];
+            }
         }
 
-        float score0 = std::max<float>(0.7, hurdle_race_score[0]) * std::max<float>(0.7, archery_score[0]) * std::max<float>(0.7, roller_skating_score[0]) * std::max<float>(0.7, diving_score[0]);
-        float score1 = std::max<float>(0.7, hurdle_race_score[1]) * std::max<float>(0.7, archery_score[1]) * std::max<float>(0.7, roller_skating_score[1]) * std::max<float>(0.7, diving_score[1]);
-        float score2 = std::max<float>(0.7, hurdle_race_score[2]) * std::max<float>(0.7, archery_score[2]) * std::max<float>(0.7, roller_skating_score[2]) * std::max<float>(0.7, diving_score[2]);
+        if (archery.end) {
+            archery.generate_places(places);
+            for (int i = 0; i < 3; i++) {
+                archery_score[i] += places[i];
+            }
+        }
+
+        if (roller_skating.end) {
+            roller_skating.generate_places(places);
+            for (int i = 0; i < 3; i++) {
+                roller_skating_score[i] += places[i];
+            }
+        }
+
+        if (diving.end) {
+            diving.generate_places(places);
+            for (int i = 0; i < 3; i++) {
+                diving_score[i] += places[i];
+            }
+        }
+
+        int score0 = std::max<int>(1, hurdle_race_score[0]) * std::max<int>(1, archery_score[0]) * std::max<int>(1, roller_skating_score[0]) * std::max<int>(1, diving_score[0]);
+        int score1 = std::max<int>(1, hurdle_race_score[1]) * std::max<int>(1, archery_score[1]) * std::max<int>(1, roller_skating_score[1]) * std::max<int>(1, diving_score[1]);
+        int score2 = std::max<int>(1, hurdle_race_score[2]) * std::max<int>(1, archery_score[2]) * std::max<int>(1, roller_skating_score[2]) * std::max<int>(1, diving_score[2]);
 
         // maybe change the enemy to win with him?
         // get some values from gameplay? (with whom likely to win at the end)
-        float sum = score0 + score1 + score2;
+        int sum = score0 + score1 + score2;
 
-        r0 = (score0 - score1 - score2) / sum;
-        r1 = (score1 - score0 - score2) / sum;
-        r2 = (score2 - score0 - score1) / sum;
+        r0 = (float) (score0 - 0.5 * (score1 + score2)) / sum;
+        r1 = (float) (score1 - 0.5 * (score0 + score2)) / sum;
+        r2 = (float) (score2 - 0.5 * (score0 + score1)) / sum;
+
+        // float score0 = std::max<float>(1, hurdle_race_score[0]) * std::max<float>(0.95, archery_score[0]) * std::max<float>(0.93, roller_skating_score[0]) * std::max<float>(1, diving_score[0]);
+        // float score1 = std::max<float>(1, hurdle_race_score[1]) * std::max<float>(0.95, archery_score[1]) * std::max<float>(0.93, roller_skating_score[1]) * std::max<float>(1, diving_score[1]);
+        // float score2 = std::max<float>(1, hurdle_race_score[2]) * std::max<float>(0.95, archery_score[2]) * std::max<float>(0.93, roller_skating_score[2]) * std::max<float>(1, diving_score[2]);
+
+        // float sum = score0 + score1 + score2;
+
+        // r0 = (float) (score0 - score1 - score2) / sum;
+        // r1 = (float) (score1 - score0 - score2) / sum;
+        // r2 = (float) (score2 - score0 - score1) / sum;
     }
 
     void init(const std::vector<std::string>& gpu,
@@ -113,19 +137,9 @@ struct State {
             roller_skating.end = true;
         }
         else { // roller_skating
-            for (int i = 0; i < 24; i++) {
-                bool ok = true;
-                for (int j = 0; j < 4; j++) {
-                    if (((all_permutations[i] >> (2 * j)) & 3) != to_move_index(gpu[2][j])) {
-                        ok = false;
-                        break;
-                    }
-                }
-
-                if (ok) {
-                    roller_skating.order = all_permutations[i];
-                    break;
-                }
+            roller_skating.order = 0;
+            for (int i = 0; i < 4; i++) {
+                roller_skating.order |= uint8_t(i) << (to_move_index(gpu[2][i]) << 1);
             }
 
             for (int i = 0; i < 3; i++) {
@@ -134,6 +148,7 @@ struct State {
             }
 
             roller_skating.turns_left = reg[2][6];
+            // roller_skating.turns_done = 0;
 
             roller_skating.end = false;
         }
@@ -157,6 +172,39 @@ struct State {
             diving.end = false;
         }
     }
+    
+    inline bool still_playing() const {
+        return !hurdle_race.end ||
+               !archery.end ||
+               !roller_skating.end ||
+               !diving.end;
+    }
+
+    void play_greedy() {
+        int8_t move[3];
+
+        for (int i = 0; i < 3; i++) {
+            if (archery_score[i] <= hurdle_race_score[i] &&
+                archery_score[i] <= diving_score[i] &&
+                archery_score[i] <= roller_skating_score[i]) {
+                move[i] = archery.greedy_move(i);
+            }
+            else
+            if (hurdle_race_score[i] <= diving_score[i] &&
+                hurdle_race_score[i] <= roller_skating_score[i]) {
+                move[i] = hurdle_race.greedy_move(i);
+            }
+            else
+            if (diving_score[i] <= roller_skating_score[i]) {
+                move[i] = diving.greedy_move(i);
+            }
+            else {
+                move[i] = roller_skating.greedy_move(i);
+            }
+        }
+
+        play(move[0], move[1], move[2]);
+    }
 
     void play(int8_t p0, int8_t p1, int8_t p2) {
         const int8_t move[3] = {p0, p1, p2};
@@ -165,6 +213,7 @@ struct State {
         archery.play(move);
         roller_skating.play(move);
         diving.play(move);
+        turn++;
     }
 
     void debug() const {

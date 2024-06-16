@@ -8,6 +8,9 @@
 
 struct HurdleRace {
     
+    static int dp[TRACK_LENGTH];
+    static int8_t dp_opt[TRACK_LENGTH];
+
     uint32_t track;
 
     int8_t pos[3], stun[3];
@@ -96,6 +99,25 @@ struct HurdleRace {
             }
         }
     }
+
+    bool in_waiting(const int8_t player_idx) const {
+        return stun[player_idx] > 0;
+    }
+
+    void build_dp() {
+        dp[TRACK_LENGTH - 1] = 0;
+
+        for (int i = TRACK_LENGTH - 2; i >= 0; i--) {
+            
+        }
+    }
+
+    int8_t greedy_move(const int8_t player_idx) const {
+        return dp_opt[pos[player_idx]];
+    }
 };
+
+int HurdleRace::dp[TRACK_LENGTH];
+int8_t dp_opt[TRACK_LENGTH];
 
 #endif // HURDLE_RACE

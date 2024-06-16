@@ -65,6 +65,7 @@ constexpr uint8_t all_permutations[24] = {
 struct RollerSkating {
 
     int8_t turns_left;
+    // int8_t turns_done;
 
     int8_t dist[3];
     int8_t risk[3];
@@ -134,23 +135,21 @@ struct RollerSkating {
             }
         }
 
-        const int8_t d0 = dist[0] % 10;
-        const int8_t d1 = dist[1] % 10;
-        const int8_t d2 = dist[2] % 10;
-
-        const bool p01 = (d0 == d1);
-        const bool p02 = (d0 == d2);
-        const bool p12 = (d1 == d2);
-        
-        if (risk[0] >= 0 && (p01 || p02)) {
+        if (risk[0] >= 0 &&
+            (dist[0] % 10 == dist[1] % 10 ||
+            dist[0] % 10 == dist[2] % 10)) {
             risk[0] += 2;
         }
 
-        if (risk[1] >= 0 && (p01 || p12)) {
+        if (risk[1] >= 0 &&
+            (dist[1] % 10 == dist[0] % 10 ||
+            dist[1] % 10 == dist[2] % 10)) {
             risk[1] += 2;
         }
 
-        if (risk[2] >= 0 && (p12 || p02)) {
+        if (risk[2] >= 0 &&
+            (dist[2] % 10 == dist[0] % 10 ||
+            dist[2] % 10 == dist[1] % 10)) {
             risk[2] += 2;
         }
 
@@ -160,14 +159,27 @@ struct RollerSkating {
             }
         }
 
-        if (turns_left == 0) {
+        if (turns_left == 0 /*|| turns_done == 10*/) {
             end = true;
         }
         else {
+            // turns_done++;
             turns_left--;
 
             order = all_permutations[fast_rand() % 24];
         }
+    }
+
+    bool in_waiting(const int8_t player_idx) const {
+        return risk[player_idx] < 0;
+    }
+
+    // maybe if for not being stun'ed
+    int8_t greedy_move(const int8_t player_idx) const {
+        if (risk[player_idx] + 2 < 5) {
+            return (order >> (2 * 3)) & 3; // if have risk + 2 < 5 then rush 3
+        }
+        return (order >> 1) & 3; // else go 2
     }
 };
 

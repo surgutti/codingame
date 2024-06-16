@@ -21,7 +21,7 @@ int NB_GAMES;
 
 int main() {
 
-    std::cerr << sizeof(MCTSNode) << '\n';
+    std::cerr << sizeof(State) << '\n';
 
     std::cin >> PLAYER_IDX;
     std::cin.ignore();
@@ -35,9 +35,9 @@ int main() {
     for (TURN = 0; ; TURN++) {
         State current_state;
         
+        int final_score[3];
         for (int i = 0; i < 3; i++) {
-            int final_score;
-            std::cin >> final_score;
+            std::cin >> final_score[i];
 
             {
                 int gold, silver, bronze;
@@ -88,11 +88,20 @@ int main() {
 
         std::cerr << "MCTS START\n";
 
+        current_state.turn = TURN;
+
 #ifdef PSYLEAGUE
         mcts.run(current_state, 45);
 #else
         mcts.run(current_state, (TURN == 0 ? 950 : 45));
 #endif // PSYLEAGUE
+
+        /*
+        if i'm lossing -> attack the lowest link
+        if i'm winning -> maximize the gap between me and second place
+        if i'm second ->
+        
+        */
 
         mcts.debug();
         std::cerr << "timer: " << timer.get_elapsed() << '\n';
@@ -107,9 +116,9 @@ int main() {
 
         std::cout << move_list[move] << std::endl;
 
-        if (TURN == 1) {
-            return 0;
-        }
+        // if (TURN == 1) {
+        //     return 0;
+        // }
     }
 
 }

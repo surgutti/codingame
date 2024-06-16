@@ -63,6 +63,14 @@ struct Diving {
             goals_left--;
         }
     }
+
+    bool in_waiting(const int8_t player_idx) const {
+        return false;
+    }
+
+    int8_t greedy_move(const int8_t player_idx) const {
+        return goal & 3;
+    }
 };
 
 #endif // DIVING_HPP

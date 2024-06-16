@@ -539,7 +539,7 @@
                  archery.end &&
                  roller_skating.end &&
                  diving.end) ||
-                turn >= 100;
+                turn >= 99;
      }
  
      // return how much does a player earn from games
@@ -685,7 +685,6 @@
          archery.play(move);
          roller_skating.play(move);
          diving.play(move);
-         turn++;
      }
  
      void debug() const {

@@ -29,7 +29,7 @@
    const int MCTSNODE_POOL = 8'000'000;
    
    // TODO: run psyleague with different C values
-   const float C = 0.6f;
+   const float C = 0.4f;
    
    #endif // CONST_HPP
    // *** End of: /home/olaf/codingame/const.hpp *** 
@@ -190,11 +190,12 @@
   
           for (int i = 0; i < 3; i++) {
               x[i] += wind_strength * dx[move[i]];
-              y[i] += wind_strength * dy[move[i]];
   
               if (x[i] > +20) x[i] = +20;
               else
               if (x[i] < -20) x[i] = -20;
+              
+              y[i] += wind_strength * dy[move[i]];
           
               if (y[i] > +20) y[i] = +20;
               else
@@ -334,7 +335,6 @@
   struct RollerSkating {
   
       int8_t turns_left;
-      // int8_t turns_done;
   
       int8_t dist[3];
       int8_t risk[3];
@@ -404,21 +404,23 @@
               }
           }
   
-          if (risk[0] >= 0 &&
-              (dist[0] % 10 == dist[1] % 10 ||
-              dist[0] % 10 == dist[2] % 10)) {
+          const int8_t d0 = dist[0] % 10;
+          const int8_t d1 = dist[1] % 10;
+          const int8_t d2 = dist[2] % 10;
+  
+          const bool p01 = (d0 == d1);
+          const bool p02 = (d0 == d2);
+          const bool p12 = (d1 == d2);
+          
+          if (risk[0] >= 0 && (p01 || p02)) {
               risk[0] += 2;
           }
   
-          if (risk[1] >= 0 &&
-              (dist[1] % 10 == dist[0] % 10 ||
-              dist[1] % 10 == dist[2] % 10)) {
+          if (risk[1] >= 0 && (p01 || p12)) {
               risk[1] += 2;
           }
   
-          if (risk[2] >= 0 &&
-              (dist[2] % 10 == dist[0] % 10 ||
-              dist[2] % 10 == dist[1] % 10)) {
+          if (risk[2] >= 0 && (p12 || p02)) {
               risk[2] += 2;
           }
   
@@ -428,11 +430,10 @@
               }
           }
   
-          if (turns_left == 0 /*|| turns_done == 10*/) {
+          if (turns_left == 0) {
               end = true;
           }
           else {
-              // turns_done++;
               turns_left--;
   
               order = all_permutations[fast_rand() % 24];
@@ -532,14 +533,11 @@
      Diving diving;
      uint8_t diving_score[3];
  
-     int turn;
- 
      bool is_terminal() const {
-         return (hurdle_race.end &&
-                 archery.end &&
-                 roller_skating.end &&
-                 diving.end) ||
-                turn >= 100;
+         return hurdle_race.end &&
+                archery.end &&
+                roller_skating.end &&
+                diving.end;
      }
  
      // return how much does a player earn from games
@@ -547,55 +545,34 @@
  
          int8_t places[3];
  
-         if (hurdle_race.end) {
-             hurdle_race.generate_places(places);
-             for (int i = 0; i < 3; i++) {
-                 hurdle_race_score[i] += places[i];
-             }
+         hurdle_race.generate_places(places);
+         for (int i = 0; i < 3; i++) {
+             hurdle_race_score[i] += places[i];
+         }
+         archery.generate_places(places);
+         for (int i = 0; i < 3; i++) {
+             archery_score[i] += places[i];
+         }
+         roller_skating.generate_places(places);
+         for (int i = 0; i < 3; i++) {
+             roller_skating_score[i] += places[i];
+         }
+         diving.generate_places(places);
+         for (int i = 0; i < 3; i++) {
+             diving_score[i] += places[i];
          }
  
-         if (archery.end) {
-             archery.generate_places(places);
-             for (int i = 0; i < 3; i++) {
-                 archery_score[i] += places[i];
-             }
-         }
- 
-         if (roller_skating.end) {
-             roller_skating.generate_places(places);
-             for (int i = 0; i < 3; i++) {
-                 roller_skating_score[i] += places[i];
-             }
-         }
- 
-         if (diving.end) {
-             diving.generate_places(places);
-             for (int i = 0; i < 3; i++) {
-                 diving_score[i] += places[i];
-             }
-         }
- 
-         int score0 = std::max<int>(1, hurdle_race_score[0]) * std::max<int>(1, archery_score[0]) * std::max<int>(1, roller_skating_score[0]) * std::max<int>(1, diving_score[0]);
-         int score1 = std::max<int>(1, hurdle_race_score[1]) * std::max<int>(1, archery_score[1]) * std::max<int>(1, roller_skating_score[1]) * std::max<int>(1, diving_score[1]);
-         int score2 = std::max<int>(1, hurdle_race_score[2]) * std::max<int>(1, archery_score[2]) * std::max<int>(1, roller_skating_score[2]) * std::max<int>(1, diving_score[2]);
+         float score0 = std::max<float>(0.7, hurdle_race_score[0]) * std::max<float>(0.7, archery_score[0]) * std::max<float>(0.7, roller_skating_score[0]) * std::max<float>(0.7, diving_score[0]);
+         float score1 = std::max<float>(0.7, hurdle_race_score[1]) * std::max<float>(0.7, archery_score[1]) * std::max<float>(0.7, roller_skating_score[1]) * std::max<float>(0.7, diving_score[1]);
+         float score2 = std::max<float>(0.7, hurdle_race_score[2]) * std::max<float>(0.7, archery_score[2]) * std::max<float>(0.7, roller_skating_score[2]) * std::max<float>(0.7, diving_score[2]);
  
          // maybe change the enemy to win with him?
          // get some values from gameplay? (with whom likely to win at the end)
-         int sum = score0 + score1 + score2;
+         float sum = score0 + score1 + score2;
  
-         r0 = (float) (score0 - score1 - score2) / sum;
-         r1 = (float) (score1 - score0 - score2) / sum;
-         r2 = (float) (score2 - score0 - score1) / sum;
- 
-         // float score0 = std::max<float>(1, hurdle_race_score[0]) * std::max<float>(0.95, archery_score[0]) * std::max<float>(0.93, roller_skating_score[0]) * std::max<float>(1, diving_score[0]);
-         // float score1 = std::max<float>(1, hurdle_race_score[1]) * std::max<float>(0.95, archery_score[1]) * std::max<float>(0.93, roller_skating_score[1]) * std::max<float>(1, diving_score[1]);
-         // float score2 = std::max<float>(1, hurdle_race_score[2]) * std::max<float>(0.95, archery_score[2]) * std::max<float>(0.93, roller_skating_score[2]) * std::max<float>(1, diving_score[2]);
- 
-         // float sum = score0 + score1 + score2;
- 
-         // r0 = (float) (score0 - score1 - score2) / sum;
-         // r1 = (float) (score1 - score0 - score2) / sum;
-         // r2 = (float) (score2 - score0 - score1) / sum;
+         r0 = (score0 - score1 - score2) / sum;
+         r1 = (score1 - score0 - score2) / sum;
+         r2 = (score2 - score0 - score1) / sum;
      }
  
      void init(const std::vector<std::string>& gpu,
@@ -642,9 +619,19 @@
              roller_skating.end = true;
          }
          else { // roller_skating
-             roller_skating.order = 0;
-             for (int i = 0; i < 4; i++) {
-                 roller_skating.order |= uint8_t(i) << (to_move_index(gpu[2][i]) << 1);
+             for (int i = 0; i < 24; i++) {
+                 bool ok = true;
+                 for (int j = 0; j < 4; j++) {
+                     if (((all_permutations[i] >> (2 * j)) & 3) != to_move_index(gpu[2][j])) {
+                         ok = false;
+                         break;
+                     }
+                 }
+ 
+                 if (ok) {
+                     roller_skating.order = all_permutations[i];
+                     break;
+                 }
              }
  
              for (int i = 0; i < 3; i++) {
@@ -653,7 +640,6 @@
              }
  
              roller_skating.turns_left = reg[2][6];
-             // roller_skating.turns_done = 0;
  
              roller_skating.end = false;
          }
@@ -685,7 +671,6 @@
          archery.play(move);
          roller_skating.play(move);
          diving.play(move);
-         turn++;
      }
  
      void debug() const {
@@ -794,9 +779,9 @@
          float best_score = -INF;
          int8_t best_move = -1;
          
-         float log_node_vis = std::log(node_vis);
+         float sqrt_log_node_vis = C * fastsqrtf(fastlogf(node_vis));
          for (int8_t move = 0; move < 4; move++) {
-             float node_score = avg[player_idx][move] + C * std::sqrt(log_node_vis / vis[player_idx][move]);
+             float node_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]);
  
              if (best_score < node_score) {
                  best_score = node_score;
@@ -862,37 +847,51 @@
  struct MCTS {
      MCTSNode* root;
  
-     void mcts(MCTSNode* node, State& state, float& r0, float& r1, float& r2) {
-         
-         if (state.is_terminal()) {
-             state.get_stats(r0, r1, r2);
-             return;
+     void mcts(MCTSNode* node, State& state) {
+         static MCTSNode* stack[40];
+         MCTSNode** head = stack + 39;
+         MCTSNode* child;
+ 
+         *head = node;
+ 
+         float r0, r1, r2;
+ 
+         for (;;) {
+             if (state.is_terminal()) {
+                 state.get_stats(r0, r1, r2);
+                 (*head)->node_vis++;
+                 break;
+             }
+ 
+             if ((*head)->node_vis == 0) {
+                 // TODO: smarter rollouts?
+                 do {
+                     uint8_t moves = fast_rand() & 0b111111;
+                     state.play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
+                 } while (!state.is_terminal());
+ 
+                 state.get_stats(r0, r1, r2);
+                 (*head)->node_vis++;
+                 break;
+             }
+ 
+             if ((*head)->first_son == -1) {
+                 (*head)->expand();
+             }
+ 
+             child = (*head)->select();
+             state.play((child->last_moves >> 0) & 3,
+                        (child->last_moves >> 2) & 3,
+                        (child->last_moves >> 4) & 3);
+ 
+             *(--head) = child;
          }
  
-         if (node->node_vis == 0) {
-             do {
-                 uint8_t moves = fast_rand();
-                 state.play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
-             } while (!state.is_terminal());
- 
-             state.get_stats(r0, r1, r2);
-             node->node_vis++;
-             return;
+         while (head != (stack + 39)) {
+             child = *head;
+             head++;
+             (*head)->apply(child->last_moves, r0, r1, r2);
          }
- 
-         if (node->first_son == -1) {
-             node->expand();
-         }
- 
-         MCTSNode* child = node->select();
- 
-         state.play((child->last_moves >> 0) & 3,
-                    (child->last_moves >> 2) & 3,
-                    (child->last_moves >> 4) & 3);
-         
-         mcts(child, state, r0, r1, r2);
- 
-         node->apply(child->last_moves, r0, r1, r2);
      }
  
      inline void reset() {
@@ -917,8 +916,7 @@
  
          do {
              State state = root_state;
-             float r0, r1, r2;
-             mcts(root, state, r0, r1, r2);
+             mcts(root, state);
          } while (timer.get_elapsed() < timeout &&
                   MCTSNode::last_node + 64 < MCTSNODE_POOL);
      }
@@ -937,7 +935,7 @@ int NB_GAMES;
 
 int main() {
 
-    std::cerr << sizeof(State) << '\n';
+    std::cerr << sizeof(MCTSNode) << '\n';
 
     std::cin >> PLAYER_IDX;
     std::cin.ignore();
@@ -951,9 +949,9 @@ int main() {
     for (TURN = 0; ; TURN++) {
         State current_state;
         
-        int final_score[3];
         for (int i = 0; i < 3; i++) {
-            std::cin >> final_score[i];
+            int final_score;
+            std::cin >> final_score;
 
             {
                 int gold, silver, bronze;
@@ -1004,20 +1002,11 @@ int main() {
 
         std::cerr << "MCTS START\n";
 
-        current_state.turn = TURN;
-
 #ifdef PSYLEAGUE
         mcts.run(current_state, 45);
 #else
         mcts.run(current_state, (TURN == 0 ? 950 : 45));
 #endif // PSYLEAGUE
-
-        /*
-        if i'm lossing -> attack the lowest link
-        if i'm winning -> maximize the gap between me and second place
-        if i'm second ->
-        
-        */
 
         mcts.debug();
         std::cerr << "timer: " << timer.get_elapsed() << '\n';

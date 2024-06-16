@@ -29,7 +29,7 @@
    const int MCTSNODE_POOL = 8'000'000;
    
    // TODO: run psyleague with different C values
-   const float C = 0.6f;
+   const float C = 0.7f;
    
    #endif // CONST_HPP
    // *** End of: /home/olaf/codingame/const.hpp *** 
@@ -532,14 +532,11 @@
      Diving diving;
      uint8_t diving_score[3];
  
-     int turn;
- 
      bool is_terminal() const {
-         return (hurdle_race.end &&
-                 archery.end &&
-                 roller_skating.end &&
-                 diving.end) ||
-                turn >= 100;
+         return hurdle_race.end &&
+                archery.end &&
+                roller_skating.end &&
+                diving.end;
      }
  
      // return how much does a player earn from games
@@ -547,55 +544,32 @@
  
          int8_t places[3];
  
-         if (hurdle_race.end) {
-             hurdle_race.generate_places(places);
-             for (int i = 0; i < 3; i++) {
-                 hurdle_race_score[i] += places[i];
-             }
+         hurdle_race.generate_places(places);
+         for (int i = 0; i < 3; i++) {
+             hurdle_race_score[i] += places[i];
+         }
+         archery.generate_places(places);
+         for (int i = 0; i < 3; i++) {
+             archery_score[i] += places[i];
+         }
+         roller_skating.generate_places(places);
+         for (int i = 0; i < 3; i++) {
+             roller_skating_score[i] += places[i];
+         }
+         diving.generate_places(places);
+         for (int i = 0; i < 3; i++) {
+             diving_score[i] += places[i];
          }
  
-         if (archery.end) {
-             archery.generate_places(places);
-             for (int i = 0; i < 3; i++) {
-                 archery_score[i] += places[i];
-             }
-         }
+         float score0 = std::max<float>(1, hurdle_race_score[0]) * std::max<float>(0.95, archery_score[0]) * std::max<float>(0.9, roller_skating_score[0]) * std::max<float>(1, diving_score[0]);
+         float score1 = std::max<float>(1, hurdle_race_score[1]) * std::max<float>(0.95, archery_score[1]) * std::max<float>(0.9, roller_skating_score[1]) * std::max<float>(1, diving_score[1]);
+         float score2 = std::max<float>(1, hurdle_race_score[2]) * std::max<float>(0.95, archery_score[2]) * std::max<float>(0.9, roller_skating_score[2]) * std::max<float>(1, diving_score[2]);
  
-         if (roller_skating.end) {
-             roller_skating.generate_places(places);
-             for (int i = 0; i < 3; i++) {
-                 roller_skating_score[i] += places[i];
-             }
-         }
- 
-         if (diving.end) {
-             diving.generate_places(places);
-             for (int i = 0; i < 3; i++) {
-                 diving_score[i] += places[i];
-             }
-         }
- 
-         int score0 = std::max<int>(1, hurdle_race_score[0]) * std::max<int>(1, archery_score[0]) * std::max<int>(1, roller_skating_score[0]) * std::max<int>(1, diving_score[0]);
-         int score1 = std::max<int>(1, hurdle_race_score[1]) * std::max<int>(1, archery_score[1]) * std::max<int>(1, roller_skating_score[1]) * std::max<int>(1, diving_score[1]);
-         int score2 = std::max<int>(1, hurdle_race_score[2]) * std::max<int>(1, archery_score[2]) * std::max<int>(1, roller_skating_score[2]) * std::max<int>(1, diving_score[2]);
- 
-         // maybe change the enemy to win with him?
-         // get some values from gameplay? (with whom likely to win at the end)
-         int sum = score0 + score1 + score2;
+         float sum = score0 + score1 + score2;
  
          r0 = (float) (score0 - score1 - score2) / sum;
          r1 = (float) (score1 - score0 - score2) / sum;
          r2 = (float) (score2 - score0 - score1) / sum;
- 
-         // float score0 = std::max<float>(1, hurdle_race_score[0]) * std::max<float>(0.95, archery_score[0]) * std::max<float>(0.93, roller_skating_score[0]) * std::max<float>(1, diving_score[0]);
-         // float score1 = std::max<float>(1, hurdle_race_score[1]) * std::max<float>(0.95, archery_score[1]) * std::max<float>(0.93, roller_skating_score[1]) * std::max<float>(1, diving_score[1]);
-         // float score2 = std::max<float>(1, hurdle_race_score[2]) * std::max<float>(0.95, archery_score[2]) * std::max<float>(0.93, roller_skating_score[2]) * std::max<float>(1, diving_score[2]);
- 
-         // float sum = score0 + score1 + score2;
- 
-         // r0 = (float) (score0 - score1 - score2) / sum;
-         // r1 = (float) (score1 - score0 - score2) / sum;
-         // r2 = (float) (score2 - score0 - score1) / sum;
      }
  
      void init(const std::vector<std::string>& gpu,
@@ -685,7 +659,6 @@
          archery.play(move);
          roller_skating.play(move);
          diving.play(move);
-         turn++;
      }
  
      void debug() const {
@@ -1001,10 +974,8 @@ int main() {
 
             current_state.init(gpu, reg);
         }
-
+        
         std::cerr << "MCTS START\n";
-
-        current_state.turn = TURN;
 
 #ifdef PSYLEAGUE
         mcts.run(current_state, 45);
