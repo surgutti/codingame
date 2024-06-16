@@ -68,9 +68,10 @@ struct MCTSNode {
         float best_score = -INF;
         int8_t best_move = -1;
         
+        float sqrt_log_node_vis = C * fastsqrtf(fastlogf(node_vis));
         float log_node_vis = std::log(node_vis);
         for (int8_t move = 0; move < 4; move++) {
-            float node_score = avg[player_idx][move] + C * std::sqrt(log_node_vis / vis[player_idx][move]);
+            float node_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]); // C * std::sqrt(log_node_vis / vis[player_idx][move]);
 
             if (best_score < node_score) {
                 best_score = node_score;
@@ -145,13 +146,13 @@ struct MCTS {
 
         if (node->node_vis == 0) {
             do {
-                if (state.still_playing()) {
-                    state.play_greedy();
-                }
-                else {
+                // if (state.still_playing()) {
+                //     state.play_greedy();
+                // }
+                // else {
                     uint8_t moves = fast_rand();
                     state.play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
-                }
+                // }
             } while (!state.is_terminal());
 
             state.get_stats(r0, r1, r2);

@@ -1,6 +1,7 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
+#include <cstdint>
 #include <cassert>
 #include <x86intrin.h>
 
