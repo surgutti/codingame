@@ -186,7 +186,7 @@ struct State {
                !diving.end;
     }
 
-    void greedy_moves(int8_t* move) const {
+    inline void greedy_moves(int8_t* move) const {
         for (int i = 0; i < 3; i++) {
 
             // std::cerr << "player: " << i << '\n';
@@ -250,6 +250,11 @@ struct State {
             int best_score = -1;
             for (int j = 0; j < 4; j++) {
                 if (best_score < eval[j]) {
+                    best_score = eval[j];
+                    move[i] = j;
+                }
+                else
+                if (best_score == eval[j] && fast_rand() & 1) {
                     best_score = eval[j];
                     move[i] = j;
                 }

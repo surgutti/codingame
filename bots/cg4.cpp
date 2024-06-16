@@ -39,10 +39,6 @@
   
   struct HurdleRace {
       
-      static int dp[TRACK_LENGTH + 2]; // shortest time to finish
-      static int pd[TRACK_LENGTH + 2]; // longest time to finish
-      static uint8_t dp_opt[TRACK_LENGTH];
-  
       uint32_t track;
   
       int8_t pos[3], stun[3];
@@ -131,152 +127,7 @@
               }
           }
       }
-  
-      bool in_waiting(const int8_t player_idx) const {
-          return stun[player_idx] > 0;
-      }
-  
-      void build_dp() {
-          dp[TRACK_LENGTH - 1] = 0;
-          dp[TRACK_LENGTH + 0] = 0;
-          dp[TRACK_LENGTH + 1] = 0;
-  
-          dp_opt[TRACK_LENGTH - 1] = 0b1111;
-          
-          pd[TRACK_LENGTH - 1] = 0;
-          pd[TRACK_LENGTH + 0] = 0;
-          pd[TRACK_LENGTH + 1] = 0;
-  
-          for (int i = TRACK_LENGTH - 2; i >= 0; i--) {
-  
-              dp[i] = 1000;
-              pd[i] = 0;
-              dp_opt[i] = 0;
-              for (int8_t move = 0; move < 4; move++) {
-                  int now = 0;
-  
-                  int p = i;
-  
-                  if (move == 1) {
-                      p++;
-                      now += 1;
-  
-                      if (track & (1U << p)) {
-                          now += 2;
-                      }
-                  }
-                  else
-                  if (move == 0) {
-                      p += 2;
-                      now += 1;
-                      
-                      if (track & (1U << p)) {
-                          now += 2;
-                      }
-                  }
-                  else
-                  if (move == 2) {
-                      p++;
-                      if (track & (1U << p)) {
-                          now += 1 + 2;
-                      }
-                      else {
-                          p++;
-                          now += 1;
-  
-                          if (track & (1U << p)) {
-                              now += 2;
-                          }
-                      }
-                  }
-                  else {
-                      p++;
-                      if (track & (1U << p)) {
-                          now += 1 + 2;
-                      }
-                      else {
-                          p++;
-                          if (track & (1U << p)) {
-                              now += 1 + 2;
-                          }
-                          else {
-                              p++;
-                              now += 1;
-  
-                              if (track & (1U << p)) {
-                                  now += 2;
-                              }
-                          }
-                      }
-                  }
-  
-                  if (dp[i] > now + dp[p]) {
-                      dp[i] = now + dp[p];
-                      dp_opt[i] = 1 << move;
-                  }
-                  else
-                  if (dp[i] == now + dp[p]) {
-                      dp_opt[i] |= 1 << move;
-                  }
-  
-                  if (pd[i] < now + pd[p]) {
-                      pd[i] = now + pd[p]; // ! need to use the pd value, not the dp in now!!!
-                  }
-              }
-          }
-  
-          // std::cerr << "dp: ";
-          // for (int i = 0; i < TRACK_LENGTH; i++) {
-          //     std::cerr << int(dp[i]) << ' ';
-          // }
-          // std::cerr << '\n';
-  
-          // std::cerr << "dp_opt: ";
-          // for (int i = 0; i < TRACK_LENGTH; i++) {
-          //     std::cerr << int(dp_opt[i]) << ' ';
-          // }
-          // std::cerr << '\n';
-  
-          // std::cerr << "pd: ";
-          // for (int i = 0; i < TRACK_LENGTH; i++) {
-          //     std::cerr << int(pd[i]) << ' ';
-          // }
-          // std::cerr << '\n';
-      }
-  
-      inline bool playable(const int8_t player_idx) const {
-          if (stun[player_idx]) {
-              return false;
-          }
-  
-          const int8_t enemy1_idx = (player_idx + 1) % 3;
-          const int8_t enemy2_idx = (player_idx + 2) % 3;
-  
-          if (pd[pos[player_idx]] + stun[player_idx] <=
-              dp[pos[enemy1_idx]] + stun[enemy1_idx] &&
-              pd[pos[player_idx]] + stun[player_idx] <=
-              dp[pos[enemy2_idx]] + stun[enemy2_idx]) {
-              return false; // inevitable win
-          }
-  
-          if (dp[pos[player_idx]] + stun[player_idx] >
-              pd[pos[enemy1_idx]] + stun[enemy1_idx] &&
-              dp[pos[player_idx]] + stun[player_idx] >
-              pd[pos[enemy2_idx]] + stun[enemy2_idx]) {
-              return false; // inevitable lost
-          }
-  
-          return true;
-      }
-  
-      inline uint8_t greedy_moves(const int8_t player_idx) const {
-          return dp_opt[pos[player_idx]];
-      }
   };
-  
-  int HurdleRace::dp[TRACK_LENGTH + 2];
-  int HurdleRace::pd[TRACK_LENGTH + 2];
-  uint8_t HurdleRace::dp_opt[TRACK_LENGTH];
   
   #endif // HURDLE_RACE
   // *** End of: /home/olaf/codingame/minigames/hurdle_race.hpp *** 
@@ -284,69 +135,8 @@
   #ifndef ARCHERY_HPP
   #define ARCHERY_HPP
   
-   // *** Start of: /home/olaf/codingame/random.hpp *** 
-   #ifndef RANDOM_HPP
-   #define RANDOM_HPP
-   
-    // *** Start of: /home/olaf/codingame/utils.hpp *** 
-    #ifndef UTILS_HPP
-    #define UTILS_HPP
-    
-    #include <cassert>
-    #include <x86intrin.h>
-    
-    inline int to_move_index(char c) {
-        if (c == 'U') {
-            return 0;
-        }
-        if (c == 'L') {
-            return 1;
-        }
-        if (c == 'D') {
-            return 2;
-        }
-        if (c == 'R') {
-            return 3;
-        }
-    
-        assert(false);
-    }
-    
-    inline float fastlogf(const float& x) { union { float f; uint32_t i; } vx = { x }; float y = vx.i; y *= 8.2629582881927490e-8f; return(y - 87.989971088f); }
-    inline float fastsqrtf(const float& x) { union { int i; float x; } u; u.x = x; u.i = (1 << 29) + (u.i >> 1) - (1 << 22); return(u.x); }
-    inline float rsqrt_fast(float x) { return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(x))); }
-    
-    #endif // UTILS_HPP
-    // *** End of: /home/olaf/codingame/utils.hpp *** 
-   
-   static unsigned int g_seed = 2137;
-   
-   inline void fast_srand(int seed) {
-   	g_seed = seed;
-   }
-   
-   inline int fast_rand() {
-   	unsigned int z = (g_seed += 0x39A3689AU);
-   	z = (z ^ (z >> 14)) * 0x108E8AB8;
-   	z = (z ^ (z >> 13)) * 0x2CD01FD6;
-   	return int((z ^ (z >> 15)) >> 1);
-   }
-   
-   inline int fast_rand(int a, int b) {
-       return a + fast_rand() % (b - a + 1);
-   }
-   
-   #endif
-   
-   // *** End of: /home/olaf/codingame/random.hpp *** 
-  
-  #include <vector>
   
   struct Archery {
-  
-      static int dp[ARCHERY_LENGTH][41][41];
-      static int pd[ARCHERY_LENGTH][41][41];
-      static uint8_t dp_opt[ARCHERY_LENGTH][41][41];
   
       int8_t wind[ARCHERY_LENGTH];
       int8_t wind_index;
@@ -418,131 +208,7 @@
               wind_index--;
           }
       }
-  
-      void build_dp() {
-          for (int xxx = -20; xxx <= +20; xxx++) {
-              for (int yyy = -20; yyy <= +20; yyy++) {
-                  static constexpr int8_t dx[4] = {0, -1, 0, +1};
-                  static constexpr int8_t dy[4] = {-1, 0, +1, 0};
-  
-                  int wind_strength = wind[0];
-  
-                  int& value = dp[0][20 + xxx][20 + yyy];
-                  int& worst = pd[0][20 + xxx][20 + yyy];
-                  uint8_t& opt = dp_opt[0][20 + xxx][20 + yyy];
-  
-                  opt = 0;
-                  value = 10000;
-                  worst = 0;
-                  for (int8_t move = 0; move < 4; move++) {
-                      int xx = xxx + wind_strength * dx[move];
-                      int yy = yyy + wind_strength * dy[move];
-  
-                      if (xx < -20)   xx = -20;
-                      if (xx > +20)   xx = +20;
-                      if (yy < -20)   yy = -20;
-                      if (yy > +20)   yy = +20;
-  
-                      int now = xx * xx + yy * yy;
-  
-                      if (value > now) {
-                          value = now;
-                          opt = 1 << move;
-                      }
-                      else
-                      if (value == now) {
-                          opt |= 1 << move;
-                      }
-  
-                      if (worst < now) {
-                          worst = now;
-                      }
-                  }
-  
-              }
-          }
-  
-          for (int i = 1; i <= wind_index; i++) {
-              for (int xxx = -20; xxx <= +20; xxx++) {
-                  for (int yyy = -20; yyy <= +20; yyy++) {
-  
-                      static constexpr int8_t dx[4] = {0, -1, 0, +1};
-                      static constexpr int8_t dy[4] = {-1, 0, +1, 0};
-  
-                      int wind_strength = wind[i];
-  
-                      int& value = dp[i][20 + xxx][20 + yyy];
-                      int& worst = pd[i][20 + xxx][20 + yyy];
-  
-                      uint8_t& opt = dp_opt[i][20 + xxx][20 + yyy];
-                      
-                      opt = 0;
-                      value = 10000;
-                      worst = 0;
-                      for (int8_t move = 0; move < 4; move++) {
-                          int xx = xxx + wind_strength * dx[move];
-                          int yy = yyy + wind_strength * dy[move];
-  
-                          if (xx < -20)   xx = -20;
-                          if (xx > +20)   xx = +20;
-                          if (yy < -20)   yy = -20;
-                          if (yy > +20)   yy = +20;
-  
-                          int now = dp[i - 1][xx + 20][yy + 20];
-  
-                          if (value > now) {
-                              value = now;
-                              opt = 1 << move;
-                          }
-                          else
-                          if (value == now) {
-                              opt |= 1 << move;
-                          }
-  
-                          if (worst < pd[i - 1][xx + 20][yy + 20]) {
-                              worst = pd[i - 1][xx + 20][yy + 20];
-                          }
-                      }
-                  }
-              }
-          }
-      }
-  
-      bool in_waiting(const int8_t player_idx) const {
-          return false;
-      }
-  
-      inline bool playable(const int8_t player_idx) const {
-          // too little enchancement to hope for early win
-  
-          // const int8_t enemy1_idx = (player_idx + 1) % 3;
-          // const int8_t enemy2_idx = (player_idx + 2) % 3;
-  
-          // if (pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
-          //     dp[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20] &&
-          //     pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
-          //     dp[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20]) {
-          //     return false; // inevitable win
-          // }
-  
-          // if (dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
-          //     pd[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20] &&
-          //     dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
-          //     pd[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20]) {
-          //     return false; // inevitable lost
-          // }
-  
-          return true;
-      }
-  
-      inline uint8_t greedy_moves(const int8_t player_idx) const {
-          return dp_opt[wind_index][x[player_idx] + 20][y[player_idx] + 20];
-      }
   };
-  
-  int Archery::dp[ARCHERY_LENGTH][41][41];
-  int Archery::pd[ARCHERY_LENGTH][41][41];
-  uint8_t Archery::dp_opt[ARCHERY_LENGTH][41][41];
   
   #endif // ARCHERY_HPP
   // *** End of: /home/olaf/codingame/minigames/archery.hpp *** 
@@ -550,6 +216,61 @@
   #ifndef ROLLER_SKATING
   #define ROLLER_SKATING
   
+   // *** Start of: /home/olaf/codingame/random.hpp *** 
+   #ifndef RANDOM_HPP
+   #define RANDOM_HPP
+   
+    // *** Start of: /home/olaf/codingame/utils.hpp *** 
+    #ifndef UTILS_HPP
+    #define UTILS_HPP
+    
+    #include <cassert>
+    #include <x86intrin.h>
+    
+    inline int to_move_index(char c) {
+        if (c == 'U') {
+            return 0;
+        }
+        if (c == 'L') {
+            return 1;
+        }
+        if (c == 'D') {
+            return 2;
+        }
+        if (c == 'R') {
+            return 3;
+        }
+    
+        assert(false);
+    }
+    
+    inline float fastlogf(const float& x) { union { float f; uint32_t i; } vx = { x }; float y = vx.i; y *= 8.2629582881927490e-8f; return(y - 87.989971088f); }
+    inline float fastsqrtf(const float& x) { union { int i; float x; } u; u.x = x; u.i = (1 << 29) + (u.i >> 1) - (1 << 22); return(u.x); }
+    inline float rsqrt_fast(float x) { return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(x))); }
+    
+    #endif // UTILS_HPP
+    // *** End of: /home/olaf/codingame/utils.hpp *** 
+   
+   static unsigned int g_seed = 2137;
+   
+   inline void fast_srand(int seed) {
+   	g_seed = seed;
+   }
+   
+   inline int fast_rand() {
+   	unsigned int z = (g_seed += 0x39A3689AU);
+   	z = (z ^ (z >> 14)) * 0x108E8AB8;
+   	z = (z ^ (z >> 13)) * 0x2CD01FD6;
+   	return int((z ^ (z >> 15)) >> 1);
+   }
+   
+   inline int fast_rand(int a, int b) {
+       return a + fast_rand() % (b - a + 1);
+   }
+   
+   #endif
+   
+   // *** End of: /home/olaf/codingame/random.hpp *** 
   
   #include <iostream>
   #include <algorithm>
@@ -580,28 +301,6 @@
       225,
       228,
   };
-  
-  const uint8_t second_in_permutation[256] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
-  const uint8_t last_in_permutation[256] =   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
-  
-  // void index_in_permtation_init() {
-  //     for (int i = 0; i < 24; i++) {
-  //         for (int j = 0; j < 4; j++) {
-  //             // if (((all_permutations[i] >> (2 * j)) & 3) == 1) {
-  //             //     second_in_permutation[all_permutations[i]] = j;
-  //             // }
-  
-  //             // if (((all_permutations[i] >> (2 * j)) & 3) == 3) {
-  //             //     last_in_permutation[all_permutations[i]] = j;
-  //             // }
-  //         }
-  //     }
-  
-  //     for (int i = 0; i < 256; i++) {
-  //         std::cerr << int(last_in_permutation[i]) << ',';
-  //     }
-  //     std::cerr << '\n';
-  // }
   
   // constexpr int8_t all_permutations[24][4] = {
   //     {0, 1, 2, 3},
@@ -739,26 +438,6 @@
               order = all_permutations[fast_rand() % 24];
           }
       }
-  
-      bool in_waiting(const int8_t player_idx) const {
-          return risk[player_idx] < 0;
-      }
-  
-      inline bool playable(const int8_t player_idx) const {
-          return risk[player_idx] >= 0;
-      }
-  
-      // maybe if for not being stun'ed
-      inline uint8_t greedy_moves(const int8_t player_idx) const {
-          // std::cerr << "order: " << int(order) << ' ' << int(risk[player_idx]) << '\n';
-          if (risk[player_idx] + 2 < 5) {
-              // std::cerr << "take risk\n";
-              return uint8_t(1) << last_in_permutation[order];
-              // return uint8_t(1) << ((order >> (2 * 3)) & 3); // if have risk + 2 < 5 then rush 3
-          }
-          return uint8_t(1) << second_in_permutation[order];
-          // return uint8_t(1) << ((order >> (1 * 2)) & 3); // else go 2
-      }
   };
   
   #endif // ROLLER_SPEED_SKATING
@@ -827,33 +506,6 @@
               goal >>= 2;
               goals_left--;
           }
-      }
-  
-      bool in_waiting(const int8_t player_idx) const {
-          return false;
-      }
-  
-      inline bool playable(int8_t player_idx) const {
-          const int8_t enemy1_idx = (player_idx + 1) % 3;
-          const int8_t enemy2_idx = (player_idx + 2) % 3;
-  
-          assert (int(goals_left) * (goals_left + 1) < 256);
-          if (score[player_idx] >= score[enemy1_idx] + combo[enemy1_idx] * goals_left + ((uint8_t(goals_left) * (goals_left + 1)) >> 1) &&
-              score[player_idx] >= score[enemy2_idx] + combo[enemy2_idx] * goals_left + ((uint8_t(goals_left) * (goals_left + 1)) >> 1)) {
-              return false; // inevitable win
-          }
-  
-          assert (int(goals_left) * (goals_left + 1) < 256);
-          if (score[player_idx] + combo[player_idx] * goals_left + ((uint8_t(goals_left) * (goals_left + 1)) >> 1) < score[enemy1_idx] &&
-              score[player_idx] + combo[player_idx] * goals_left + ((uint8_t(goals_left) * (goals_left + 1)) >> 1) < score[enemy2_idx]) {
-              return false; // inevitable lost
-          }
-  
-          return true;
-      }
-  
-      inline uint8_t greedy_moves(const int8_t player_idx) const {
-          return uint8_t(1) << (goal & 3);
       }
   };
   
@@ -931,11 +583,9 @@
          // get some values from gameplay? (with whom likely to win at the end)
          int sum = score0 + score1 + score2;
  
-         // maybe the place could be weighted after few turns (on the beginning just focus on own scores?)
- 
-         r0 = (float) (score0 - score1 - score2) / sum; // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
-         r1 = (float) (score1 - score0 - score2) / sum; // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
-         r2 = (float) (score2 - score0 - score1) / sum; // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
+         r0 = (float) (score0 - 0.75 * (score1 + score2)) / sum;
+         r1 = (float) (score1 - 0.75 * (score0 + score2)) / sum;
+         r2 = (float) (score2 - 0.75 * (score0 + score1)) / sum;
  
          // float score0 = std::max<float>(1, hurdle_race_score[0]) * std::max<float>(0.95, archery_score[0]) * std::max<float>(0.93, roller_skating_score[0]) * std::max<float>(1, diving_score[0]);
          // float score1 = std::max<float>(1, hurdle_race_score[1]) * std::max<float>(0.95, archery_score[1]) * std::max<float>(0.93, roller_skating_score[1]) * std::max<float>(1, diving_score[1]);
@@ -968,8 +618,6 @@
              }
  
              hurdle_race.end = false;
- 
-             hurdle_race.build_dp();
          }
  
          if (gpu[1] == "GAME_OVER") {
@@ -988,8 +636,6 @@
              }
  
              archery.end = false;
- 
-             archery.build_dp();
          }
  
          if (gpu[2] == "GAME_OVER") {
@@ -1030,96 +676,6 @@
  
              diving.end = false;
          }
-     }
-     
-     inline bool still_playing() const {
-         return !hurdle_race.end ||
-                !archery.end ||
-                !roller_skating.end ||
-                !diving.end;
-     }
- 
-     inline void greedy_moves(int8_t* move) const {
-         for (int i = 0; i < 3; i++) {
- 
-             // std::cerr << "player: " << i << '\n';
- 
-             int eval[4] = {0, 0, 0, 0};
- 
-             if (hurdle_race.playable(i)) {
-                 uint8_t good_moves = hurdle_race.greedy_moves(i);
-                 for (int j = 0; j < 4; j++) {
-                     if (good_moves & (1 << j)) {
-                         eval[j] += int(archery_score[i]) * roller_skating_score[i] * diving_score[i] + 1;
-                     }
-                 }
-             }
-             // else {
-             //     std::cerr << "hurdles useless\n";
-             // }
- 
-             if (archery.playable(i)) {
-                 uint8_t good_moves = archery.greedy_moves(i);
-                 for (int j = 0; j < 4; j++) {
-                     if (good_moves & (1 << j)) {
-                         eval[j] += int(hurdle_race_score[i]) * roller_skating_score[i] * diving_score[i] + 1;
-                     }
-                 }
-             }
-             // else {
-             //     std::cerr << "archery useless\n";
-             // }
- 
-             if (roller_skating.playable(i)) {
-                 uint8_t good_moves = roller_skating.greedy_moves(i);
-                 for (int j = 0; j < 4; j++) {
-                     if (good_moves & (1 << j)) {
-                         eval[j] += int(hurdle_race_score[i]) * archery_score[i] * diving_score[i] + 1;
-                     }
-                 }
-             }
-             // else {
-             //     std::cerr << "skating useless\n";
-             // }
- 
-             if (diving.playable(i)) {
-                 uint8_t good_moves = diving.greedy_moves(i);
-                 for (int j = 0; j < 4; j++) {
-                     if (good_moves & (1 << j)) {
-                         eval[j] += int(hurdle_race_score[i]) * archery_score[i] * roller_skating_score[i] + 1;
-                     }
-                 }
-             }
-             // else {
-             //     std::cerr << "diving useless\n";
-             // }
- 
-             // std::cerr << "eval: ";
-             // for (int j = 0; j < 4; j++) {
-                 // std::cerr << int(eval[j]) << ' ';
-             // }
-             // std::cerr << '\n';
- 
-             int best_score = -1;
-             for (int j = 0; j < 4; j++) {
-                 if (best_score < eval[j]) {
-                     best_score = eval[j];
-                     move[i] = j;
-                 }
-                 else
-                 if (best_score == eval[j] && fast_rand() & 1) {
-                     best_score = eval[j];
-                     move[i] = j;
-                 }
-             }
-         }
-     }
- 
-     void play_greedy() {
-         int8_t move[3];
- 
-         greedy_moves(move);
-         play(move[0], move[1], move[2]);
      }
  
      void play(int8_t p0, int8_t p1, int8_t p2) {
@@ -1315,13 +871,8 @@
  
          if (node->node_vis == 0) {
              do {
-                 if (state.still_playing()) {
-                     state.play_greedy();
-                 }
-                 else {
-                     uint8_t moves = fast_rand();
-                     state.play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
-                 }
+                 uint8_t moves = fast_rand();
+                 state.play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
              } while (!state.is_terminal());
  
              state.get_stats(r0, r1, r2);
@@ -1385,7 +936,7 @@ int PLAYER_IDX;
 int NB_GAMES;
 
 int main() {
-    
+
     std::cerr << sizeof(State) << '\n';
 
     std::cin >> PLAYER_IDX;
@@ -1457,29 +1008,21 @@ int main() {
 
 #ifdef PSYLEAGUE
         mcts.run(current_state, 45);
-        mcts.debug();
 #else
-        mcts.run(current_state, (TURN == 0 ? 950 : 45));
-        mcts.debug();
+        mcts.run(current_state, (TURN == 0 ? 500 : 45));
 #endif // PSYLEAGUE
 
         /*
         if i'm lossing -> attack the lowest link
         if i'm winning -> maximize the gap between me and second place
         if i'm second ->
+        
         */
+
+        mcts.debug();
         std::cerr << "timer: " << timer.get_elapsed() << '\n';
         std::cerr << "pool: " << (float) MCTSNode::last_node / MCTSNODE_POOL << '\n';
         std::cerr << "last: " << MCTSNode::last_node << '\n';
-
-        // int8_t greedy_moves[3];
-        // current_state.greedy_moves(greedy_moves);
-        // int move = greedy_moves[PLAYER_IDX];
-        // std::cerr << "GREEDY: ";
-        // for (int i = 0; i < 3; i++) {
-        //     std::cerr << move_list[greedy_moves[i]] << ' ';
-        // }
-        // std::cerr << '\n';
 
         int move = mcts.best_move(PLAYER_IDX);
         
