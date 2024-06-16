@@ -129,11 +129,19 @@ struct HurdleRace {
                 if (move == 1) {
                     p++;
                     now += 1;
+
+                    if (track & (1U << p)) {
+                        now += 2;
+                    }
                 }
                 else
                 if (move == 0) {
                     p += 2;
                     now += 1;
+                    
+                    if (track & (1U << p)) {
+                        now += 2;
+                    }
                 }
                 else
                 if (move == 2) {
@@ -144,6 +152,10 @@ struct HurdleRace {
                     else {
                         p++;
                         now += 1;
+
+                        if (track & (1U << p)) {
+                            now += 2;
+                        }
                     }
                 }
                 else {
@@ -159,12 +171,12 @@ struct HurdleRace {
                         else {
                             p++;
                             now += 1;
+
+                            if (track & (1U << p)) {
+                                now += 2;
+                            }
                         }
                     }
-                }
-
-                if (track & (1U << pos[i])) {
-                    now += 2;
                 }
 
                 if (dp[i] > now + dp[p]) {
@@ -181,6 +193,24 @@ struct HurdleRace {
                 }
             }
         }
+
+        // std::cerr << "dp: ";
+        // for (int i = 0; i < TRACK_LENGTH; i++) {
+        //     std::cerr << int(dp[i]) << ' ';
+        // }
+        // std::cerr << '\n';
+
+        // std::cerr << "dp_opt: ";
+        // for (int i = 0; i < TRACK_LENGTH; i++) {
+        //     std::cerr << int(dp_opt[i]) << ' ';
+        // }
+        // std::cerr << '\n';
+
+        // std::cerr << "pd: ";
+        // for (int i = 0; i < TRACK_LENGTH; i++) {
+        //     std::cerr << int(pd[i]) << ' ';
+        // }
+        // std::cerr << '\n';
     }
 
     inline bool playable(const int8_t player_idx) const {

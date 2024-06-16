@@ -20,7 +20,7 @@ int PLAYER_IDX;
 int NB_GAMES;
 
 int main() {
-
+    
     std::cerr << sizeof(State) << '\n';
 
     std::cin >> PLAYER_IDX;
@@ -91,9 +91,11 @@ int main() {
         current_state.turn = TURN;
 
 #ifdef PSYLEAGUE
-        mcts.run(current_state, 45);
+        // mcts.run(current_state, 45);
+        // mcts.debug();
 #else
-        mcts.run(current_state, (TURN == 0 ? 950 : 45));
+        // mcts.run(current_state, (TURN == 0 ? 950 : 45));
+        // mcts.debug();
 #endif // PSYLEAGUE
 
         /*
@@ -102,17 +104,25 @@ int main() {
         if i'm second ->
         
         */
-
-        mcts.debug();
         std::cerr << "timer: " << timer.get_elapsed() << '\n';
         std::cerr << "pool: " << (float) MCTSNode::last_node / MCTSNODE_POOL << '\n';
         std::cerr << "last: " << MCTSNode::last_node << '\n';
 
-        int move = mcts.best_move(PLAYER_IDX);
+        int8_t greedy_moves[3];
+        current_state.greedy_moves(greedy_moves);
+
+        int move = greedy_moves[PLAYER_IDX];
+        // int move = mcts.best_move(PLAYER_IDX);
         
         std::vector<std::string> move_list = {
             "UP", "LEFT", "DOWN", "RIGHT"
         };
+
+        std::cerr << "GREEDY: ";
+        for (int i = 0; i < 3; i++) {
+            std::cerr << move_list[greedy_moves[i]] << ' ';
+        }
+        std::cerr << '\n';
 
         std::cout << move_list[move] << std::endl;
 

@@ -78,9 +78,11 @@ struct State {
         // get some values from gameplay? (with whom likely to win at the end)
         int sum = score0 + score1 + score2;
 
-        r0 = (float) (score0 - score1 - score2) / sum + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
-        r1 = (float) (score1 - score0 - score2) / sum + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
-        r2 = (float) (score2 - score0 - score1) / sum + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
+        // maybe the place could be weighted after few turns (on the beginning just focus on own scores?)
+
+        r0 = (float) (score0 - score1 - score2) / sum; // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
+        r1 = (float) (score1 - score0 - score2) / sum; // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
+        r2 = (float) (score2 - score0 - score1) / sum; // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
 
         // float score0 = std::max<float>(1, hurdle_race_score[0]) * std::max<float>(0.95, archery_score[0]) * std::max<float>(0.93, roller_skating_score[0]) * std::max<float>(1, diving_score[0]);
         // float score1 = std::max<float>(1, hurdle_race_score[1]) * std::max<float>(0.95, archery_score[1]) * std::max<float>(0.93, roller_skating_score[1]) * std::max<float>(1, diving_score[1]);
@@ -184,48 +186,66 @@ struct State {
                !diving.end;
     }
 
-    void play_greedy() {
-        int8_t move[3];
-
+    void greedy_moves(int8_t* move) const {
         for (int i = 0; i < 3; i++) {
-            uint8_t eval[4] = {0, 0, 0, 0};
-            const uint8_t sum = hurdle_race_score[i] + archery_score[i] + roller_skating_score[i] + diving_score[i];
+
+            // std::cerr << "player: " << i << '\n';
+
+            int eval[4] = {0, 0, 0, 0};
 
             if (hurdle_race.playable(i)) {
                 uint8_t good_moves = hurdle_race.greedy_moves(i);
                 for (int j = 0; j < 4; j++) {
                     if (good_moves & (1 << j)) {
-                        eval[j] += sum - hurdle_race_score[i];
+                        eval[j] += int(archery_score[i]) * roller_skating_score[i] * diving_score[i] + 1;
                     }
                 }
             }
+            // else {
+            //     std::cerr << "hurdles useless\n";
+            // }
 
             if (archery.playable(i)) {
                 uint8_t good_moves = archery.greedy_moves(i);
                 for (int j = 0; j < 4; j++) {
                     if (good_moves & (1 << j)) {
-                        eval[j] += sum - archery_score[i];
+                        eval[j] += int(hurdle_race_score[i]) * roller_skating_score[i] * diving_score[i] + 1;
                     }
                 }
             }
+            // else {
+            //     std::cerr << "archery useless\n";
+            // }
 
             if (roller_skating.playable(i)) {
                 uint8_t good_moves = roller_skating.greedy_moves(i);
                 for (int j = 0; j < 4; j++) {
                     if (good_moves & (1 << j)) {
-                        eval[j] += sum - roller_skating_score[i];
+                        eval[j] += int(hurdle_race_score[i]) * archery_score[i] * diving_score[i] + 1;
                     }
                 }
             }
+            // else {
+            //     std::cerr << "skating useless\n";
+            // }
 
             if (diving.playable(i)) {
                 uint8_t good_moves = diving.greedy_moves(i);
                 for (int j = 0; j < 4; j++) {
                     if (good_moves & (1 << j)) {
-                        eval[j] += sum - diving_score[i];
+                        eval[j] += int(hurdle_race_score[i]) * archery_score[i] * roller_skating_score[i] + 1;
                     }
                 }
             }
+            // else {
+            //     std::cerr << "diving useless\n";
+            // }
+
+            // std::cerr << "eval: ";
+            // for (int j = 0; j < 4; j++) {
+                // std::cerr << int(eval[j]) << ' ';
+            // }
+            // std::cerr << '\n';
 
             int best_score = -1;
             for (int j = 0; j < 4; j++) {
@@ -235,7 +255,12 @@ struct State {
                 }
             }
         }
+    }
 
+    void play_greedy() {
+        int8_t move[3];
+
+        greedy_moves(move);
         play(move[0], move[1], move[2]);
     }
 

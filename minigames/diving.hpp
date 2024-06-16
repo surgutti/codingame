@@ -72,14 +72,16 @@ struct Diving {
         const int8_t enemy1_idx = (player_idx + 1) % 3;
         const int8_t enemy2_idx = (player_idx + 2) % 3;
 
-        if (score[player_idx] >= score[enemy1_idx] + combo[enemy1_idx] * goals_left + ((goals_left * (goals_left + 1)) >> 1) &&
-            score[player_idx] >= score[enemy2_idx] + combo[enemy2_idx] * goals_left + ((goals_left * (goals_left + 1)) >> 1)) {
-            return false;
+        assert (int(goals_left) * (goals_left + 1) < 256);
+        if (score[player_idx] >= score[enemy1_idx] + combo[enemy1_idx] * goals_left + ((uint8_t(goals_left) * (goals_left + 1)) >> 1) &&
+            score[player_idx] >= score[enemy2_idx] + combo[enemy2_idx] * goals_left + ((uint8_t(goals_left) * (goals_left + 1)) >> 1)) {
+            return false; // inevitable win
         }
 
-        if (score[player_idx] + combo[player_idx] * goals_left + ((goals_left * (goals_left + 1)) >> 1) < score[enemy1_idx] &&
-            score[player_idx] + combo[player_idx] * goals_left + ((goals_left * (goals_left + 1)) >> 1) < score[enemy2_idx]) {
-            return false;
+        assert (int(goals_left) * (goals_left + 1) < 256);
+        if (score[player_idx] + combo[player_idx] * goals_left + ((uint8_t(goals_left) * (goals_left + 1)) >> 1) < score[enemy1_idx] &&
+            score[player_idx] + combo[player_idx] * goals_left + ((uint8_t(goals_left) * (goals_left + 1)) >> 1) < score[enemy2_idx]) {
+            return false; // inevitable lost
         }
 
         return true;

@@ -177,22 +177,24 @@ struct Archery {
     }
 
     inline bool playable(const int8_t player_idx) const {
-        const int8_t enemy1_idx = (player_idx + 1) % 3;
-        const int8_t enemy2_idx = (player_idx + 2) % 3;
+        // too little enchancement to hope for early win
 
-        if (pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
-            dp[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20] &&
-            pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
-            dp[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20]) {
-            return false; // inevitable win
-        }
+        // const int8_t enemy1_idx = (player_idx + 1) % 3;
+        // const int8_t enemy2_idx = (player_idx + 2) % 3;
 
-        if (dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
-            pd[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20] &&
-            dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
-            pd[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20]) {
-            return false; // inevitable lost
-        }
+        // if (pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
+        //     dp[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20] &&
+        //     pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
+        //     dp[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20]) {
+        //     return false; // inevitable win
+        // }
+
+        // if (dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
+        //     pd[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20] &&
+        //     dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
+        //     pd[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20]) {
+        //     return false; // inevitable lost
+        // }
 
         return true;
     }

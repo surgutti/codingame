@@ -33,6 +33,28 @@ constexpr uint8_t all_permutations[24] = {
     228,
 };
 
+const uint8_t second_in_permutation[256] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
+const uint8_t last_in_permutation[256] =   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
+
+// void index_in_permtation_init() {
+//     for (int i = 0; i < 24; i++) {
+//         for (int j = 0; j < 4; j++) {
+//             // if (((all_permutations[i] >> (2 * j)) & 3) == 1) {
+//             //     second_in_permutation[all_permutations[i]] = j;
+//             // }
+
+//             // if (((all_permutations[i] >> (2 * j)) & 3) == 3) {
+//             //     last_in_permutation[all_permutations[i]] = j;
+//             // }
+//         }
+//     }
+
+//     for (int i = 0; i < 256; i++) {
+//         std::cerr << int(last_in_permutation[i]) << ',';
+//     }
+//     std::cerr << '\n';
+// }
+
 // constexpr int8_t all_permutations[24][4] = {
 //     {0, 1, 2, 3},
 //     {0, 1, 3, 2},
@@ -175,15 +197,19 @@ struct RollerSkating {
     }
 
     inline bool playable(const int8_t player_idx) const {
-        return risk[player_idx] < 0;
+        return risk[player_idx] >= 0;
     }
 
     // maybe if for not being stun'ed
     inline uint8_t greedy_moves(const int8_t player_idx) const {
+        // std::cerr << "order: " << int(order) << ' ' << int(risk[player_idx]) << '\n';
         if (risk[player_idx] + 2 < 5) {
-            return uint8_t(1) << ((order >> (2 * 3)) & 3); // if have risk + 2 < 5 then rush 3
+            // std::cerr << "take risk\n";
+            return uint8_t(1) << last_in_permutation[order];
+            // return uint8_t(1) << ((order >> (2 * 3)) & 3); // if have risk + 2 < 5 then rush 3
         }
-        return uint8_t(1) << ((order >> 1) & 3); // else go 2
+        return uint8_t(1) << second_in_permutation[order];
+        // return uint8_t(1) << ((order >> (1 * 2)) & 3); // else go 2
     }
 };
 
