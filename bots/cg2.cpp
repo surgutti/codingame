@@ -583,9 +583,9 @@
          // get some values from gameplay? (with whom likely to win at the end)
          int sum = score0 + score1 + score2;
  
-         r0 = (float) (score0 - score1 - score2) / sum;
-         r1 = (float) (score1 - score0 - score2) / sum;
-         r2 = (float) (score2 - score0 - score1) / sum;
+            r0 = (float) (score0 - score1 - score2) / sum + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
+            r1 = (float) (score1 - score0 - score2) / sum + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
+            r2 = (float) (score2 - score0 - score1) / sum + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
  
          // float score0 = std::max<float>(1, hurdle_race_score[0]) * std::max<float>(0.95, archery_score[0]) * std::max<float>(0.93, roller_skating_score[0]) * std::max<float>(1, diving_score[0]);
          // float score1 = std::max<float>(1, hurdle_race_score[1]) * std::max<float>(0.95, archery_score[1]) * std::max<float>(0.93, roller_skating_score[1]) * std::max<float>(1, diving_score[1]);

@@ -78,9 +78,9 @@ struct State {
         // get some values from gameplay? (with whom likely to win at the end)
         int sum = score0 + score1 + score2;
 
-        r0 = (float) (score0 - 0.5 * (score1 + score2)) / sum;
-        r1 = (float) (score1 - 0.5 * (score0 + score2)) / sum;
-        r2 = (float) (score2 - 0.5 * (score0 + score1)) / sum;
+        r0 = (float) (score0 - score1 - score2) / sum + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
+        r1 = (float) (score1 - score0 - score2) / sum + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
+        r2 = (float) (score2 - score0 - score1) / sum + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
 
         // float score0 = std::max<float>(1, hurdle_race_score[0]) * std::max<float>(0.95, archery_score[0]) * std::max<float>(0.93, roller_skating_score[0]) * std::max<float>(1, diving_score[0]);
         // float score1 = std::max<float>(1, hurdle_race_score[1]) * std::max<float>(0.95, archery_score[1]) * std::max<float>(0.93, roller_skating_score[1]) * std::max<float>(1, diving_score[1]);
@@ -113,6 +113,8 @@ struct State {
             }
 
             hurdle_race.end = false;
+
+            hurdle_race.build_dp();
         }
 
         if (gpu[1] == "GAME_OVER") {
@@ -131,6 +133,8 @@ struct State {
             }
 
             archery.end = false;
+
+            archery.build_dp();
         }
 
         if (gpu[2] == "GAME_OVER") {
@@ -184,22 +188,51 @@ struct State {
         int8_t move[3];
 
         for (int i = 0; i < 3; i++) {
-            if (archery_score[i] <= hurdle_race_score[i] &&
-                archery_score[i] <= diving_score[i] &&
-                archery_score[i] <= roller_skating_score[i]) {
-                move[i] = archery.greedy_move(i);
+            uint8_t eval[4] = {0, 0, 0, 0};
+            const uint8_t sum = hurdle_race_score[i] + archery_score[i] + roller_skating_score[i] + diving_score[i];
+
+            if (hurdle_race.playable(i)) {
+                uint8_t good_moves = hurdle_race.greedy_moves(i);
+                for (int j = 0; j < 4; j++) {
+                    if (good_moves & (1 << j)) {
+                        eval[j] += sum - hurdle_race_score[i];
+                    }
+                }
             }
-            else
-            if (hurdle_race_score[i] <= diving_score[i] &&
-                hurdle_race_score[i] <= roller_skating_score[i]) {
-                move[i] = hurdle_race.greedy_move(i);
+
+            if (archery.playable(i)) {
+                uint8_t good_moves = archery.greedy_moves(i);
+                for (int j = 0; j < 4; j++) {
+                    if (good_moves & (1 << j)) {
+                        eval[j] += sum - archery_score[i];
+                    }
+                }
             }
-            else
-            if (diving_score[i] <= roller_skating_score[i]) {
-                move[i] = diving.greedy_move(i);
+
+            if (roller_skating.playable(i)) {
+                uint8_t good_moves = roller_skating.greedy_moves(i);
+                for (int j = 0; j < 4; j++) {
+                    if (good_moves & (1 << j)) {
+                        eval[j] += sum - roller_skating_score[i];
+                    }
+                }
             }
-            else {
-                move[i] = roller_skating.greedy_move(i);
+
+            if (diving.playable(i)) {
+                uint8_t good_moves = diving.greedy_moves(i);
+                for (int j = 0; j < 4; j++) {
+                    if (good_moves & (1 << j)) {
+                        eval[j] += sum - diving_score[i];
+                    }
+                }
+            }
+
+            int best_score = -1;
+            for (int j = 0; j < 4; j++) {
+                if (best_score < eval[j]) {
+                    best_score = eval[j];
+                    move[i] = j;
+                }
             }
         }
 

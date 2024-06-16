@@ -8,8 +8,9 @@
 
 struct HurdleRace {
     
-    static int dp[TRACK_LENGTH];
-    static int8_t dp_opt[TRACK_LENGTH];
+    static int dp[TRACK_LENGTH + 2]; // shortest time to finish
+    static int pd[TRACK_LENGTH + 2]; // longest time to finish
+    static uint8_t dp_opt[TRACK_LENGTH];
 
     uint32_t track;
 
@@ -106,18 +107,114 @@ struct HurdleRace {
 
     void build_dp() {
         dp[TRACK_LENGTH - 1] = 0;
+        dp[TRACK_LENGTH + 0] = 0;
+        dp[TRACK_LENGTH + 1] = 0;
+
+        dp_opt[TRACK_LENGTH - 1] = 0b1111;
+        
+        pd[TRACK_LENGTH - 1] = 0;
+        pd[TRACK_LENGTH + 0] = 0;
+        pd[TRACK_LENGTH + 1] = 0;
 
         for (int i = TRACK_LENGTH - 2; i >= 0; i--) {
-            
+
+            dp[i] = 1000;
+            pd[i] = 0;
+            dp_opt[i] = 0;
+            for (int8_t move = 0; move < 4; move++) {
+                int now = 0;
+
+                int p = i;
+
+                if (move == 1) {
+                    p++;
+                    now += 1;
+                }
+                else
+                if (move == 0) {
+                    p += 2;
+                    now += 1;
+                }
+                else
+                if (move == 2) {
+                    p++;
+                    if (track & (1U << p)) {
+                        now += 1 + 2;
+                    }
+                    else {
+                        p++;
+                        now += 1;
+                    }
+                }
+                else {
+                    p++;
+                    if (track & (1U << p)) {
+                        now += 1 + 2;
+                    }
+                    else {
+                        p++;
+                        if (track & (1U << p)) {
+                            now += 1 + 2;
+                        }
+                        else {
+                            p++;
+                            now += 1;
+                        }
+                    }
+                }
+
+                if (track & (1U << pos[i])) {
+                    now += 2;
+                }
+
+                if (dp[i] > now + dp[p]) {
+                    dp[i] = now + dp[p];
+                    dp_opt[i] = 1 << move;
+                }
+                else
+                if (dp[i] == now + dp[p]) {
+                    dp_opt[i] |= 1 << move;
+                }
+
+                if (pd[i] < now + pd[p]) {
+                    pd[i] = now + pd[p]; // ! need to use the pd value, not the dp in now!!!
+                }
+            }
         }
     }
 
-    int8_t greedy_move(const int8_t player_idx) const {
+    inline bool playable(const int8_t player_idx) const {
+        if (stun[player_idx]) {
+            return false;
+        }
+
+        const int8_t enemy1_idx = (player_idx + 1) % 3;
+        const int8_t enemy2_idx = (player_idx + 2) % 3;
+
+        if (pd[pos[player_idx]] + stun[player_idx] <=
+            dp[pos[enemy1_idx]] + stun[enemy1_idx] &&
+            pd[pos[player_idx]] + stun[player_idx] <=
+            dp[pos[enemy2_idx]] + stun[enemy2_idx]) {
+            return false; // inevitable win
+        }
+
+        if (dp[pos[player_idx]] + stun[player_idx] >
+            pd[pos[enemy1_idx]] + stun[enemy1_idx] &&
+            dp[pos[player_idx]] + stun[player_idx] >
+            pd[pos[enemy2_idx]] + stun[enemy2_idx]) {
+            return false; // inevitable lost
+        }
+
+        return true;
+    }
+
+    inline uint8_t greedy_moves(const int8_t player_idx) const {
         return dp_opt[pos[player_idx]];
     }
 };
 
-int HurdleRace::dp[TRACK_LENGTH];
-int8_t dp_opt[TRACK_LENGTH];
+int HurdleRace::dp[TRACK_LENGTH + 2];
+int HurdleRace::pd[TRACK_LENGTH + 2];
+uint8_t HurdleRace::dp_opt[TRACK_LENGTH];
 
 #endif // HURDLE_RACE

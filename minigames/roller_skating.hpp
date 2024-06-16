@@ -174,12 +174,16 @@ struct RollerSkating {
         return risk[player_idx] < 0;
     }
 
+    inline bool playable(const int8_t player_idx) const {
+        return risk[player_idx] < 0;
+    }
+
     // maybe if for not being stun'ed
-    int8_t greedy_move(const int8_t player_idx) const {
+    inline uint8_t greedy_moves(const int8_t player_idx) const {
         if (risk[player_idx] + 2 < 5) {
-            return (order >> (2 * 3)) & 3; // if have risk + 2 < 5 then rush 3
+            return uint8_t(1) << ((order >> (2 * 3)) & 3); // if have risk + 2 < 5 then rush 3
         }
-        return (order >> 1) & 3; // else go 2
+        return uint8_t(1) << ((order >> 1) & 3); // else go 2
     }
 };
 

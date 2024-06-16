@@ -1009,7 +1009,7 @@ int main() {
 #ifdef PSYLEAGUE
         mcts.run(current_state, 45);
 #else
-        mcts.run(current_state, (TURN == 0 ? 500 : 45));
+        mcts.run(current_state, (TURN == 0 ? 950 : 45));
 #endif // PSYLEAGUE
 
         /*

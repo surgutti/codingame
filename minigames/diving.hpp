@@ -68,8 +68,25 @@ struct Diving {
         return false;
     }
 
-    int8_t greedy_move(const int8_t player_idx) const {
-        return goal & 3;
+    inline bool playable(int8_t player_idx) const {
+        const int8_t enemy1_idx = (player_idx + 1) % 3;
+        const int8_t enemy2_idx = (player_idx + 2) % 3;
+
+        if (score[player_idx] >= score[enemy1_idx] + combo[enemy1_idx] * goals_left + ((goals_left * (goals_left + 1)) >> 1) &&
+            score[player_idx] >= score[enemy2_idx] + combo[enemy2_idx] * goals_left + ((goals_left * (goals_left + 1)) >> 1)) {
+            return false;
+        }
+
+        if (score[player_idx] + combo[player_idx] * goals_left + ((goals_left * (goals_left + 1)) >> 1) < score[enemy1_idx] &&
+            score[player_idx] + combo[player_idx] * goals_left + ((goals_left * (goals_left + 1)) >> 1) < score[enemy2_idx]) {
+            return false;
+        }
+
+        return true;
+    }
+
+    inline uint8_t greedy_moves(const int8_t player_idx) const {
+        return uint8_t(1) << (goal & 3);
     }
 };
 

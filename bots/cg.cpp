@@ -26,9 +26,10 @@
    const int ARCHERY_LENGTH = 12 + 3; // 12 + random.nextInt(4);
    const int DIVING_LENGTH = 12 + 3; // 12 + random.nextInt(4);
    
-   const int MCTSNODE_POOL = 8'500'000;
+   const int MCTSNODE_POOL = 8'000'000;
    
-   const float C = 0.8f;
+   // TODO: run psyleague with different C values
+   const float C = 0.6f;
    
    #endif // CONST_HPP
    // *** End of: /home/olaf/codingame/const.hpp *** 
@@ -42,7 +43,6 @@
   
       int8_t pos[3], stun[3];
       bool end;
-      int8_t places[3];
   
       void debug() const {
           std::cerr << "TRACK: ";
@@ -59,7 +59,22 @@
           }
       }
   
-      void play(const int8_t* move) {
+      void generate_places(int8_t* places) const {
+          for (int i = 0; i < 3; i++) {
+              if (pos[i] >= TRACK_LENGTH - 1) {
+                  places[i] = 3;
+              }
+              else
+              if (pos[i] < pos[(i + 1) % 3] && pos[i] < pos[(i + 2) % 3]) {
+                  places[i] = 0;
+              }
+              else {
+                  places[i] = 1;
+              }
+          }
+      }
+  
+      inline void play(const int8_t* move) {
           if (end) {
               return;
           }
@@ -87,7 +102,6 @@
                       }
                   }
                   else {
-                  // if (move[i] == 3) {
                       pos[i]++;
                       if (track & (1U << pos[i])) {
                           stun[i] = 2;
@@ -102,9 +116,6 @@
                           }
                       }
                   }
-                  // else {
-                  //     assert(false);
-                  // }
   
                   if (track & (1U << pos[i])) {
                       stun[i] = 2;
@@ -115,29 +126,6 @@
                   }
               }
           }
-  
-          if (end) {
-              for (int i = 0; i < 3; i++) {
-                  if (pos[i] >= TRACK_LENGTH - 1) {
-                      places[i] = 3;
-                  }
-                  else
-                  if (pos[i] < pos[(i + 1) % 3] && pos[i] < pos[(i + 2) % 3]) {
-                      places[i] = 0;
-                  }
-                  else {
-                      places[i] = 1;
-                  }
-              }
-          }
-      }
-  
-      bool proven_win(int p_idx) const {
-          return false;
-      }
-  
-      bool proven_lost(int p_idx) const {
-          return false;
       }
   };
   
@@ -158,8 +146,6 @@
   
       bool end;
   
-      int8_t places[3];
-  
       void debug() const {
           std::cerr << "wind_index: " << wind_index << '\n';
           std::cerr << "wind: ";
@@ -172,60 +158,56 @@
           }
       }
   
-      void play(const int8_t* move) {
+      void generate_places(int8_t* places) const {
+          int16_t scores[3];
+          for (int i = 0; i < 3; i++) {
+              scores[i] = (int16_t) x[i] * x[i] + (int16_t) y[i] * y[i]; 
+          }
+  
+          for (int i = 0; i < 3; i++) {
+              if (scores[i] <= scores[(i + 1) % 3] && scores[i] <= scores[(i + 2) % 3]) {
+                  places[i] = 3;
+              }
+              else
+              if (scores[i] > scores[(i + 1) % 3] && scores[i] > scores[(i + 2) % 3]) {
+                  places[i] = 0;
+              }
+              else {
+                  places[i] = 1;
+              }
+          }
+      }
+  
+      inline void play(const int8_t* move) {
           if (end) {
               return;
           }
   
-          static const int8_t dx[4] = {0, -1, 0, +1};
-          static const int8_t dy[4] = {-1, 0, +1, 0};
+          static constexpr int8_t dx[4] = {0, -1, 0, +1};
+          static constexpr int8_t dy[4] = {-1, 0, +1, 0};
+  
+          const int8_t wind_strength = wind[wind_index];
   
           for (int i = 0; i < 3; i++) {
-              x[i] += wind[wind_index] * dx[move[i]];
-              y[i] += wind[wind_index] * dy[move[i]];
-          
-              if (x[i] < -20) x[i] = -20;
-              if (x[i] > +20) x[i] = +20;
+              x[i] += wind_strength * dx[move[i]];
+              y[i] += wind_strength * dy[move[i]];
   
-              if (y[i] < -20) y[i] = -20;
+              if (x[i] > +20) x[i] = +20;
+              else
+              if (x[i] < -20) x[i] = -20;
+          
               if (y[i] > +20) y[i] = +20;
+              else
+              if (y[i] < -20) y[i] = -20;
           }
   
           if (wind_index == 0) {
-  
-              int16_t scores[3];
-              for (int i = 0; i < 3; i++) {
-                  scores[i] = (int16_t) x[i] * x[i] + (int16_t) y[i] * y[i]; 
-              }
-  
-              for (int i = 0; i < 3; i++) {
-                  if (scores[i] <= scores[(i + 1) % 3] && scores[i] <= scores[(i + 2) % 3]) {
-                      places[i] = 3;
-                  }
-                  else
-                  if (scores[i] > scores[(i + 1) % 3] && scores[i] > scores[(i + 2) % 3]) {
-                      places[i] = 0;
-                  }
-                  else {
-                      places[i] = 1;
-                  }
-              }
-  
               end = true;
           }
           else {
               wind_index--;
           }
       }
-      
-      bool proven_win(int p_idx) const {
-          return false;
-      }
-  
-      bool proven_lost(int p_idx) const {
-          return false;
-      }
-  
   };
   
   #endif // ARCHERY_HPP
@@ -243,8 +225,9 @@
     #define UTILS_HPP
     
     #include <cassert>
+    #include <x86intrin.h>
     
-    int to_move_index(char c) {
+    inline int to_move_index(char c) {
         if (c == 'U') {
             return 0;
         }
@@ -260,6 +243,10 @@
     
         assert(false);
     }
+    
+    inline float fastlogf(const float& x) { union { float f; uint32_t i; } vx = { x }; float y = vx.i; y *= 8.2629582881927490e-8f; return(y - 87.989971088f); }
+    inline float fastsqrtf(const float& x) { union { int i; float x; } u; u.x = x; u.i = (1 << 29) + (u.i >> 1) - (1 << 22); return(u.x); }
+    inline float rsqrt_fast(float x) { return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(x))); }
     
     #endif // UTILS_HPP
     // *** End of: /home/olaf/codingame/utils.hpp *** 
@@ -288,16 +275,71 @@
   #include <iostream>
   #include <algorithm>
   
+  constexpr uint8_t all_permutations[24] = {
+      27,
+      30,
+      39,
+      45,
+      54,
+      57,
+      75,
+      78,
+      99,
+      108,
+      114,
+      120,
+      135,
+      141,
+      147,
+      156,
+      177,
+      180,
+      198,
+      201,
+      210,
+      216,
+      225,
+      228,
+  };
+  
+  // constexpr int8_t all_permutations[24][4] = {
+  //     {0, 1, 2, 3},
+  //     {0, 1, 3, 2},
+  //     {0, 2, 1, 3},
+  //     {0, 2, 3, 1},
+  //     {0, 3, 1, 2},
+  //     {0, 3, 2, 1},
+  //     {1, 0, 2, 3},
+  //     {1, 0, 3, 2},
+  //     {1, 2, 0, 3},
+  //     {1, 2, 3, 0},
+  //     {1, 3, 0, 2},
+  //     {1, 3, 2, 0},
+  //     {2, 0, 1, 3},
+  //     {2, 0, 3, 1},
+  //     {2, 1, 0, 3},
+  //     {2, 1, 3, 0},
+  //     {2, 3, 0, 1},
+  //     {2, 3, 1, 0},
+  //     {3, 0, 1, 2},
+  //     {3, 0, 2, 1},
+  //     {3, 1, 0, 2},
+  //     {3, 1, 2, 0},
+  //     {3, 2, 0, 1},
+  //     {3, 2, 1, 0}
+  // };
+  
+  // (order >> move[i]) & 3 == 0
+  
   struct RollerSkating {
   
       int8_t turns_left;
+      // int8_t turns_done;
   
       int8_t dist[3];
       int8_t risk[3];
   
-      int8_t places[3];
-  
-      int8_t order[4];
+      uint8_t order;
   
       bool end;
   
@@ -308,12 +350,31 @@
           }
           std::cerr << "order: ";
           for (int i = 0; i < 4; i++) {
-              std::cerr << int(order[i]) << ' ';
+              std::cerr << int((order >> (i << 1)) & 3) << ' ';
           }
           std::cerr << '\n';
       }
   
-      void play(const int8_t* move) {
+      void generate_places(int8_t* places) {
+          for (int i = 0; i < 3; i++) {
+              if (dist[i] >= dist[(i + 1) % 3] && dist[i] >= dist[(i + 2) % 3]) {
+                  places[i] = 3;
+              }
+              else
+              if (dist[i] < dist[(i + 1) % 3] && dist[i] < dist[(i + 2) % 3]) {
+                  places[i] = 0;
+              }
+              else {
+                  places[i] = 1;
+              }
+          }
+      }
+  
+      // TODO:
+      // after few turns (5?) just take the places as dist shows
+      // gather some statistics on starting positions
+      // the most important fact is that players will jump on max and get higest risk
+      inline void play(const int8_t* move) {
           if (end) {
               return;
           }
@@ -322,29 +383,30 @@
               if (risk[i] < 0) {
                   risk[i]++;
               }
-              else
-              if (order[move[i]] == 0) {
-                  dist[i] += 1;
-                  risk[i] -= 1;
-              }
-              else
-              if (order[move[i]] == 1) {
-                  dist[i] += 2;
-              }
-              else
-              if (order[move[i]] == 2) {
-                  dist[i] += 2;
-                  risk[i] += 1;
-              }
               else {
-                  dist[i] += 3;
-                  risk[i] += 2;
+                  const int8_t index = (order >> (move[i] << 1)) & 3;
+                  
+                  dist[i] += 2;
+  
+                  if (index == 0) {
+                      dist[i]--;
+                      risk[i]--;
+                  }
+                  else
+                  if (index == 2) {
+                      risk[i]++;
+                  }
+                  else
+                  if (index == 3) {
+                      dist[i]++;
+                      risk[i] += 2;
+                  }
               }
           }
-          
+  
           if (risk[0] >= 0 &&
               (dist[0] % 10 == dist[1] % 10 ||
-               dist[0] % 10 == dist[2] % 10)) {
+              dist[0] % 10 == dist[2] % 10)) {
               risk[0] += 2;
           }
   
@@ -366,32 +428,16 @@
               }
           }
   
-          if (turns_left == 0) {
-              for (int i = 0; i < 3; i++) {
-                  if (dist[i] >= dist[(i + 1) % 3] && dist[i] >= dist[(i + 2) % 3]) {
-                      places[i] = 3;
-                  }
-                  else
-                  if (dist[i] < dist[(i + 1) % 3] && dist[i] < dist[(i + 2) % 3]) {
-                      places[i] = 0;
-                  }
-                  else {
-                      places[i] = 1;
-                  }
-              }
-  
+          if (turns_left == 0 /*|| turns_done == 10*/) {
               end = true;
           }
           else {
+              // turns_done++;
               turns_left--;
   
-              // new order
-              std::swap(order[3], order[fast_rand() % 4]);
-              std::swap(order[2], order[fast_rand() % 3]);
-              std::swap(order[1], order[fast_rand() % 2]);
+              order = all_permutations[fast_rand() % 24];
           }
       }
-  
   };
   
   #endif // ROLLER_SPEED_SKATING
@@ -409,8 +455,6 @@
       uint8_t score[3];
       int8_t combo[3];
   
-      int8_t places[3];
-  
       bool end;
   
       void debug() const {
@@ -425,7 +469,22 @@
           }
       }
   
-      void play(const int8_t* move) {
+      void generate_places(int8_t* places) const {
+          for (int i = 0; i < 3; i++) {
+              if (score[i] >= score[(i + 1) % 3] && score[i] >= score[(i + 2) % 3]) {
+                  places[i] = 3;
+              }
+              else
+              if (score[i] < score[(i + 1) % 3] && score[i] < score[(i + 2) % 3]) {
+                  places[i] = 0;
+              }
+              else {
+                  places[i] = 1;
+              }
+          }
+      }
+  
+      inline void play(const int8_t* move) {
           if (end) {
               return;
           }
@@ -442,32 +501,11 @@
   
           if (goals_left == 1) {
               end = true;
-  
-              for (int i = 0; i < 3; i++) {
-                  if (score[i] >= score[(i + 1) % 3] && score[i] >= score[(i + 2) % 3]) {
-                      places[i] = 3;
-                  }
-                  else
-                  if (score[i] < score[(i + 1) % 3] && score[i] < score[(i + 2) % 3]) {
-                      places[i] = 0;
-                  }
-                  else {
-                      places[i] = 1;
-                  }
-              }
           }
           else {
               goal >>= 2;
               goals_left--;
           }
-      }
-  
-      bool proven_win(int p_idx) const {
-          return false;
-      }
-  
-      bool proven_lost(int p_idx) const {
-          return false;
       }
   };
   
@@ -494,32 +532,70 @@
      Diving diving;
      uint8_t diving_score[3];
  
+     int turn;
+ 
      bool is_terminal() const {
-         return hurdle_race.end &&
-                archery.end &&
-                roller_skating.end &&
-                diving.end;
+         return (hurdle_race.end &&
+                 archery.end &&
+                 roller_skating.end &&
+                 diving.end) ||
+                turn >= 100;
      }
  
      // return how much does a player earn from games
      void get_stats(float& r0, float& r1, float& r2) {
  
-         for (int i = 0; i < 3; i++) {
-             hurdle_race_score[i] += hurdle_race.places[i];
-             archery_score[i] += archery.places[i];
-             roller_skating_score[i] += roller_skating.places[i];
-             diving_score[i] += diving.places[i];
+         int8_t places[3];
+ 
+         if (hurdle_race.end) {
+             hurdle_race.generate_places(places);
+             for (int i = 0; i < 3; i++) {
+                 hurdle_race_score[i] += places[i];
+             }
+         }
+ 
+         if (archery.end) {
+             archery.generate_places(places);
+             for (int i = 0; i < 3; i++) {
+                 archery_score[i] += places[i];
+             }
+         }
+ 
+         if (roller_skating.end) {
+             roller_skating.generate_places(places);
+             for (int i = 0; i < 3; i++) {
+                 roller_skating_score[i] += places[i];
+             }
+         }
+ 
+         if (diving.end) {
+             diving.generate_places(places);
+             for (int i = 0; i < 3; i++) {
+                 diving_score[i] += places[i];
+             }
          }
  
          int score0 = std::max<int>(1, hurdle_race_score[0]) * std::max<int>(1, archery_score[0]) * std::max<int>(1, roller_skating_score[0]) * std::max<int>(1, diving_score[0]);
          int score1 = std::max<int>(1, hurdle_race_score[1]) * std::max<int>(1, archery_score[1]) * std::max<int>(1, roller_skating_score[1]) * std::max<int>(1, diving_score[1]);
          int score2 = std::max<int>(1, hurdle_race_score[2]) * std::max<int>(1, archery_score[2]) * std::max<int>(1, roller_skating_score[2]) * std::max<int>(1, diving_score[2]);
  
+         // maybe change the enemy to win with him?
+         // get some values from gameplay? (with whom likely to win at the end)
          int sum = score0 + score1 + score2;
  
          r0 = (float) (score0 - score1 - score2) / sum;
          r1 = (float) (score1 - score0 - score2) / sum;
          r2 = (float) (score2 - score0 - score1) / sum;
+ 
+         // float score0 = std::max<float>(1, hurdle_race_score[0]) * std::max<float>(0.95, archery_score[0]) * std::max<float>(0.93, roller_skating_score[0]) * std::max<float>(1, diving_score[0]);
+         // float score1 = std::max<float>(1, hurdle_race_score[1]) * std::max<float>(0.95, archery_score[1]) * std::max<float>(0.93, roller_skating_score[1]) * std::max<float>(1, diving_score[1]);
+         // float score2 = std::max<float>(1, hurdle_race_score[2]) * std::max<float>(0.95, archery_score[2]) * std::max<float>(0.93, roller_skating_score[2]) * std::max<float>(1, diving_score[2]);
+ 
+         // float sum = score0 + score1 + score2;
+ 
+         // r0 = (float) (score0 - score1 - score2) / sum;
+         // r1 = (float) (score1 - score0 - score2) / sum;
+         // r2 = (float) (score2 - score0 - score1) / sum;
      }
  
      void init(const std::vector<std::string>& gpu,
@@ -539,7 +615,6 @@
              for (int i = 0; i < 3; i++) {
                  hurdle_race.pos[i] = reg[0][i];
                  hurdle_race.stun[i] = reg[0][i + 3];
-                 hurdle_race.places[i] = -1;
              }
  
              hurdle_race.end = false;
@@ -558,7 +633,6 @@
              for (int i = 0; i < 3; i++) {
                  archery.x[i] = reg[1][2 * i + 0];
                  archery.y[i] = reg[1][2 * i + 1];
-                 archery.places[i] = -1;
              }
  
              archery.end = false;
@@ -568,8 +642,9 @@
              roller_skating.end = true;
          }
          else { // roller_skating
+             roller_skating.order = 0;
              for (int i = 0; i < 4; i++) {
-                 roller_skating.order[to_move_index(gpu[2][i])] = i;
+                 roller_skating.order |= uint8_t(i) << (to_move_index(gpu[2][i]) << 1);
              }
  
              for (int i = 0; i < 3; i++) {
@@ -578,6 +653,7 @@
              }
  
              roller_skating.turns_left = reg[2][6];
+             // roller_skating.turns_done = 0;
  
              roller_skating.end = false;
          }
@@ -596,7 +672,6 @@
              for (int i = 0; i < 3; i++) {
                  diving.score[i] = reg[3][i];
                  diving.combo[i] = reg[3][i + 3];
-                 diving.places[i] = -1;
              }
  
              diving.end = false;
@@ -610,6 +685,7 @@
          archery.play(move);
          roller_skating.play(move);
          diving.play(move);
+         turn++;
      }
  
      void debug() const {
@@ -673,10 +749,9 @@
  
      unsigned node_vis;
  
-     void init(const uint8_t& _last_moves) {
+     inline void init(const uint8_t& _last_moves) {
          last_moves = _last_moves;
          first_son = -1;
-         node_vis = 0;
  
          for (int i = 0; i < 3; i++) {
              for (int j = 0; j < 4; j++) {
@@ -686,10 +761,10 @@
          }
      }
  
-     void expand() {
+     inline void expand() {
          first_son = last_node;
          for (uint8_t moves = 0; moves < 64; moves++) {
-             pool[last_node++].init(moves);
+             pool[last_node++].node_vis = 0;
          }
      }
  
@@ -709,18 +784,20 @@
          return best_move;
      }
  
-     int select_per_player(int player_idx) const {
-         float best_score = -INF;
-         int best_move = -1;
-         
-         float log_node_vis = std::log(node_vis);
-         for (int move = 0; move < 4; move++) {
+     inline int8_t select_per_player(int player_idx) const {
+         for (int8_t move = 0; move < 4; move++) {
              if (vis[player_idx][move] == 0) {
                  return move;
              }
+         }
  
-             float node_score = avg[player_idx][move] + C * std::sqrt(log_node_vis / vis[player_idx][move]);
+         float best_score = -INF;
+         int8_t best_move = -1;
          
+         float log_node_vis = std::log(node_vis);
+         for (int8_t move = 0; move < 4; move++) {
+             float node_score = avg[player_idx][move] + C * std::sqrt(log_node_vis / vis[player_idx][move]);
+ 
              if (best_score < node_score) {
                  best_score = node_score;
                  best_move = move;
@@ -730,16 +807,24 @@
          return best_move;
      }
  
-     MCTSNode* select() const {
-         return &pool[first_son + select_per_player(0) * 1
-                                + select_per_player(1) * 4
-                                + select_per_player(2) * 16];
+     inline MCTSNode* select() const {
+         const uint8_t moves = (select_per_player(0) << 0) |
+                               (select_per_player(1) << 2) |
+                               (select_per_player(2) << 4);
+ 
+         MCTSNode* node = &pool[first_son + moves];
+ 
+         if (node->node_vis == 0) {
+             node->init(moves);
+         }
+ 
+         return node;
      }
  
-     void apply(uint8_t moves, float r0, float r1, float r2) {
-         int m0 = (moves >> 0) & 3;
-         int m1 = (moves >> 2) & 3;
-         int m2 = (moves >> 4) & 3;
+     inline void apply(uint8_t moves, float r0, float r1, float r2) {
+         uint8_t m0 = (moves >> 0) & 3;
+         uint8_t m1 = (moves >> 2) & 3;
+         uint8_t m2 = (moves >> 4) & 3;
  
          avg[0][m0] *= vis[0][m0];
          avg[0][m0] += r0;
@@ -777,22 +862,20 @@
  struct MCTS {
      MCTSNode* root;
  
-     void rollout(State& state, float& r0, float& r1, float& r2) {
-         do {
-             state.play(fast_rand() & 3, fast_rand() & 3, fast_rand() & 3);
-         } while (!state.is_terminal());
- 
-         state.get_stats(r0, r1, r2);
-     }
- 
      void mcts(MCTSNode* node, State& state, float& r0, float& r1, float& r2) {
+         
          if (state.is_terminal()) {
              state.get_stats(r0, r1, r2);
              return;
          }
  
          if (node->node_vis == 0) {
-             rollout(state, r0, r1, r2);
+             do {
+                 uint8_t moves = fast_rand();
+                 state.play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
+             } while (!state.is_terminal());
+ 
+             state.get_stats(r0, r1, r2);
              node->node_vis++;
              return;
          }
@@ -803,19 +886,21 @@
  
          MCTSNode* child = node->select();
  
-         state.play((child->last_moves >> 0) & 3, 
+         state.play((child->last_moves >> 0) & 3,
                     (child->last_moves >> 2) & 3,
                     (child->last_moves >> 4) & 3);
- 
+         
          mcts(child, state, r0, r1, r2);
  
          node->apply(child->last_moves, r0, r1, r2);
      }
  
-     void reset() {
+     inline void reset() {
          MCTSNode::last_node = 0;
-         MCTSNode::pool[MCTSNode::last_node].init(0);
          root = &MCTSNode::pool[MCTSNode::last_node];
+         root->node_vis = 0;
+         root->init(0);
+ 
          MCTSNode::last_node++;
      }
  
@@ -823,15 +908,12 @@
          return root->best_move_per_player(player_idx);
      }
  
-     void debug() {
+     void debug() const {
          root->debug();
      }
  
      void run(const State& root_state, int timeout) {
          reset();
- 
-         // root_state.debug();
-         // return;
  
          do {
              State state = root_state;
@@ -869,9 +951,9 @@ int main() {
     for (TURN = 0; ; TURN++) {
         State current_state;
         
+        int final_score[3];
         for (int i = 0; i < 3; i++) {
-            int final_score;
-            std::cin >> final_score;
+            std::cin >> final_score[i];
 
             {
                 int gold, silver, bronze;
@@ -922,11 +1004,20 @@ int main() {
 
         std::cerr << "MCTS START\n";
 
+        current_state.turn = TURN;
+
 #ifdef PSYLEAGUE
         mcts.run(current_state, 45);
 #else
-        mcts.run(current_state, (TURN == 0 ? 950 : 45));
+        mcts.run(current_state, (TURN == 0 ? 500 : 45));
 #endif // PSYLEAGUE
+
+        /*
+        if i'm lossing -> attack the lowest link
+        if i'm winning -> maximize the gap between me and second place
+        if i'm second ->
+        
+        */
 
         mcts.debug();
         std::cerr << "timer: " << timer.get_elapsed() << '\n';
@@ -941,7 +1032,9 @@ int main() {
 
         std::cout << move_list[move] << std::endl;
 
-        // return 0;
+        // if (TURN == 1) {
+        //     return 0;
+        // }
     }
 
 }
