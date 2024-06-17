@@ -7,6 +7,7 @@
     #pragma GCC target("avx,avx2,f16c,fma,sse3,ssse3,sse4.1,sse4.2")
 #endif // LOCAL
 
+#include "const.hpp"
 #include "state.hpp"
 // #include "search.hpp"
 #include "mcts.hpp"
@@ -16,7 +17,6 @@
 #include <vector>
 
 int TURN;
-int PLAYER_IDX;
 int NB_GAMES;
 
 int main() {

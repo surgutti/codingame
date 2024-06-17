@@ -179,27 +179,48 @@ struct Archery {
     inline bool playable(const int8_t player_idx) const {
         // too little enchancement to hope for early win
 
-        // const int8_t enemy1_idx = (player_idx + 1) % 3;
-        // const int8_t enemy2_idx = (player_idx + 2) % 3;
+        const int8_t enemy1_idx = (player_idx + 1) % 3;
+        const int8_t enemy2_idx = (player_idx + 2) % 3;
 
-        // if (pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
-        //     dp[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20] &&
-        //     pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
-        //     dp[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20]) {
-        //     return false; // inevitable win
-        // }
+        if (pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
+            dp[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20] &&
 
-        // if (dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
-        //     pd[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20] &&
-        //     dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
-        //     pd[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20]) {
-        //     return false; // inevitable lost
-        // }
+            pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
+            dp[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20]) {
+            return false; // inevitable 1st place
+        }
+
+        if (dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
+            pd[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20] &&
+            
+            dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
+            pd[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20]) {
+            return false; // inevitable 3rd place
+        }
+
+        if (pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
+            dp[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20] &&
+
+            dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
+            pd[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20]) {
+            return false; // inevitable 2nd place
+        }
+
+        if (pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
+            dp[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20] &&
+            
+            dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
+            pd[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20]) {
+            return false; // inevitable 2nd place
+        }
 
         return true;
     }
 
     inline uint8_t greedy_moves(const int8_t player_idx) const {
+        if (end)
+            return 0;
+        
         return dp_opt[wind_index][x[player_idx] + 20][y[player_idx] + 20];
     }
 };

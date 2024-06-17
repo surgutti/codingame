@@ -19,6 +19,7 @@ struct MCTSNode {
     uint8_t last_moves;
 
     float avg[3][4];
+    float var[3][4];
     unsigned vis[3][4];
 
     unsigned node_vis;
@@ -30,6 +31,7 @@ struct MCTSNode {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
                 avg[i][j] = 0;
+                var[i][j] = 0;
                 vis[i][j] = 0;
             }
         }
@@ -68,13 +70,16 @@ struct MCTSNode {
         float best_score = -INF;
         int8_t best_move = -1;
         
-        float sqrt_log_node_vis = C * fastsqrtf(fastlogf(node_vis));
-        float log_node_vis = std::log(node_vis);
+        float sqrt_log_node_vis = fastsqrtf(fastlogf(node_vis));
         for (int8_t move = 0; move < 4; move++) {
-            float node_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]); // C * std::sqrt(log_node_vis / vis[player_idx][move]);
+            float reward_variance = var[player_idx][move] / vis[player_idx][move];
+            float variance_term = reward_variance + fastsqrtf(2 * fastlogf(node_vis) / vis[player_idx][move]);
+            float ucb_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]) * std::min(0.25f, variance_term);
 
-            if (best_score < node_score) {
-                best_score = node_score;
+            // float ucb_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]); // C * std::sqrt(log_node_vis / vis[player_idx][move]);
+
+            if (best_score < ucb_score) {
+                best_score = ucb_score;
                 best_move = move;
             }
         }
@@ -96,25 +101,25 @@ struct MCTSNode {
         return node;
     }
 
+    inline void apply_per_player(int player_idx, uint8_t move, float reward) {
+        float delta = reward - avg[player_idx][move];
+
+        avg[player_idx][move] *= vis[player_idx][move];
+        avg[player_idx][move] += reward;
+        vis[player_idx][move] += 1;
+        avg[player_idx][move] /= vis[player_idx][move];
+
+        var[player_idx][move] += delta * (reward - avg[player_idx][move]);
+    }
+
     inline void apply(uint8_t moves, float r0, float r1, float r2) {
         uint8_t m0 = (moves >> 0) & 3;
         uint8_t m1 = (moves >> 2) & 3;
         uint8_t m2 = (moves >> 4) & 3;
 
-        avg[0][m0] *= vis[0][m0];
-        avg[0][m0] += r0;
-        vis[0][m0] += 1;
-        avg[0][m0] /= vis[0][m0];
-
-        avg[1][m1] *= vis[1][m1];
-        avg[1][m1] += r1;
-        vis[1][m1] += 1;
-        avg[1][m1] /= vis[1][m1];
-
-        avg[2][m2] *= vis[2][m2];
-        avg[2][m2] += r2;
-        vis[2][m2] += 1;
-        avg[2][m2] /= vis[2][m2];
+        apply_per_player(0, m0, r0);
+        apply_per_player(1, m1, r1);
+        apply_per_player(2, m2, r2);
 
         node_vis += 1;
     }
@@ -124,7 +129,7 @@ struct MCTSNode {
         for (int i = 0; i < 3; i++) {
             std::cerr << "PLAYER: " << i << '\n';
             for (int move = 0; move < 4; move++) {
-                std::cerr << avg[i][move] << '/' << vis[i][move] << ' ';
+                std::cerr << avg[i][move] << '/' << vis[i][move] << "(" << var[i][move] << ") ";
             }
             std::cerr << '\n';
         }
@@ -146,6 +151,7 @@ struct MCTS {
 
         if (node->node_vis == 0) {
             do {
+                // maybe only once play greedy move? then just random (for sake of optimization)
                 // if (state.still_playing()) {
                 //     state.play_greedy();
                 // }

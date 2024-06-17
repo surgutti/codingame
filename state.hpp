@@ -84,6 +84,19 @@ struct State {
         r1 = (float) (score1 - score0 - score2) / sum; // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
         r2 = (float) (score2 - score0 - score1) / sum; // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
 
+        // losing -> attack the weakest link (secret strategy: dont care about the winning guy)
+        // if (PLAYER_IDX == 0 && score0 < score1 && score0 < score2) {
+        //     r0 = (float) (score0 - std::min(score1, score2)) / (score0 + std::min(score1, score2));
+        // }
+        // else
+        // if (PLAYER_IDX == 1 && score1 < score0 && score1 < score2) {
+        //     r1 = (float) (score1 - std::min(score0, score2)) / (score1 + std::min(score0, score2));
+        // }
+        // else
+        // if (PLAYER_IDX == 2 && score2 < score0 && score2 < score1) {
+        //     r2 = (float) (score2 - std::min(score0, score1)) / (score2 + std::min(score0, score1));
+        // }
+
         // float score0 = std::max<float>(1, hurdle_race_score[0]) * std::max<float>(0.95, archery_score[0]) * std::max<float>(0.93, roller_skating_score[0]) * std::max<float>(1, diving_score[0]);
         // float score1 = std::max<float>(1, hurdle_race_score[1]) * std::max<float>(0.95, archery_score[1]) * std::max<float>(0.93, roller_skating_score[1]) * std::max<float>(1, diving_score[1]);
         // float score2 = std::max<float>(1, hurdle_race_score[2]) * std::max<float>(0.95, archery_score[2]) * std::max<float>(0.93, roller_skating_score[2]) * std::max<float>(1, diving_score[2]);
@@ -117,6 +130,12 @@ struct State {
             hurdle_race.end = false;
 
             hurdle_race.build_dp();
+            
+            if (!hurdle_race.playable(0) &&
+                !hurdle_race.playable(1) &&
+                !hurdle_race.playable(2)) {    
+                hurdle_race.end = true;
+            }
         }
 
         if (gpu[1] == "GAME_OVER") {
@@ -137,6 +156,12 @@ struct State {
             archery.end = false;
 
             archery.build_dp();
+
+            if (!archery.playable(0) &&
+                !archery.playable(1) &&
+                !archery.playable(2)) {
+                archery.end = true;
+            }
         }
 
         if (gpu[2] == "GAME_OVER") {
@@ -157,6 +182,12 @@ struct State {
             // roller_skating.turns_done = 0;
 
             roller_skating.end = false;
+
+            if (!roller_skating.playable(0) &&
+                !roller_skating.playable(1) &&
+                !roller_skating.playable(2)) {
+                roller_skating.end = true;
+            }
         }
 
         if (gpu[3] == "GAME_OVER") {
@@ -176,6 +207,12 @@ struct State {
             }
 
             diving.end = false;
+            
+            if (!diving.playable(0) &&
+                !diving.playable(1) &&
+                !diving.playable(2)) {
+                diving.end = true;
+            }
         }
     }
     
@@ -189,76 +226,96 @@ struct State {
     inline void greedy_moves(int8_t* move) const {
         for (int i = 0; i < 3; i++) {
 
-            // std::cerr << "player: " << i << '\n';
+            uint8_t moves = hurdle_race.greedy_moves(i) |
+                            archery.greedy_moves(i) |
+                            roller_skating.greedy_moves(i) |
+                            diving.greedy_moves(i) | 
+                            (uint8_t(1) << (fast_rand() & 3));
+            
+            uint8_t order = all_permutations[fast_rand() % 24];
 
-            int eval[4] = {0, 0, 0, 0};
-
-            if (hurdle_race.playable(i)) {
-                uint8_t good_moves = hurdle_race.greedy_moves(i);
-                for (int j = 0; j < 4; j++) {
-                    if (good_moves & (1 << j)) {
-                        eval[j] += int(archery_score[i]) * roller_skating_score[i] * diving_score[i] + 1;
-                    }
-                }
-            }
-            // else {
-            //     std::cerr << "hurdles useless\n";
-            // }
-
-            if (archery.playable(i)) {
-                uint8_t good_moves = archery.greedy_moves(i);
-                for (int j = 0; j < 4; j++) {
-                    if (good_moves & (1 << j)) {
-                        eval[j] += int(hurdle_race_score[i]) * roller_skating_score[i] * diving_score[i] + 1;
-                    }
-                }
-            }
-            // else {
-            //     std::cerr << "archery useless\n";
-            // }
-
-            if (roller_skating.playable(i)) {
-                uint8_t good_moves = roller_skating.greedy_moves(i);
-                for (int j = 0; j < 4; j++) {
-                    if (good_moves & (1 << j)) {
-                        eval[j] += int(hurdle_race_score[i]) * archery_score[i] * diving_score[i] + 1;
-                    }
-                }
-            }
-            // else {
-            //     std::cerr << "skating useless\n";
-            // }
-
-            if (diving.playable(i)) {
-                uint8_t good_moves = diving.greedy_moves(i);
-                for (int j = 0; j < 4; j++) {
-                    if (good_moves & (1 << j)) {
-                        eval[j] += int(hurdle_race_score[i]) * archery_score[i] * roller_skating_score[i] + 1;
-                    }
-                }
-            }
-            // else {
-            //     std::cerr << "diving useless\n";
-            // }
-
-            // std::cerr << "eval: ";
-            // for (int j = 0; j < 4; j++) {
-                // std::cerr << int(eval[j]) << ' ';
-            // }
-            // std::cerr << '\n';
-
-            int best_score = -1;
+            move[i] = -1;
             for (int j = 0; j < 4; j++) {
-                if (best_score < eval[j]) {
-                    best_score = eval[j];
+                if ((moves >> (order & 3)) & 1) {
                     move[i] = j;
+                    break;
                 }
-                else
-                if (best_score == eval[j] && fast_rand() & 1) {
-                    best_score = eval[j];
-                    move[i] = j;
-                }
+
+                order >>= 2;
             }
+
+            // assert(0 <= move[i] && move[i] <= 3);
+
+            // // std::cerr << "player: " << i << '\n';
+
+            // int eval[4] = {0, 0, 0, 0};
+
+            // if (hurdle_race.playable(i)) {
+            //     uint8_t good_moves = hurdle_race.greedy_moves(i);
+            //     for (int j = 0; j < 4; j++) {
+            //         if (good_moves & (1 << j)) {
+            //             eval[j] += int(archery_score[i]) * roller_skating_score[i] * diving_score[i] + 1;
+            //         }
+            //     }
+            // }
+            // // else {
+            // //     std::cerr << "hurdles useless\n";
+            // // }
+
+            // if (archery.playable(i)) {
+            //     uint8_t good_moves = archery.greedy_moves(i);
+            //     for (int j = 0; j < 4; j++) {
+            //         if (good_moves & (1 << j)) {
+            //             eval[j] += int(hurdle_race_score[i]) * roller_skating_score[i] * diving_score[i] + 1;
+            //         }
+            //     }
+            // }
+            // // else {
+            // //     std::cerr << "archery useless\n";
+            // // }
+
+            // if (roller_skating.playable(i)) {
+            //     uint8_t good_moves = roller_skating.greedy_moves(i);
+            //     for (int j = 0; j < 4; j++) {
+            //         if (good_moves & (1 << j)) {
+            //             eval[j] += int(hurdle_race_score[i]) * archery_score[i] * diving_score[i] + 1;
+            //         }
+            //     }
+            // }
+            // // else {
+            // //     std::cerr << "skating useless\n";
+            // // }
+
+            // if (diving.playable(i)) {
+            //     uint8_t good_moves = diving.greedy_moves(i);
+            //     for (int j = 0; j < 4; j++) {
+            //         if (good_moves & (1 << j)) {
+            //             eval[j] += int(hurdle_race_score[i]) * archery_score[i] * roller_skating_score[i] + 1;
+            //         }
+            //     }
+            // }
+            // // else {
+            // //     std::cerr << "diving useless\n";
+            // // }
+
+            // // std::cerr << "eval: ";
+            // // for (int j = 0; j < 4; j++) {
+            //     // std::cerr << int(eval[j]) << ' ';
+            // // }
+            // // std::cerr << '\n';
+
+            // int best_score = -1;
+            // for (int j = 0; j < 4; j++) {
+            //     if (best_score < eval[j]) {
+            //         best_score = eval[j];
+            //         move[i] = j;
+            //     }
+            //     else
+            //     if (best_score == eval[j] && fast_rand() & 1) {
+            //         best_score = eval[j];
+            //         move[i] = j;
+            //     }
+            // }
         }
     }
 

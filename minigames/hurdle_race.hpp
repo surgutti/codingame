@@ -214,31 +214,54 @@ struct HurdleRace {
     }
 
     inline bool playable(const int8_t player_idx) const {
-        if (stun[player_idx]) {
-            return false;
-        }
+        // if (stun[player_idx]) {
+        //     return false;
+        // }
 
         const int8_t enemy1_idx = (player_idx + 1) % 3;
         const int8_t enemy2_idx = (player_idx + 2) % 3;
 
         if (pd[pos[player_idx]] + stun[player_idx] <=
             dp[pos[enemy1_idx]] + stun[enemy1_idx] &&
+            
             pd[pos[player_idx]] + stun[player_idx] <=
             dp[pos[enemy2_idx]] + stun[enemy2_idx]) {
-            return false; // inevitable win
+            return false; // inevitable 1st place
         }
 
         if (dp[pos[player_idx]] + stun[player_idx] >
             pd[pos[enemy1_idx]] + stun[enemy1_idx] &&
+
             dp[pos[player_idx]] + stun[player_idx] >
             pd[pos[enemy2_idx]] + stun[enemy2_idx]) {
-            return false; // inevitable lost
+            return false; // inevitable 3rd place
+        }
+
+        // ranking: <enemy1> <player> <enemy2>
+        if (dp[pos[player_idx]] + stun[player_idx] >
+            pd[pos[enemy1_idx]] + stun[enemy1_idx] &&
+            
+            pd[pos[player_idx]] + stun[player_idx] <=
+            dp[pos[enemy2_idx]] + stun[enemy2_idx]) {
+            return false; // inevitable 2nd place
+        }
+
+        // ranking: <enemy2> <player> <enemy1>
+        if (dp[pos[player_idx]] + stun[player_idx] >
+            pd[pos[enemy2_idx]] + stun[enemy2_idx] &&
+            
+            pd[pos[player_idx]] + stun[player_idx] <=
+            dp[pos[enemy1_idx]] + stun[enemy1_idx]) {
+            return false; // inevitable 2nd place
         }
 
         return true;
     }
 
     inline uint8_t greedy_moves(const int8_t player_idx) const {
+        if (end || stun[player_idx])
+            return 0;
+
         return dp_opt[pos[player_idx]];
     }
 };

@@ -108,7 +108,7 @@ struct RollerSkating {
         std::cerr << '\n';
     }
 
-    void generate_places(int8_t* places) {
+    inline void generate_places(int8_t* places) {
         for (int i = 0; i < 3; i++) {
             if (dist[i] >= dist[(i + 1) % 3] && dist[i] >= dist[(i + 2) % 3]) {
                 places[i] = 3;
@@ -157,21 +157,19 @@ struct RollerSkating {
             }
         }
 
-        if (risk[0] >= 0 &&
-            (dist[0] % 10 == dist[1] % 10 ||
-            dist[0] % 10 == dist[2] % 10)) {
+        const int8_t d0 = dist[0] % 10;
+        const int8_t d1 = dist[1] % 10;
+        const int8_t d2 = dist[2] % 10;
+
+        if (risk[0] >= 0 && (d0 == d1 || d0 == d2)) {
             risk[0] += 2;
         }
 
-        if (risk[1] >= 0 &&
-            (dist[1] % 10 == dist[0] % 10 ||
-            dist[1] % 10 == dist[2] % 10)) {
+        if (risk[1] >= 0 && (d1 == d0 || d1 == d2)) {
             risk[1] += 2;
         }
 
-        if (risk[2] >= 0 &&
-            (dist[2] % 10 == dist[0] % 10 ||
-            dist[2] % 10 == dist[1] % 10)) {
+        if (risk[2] >= 0 && (d2 == d0 || d2 == d1)) {
             risk[2] += 2;
         }
 
@@ -197,11 +195,14 @@ struct RollerSkating {
     }
 
     inline bool playable(const int8_t player_idx) const {
-        return risk[player_idx] >= 0;
+        return true; // return risk[player_idx] >= 0;
     }
 
     // maybe if for not being stun'ed
     inline uint8_t greedy_moves(const int8_t player_idx) const {
+        if (end || risk[player_idx] < 0)
+            return 0;
+
         // std::cerr << "order: " << int(order) << ' ' << int(risk[player_idx]) << '\n';
         if (risk[player_idx] + 2 < 5) {
             // std::cerr << "take risk\n";
