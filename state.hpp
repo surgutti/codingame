@@ -87,16 +87,35 @@ struct State {
 
         // if (turn == 100) {
         //     // if simulated to the end of the game, just get the current leaderboard
-        //     r0 = (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
-        //     r1 = (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
-        //     r2 = (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
+
         // }
         // else {
             // assuming that opponents are litle against me
-        r0 = (float) (2 * score0 - score1 - score2) / (2 * score0 + score1 + score2); // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
-        r1 = (float) (2 * score1 - score0 - score2) / (2 * score1 + score0 + score2); // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
-        r2 = (float) (2 * score2 - score0 - score1) / (2 * score2 + score0 + score1); // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
+        r0 = (float) (COEFFICIENT1 * score0 - score1 - score2) / (COEFFICIENT1 * score0 + score1 + score2); // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
+        r1 = (float) (COEFFICIENT1 * score1 - score0 - score2) / (COEFFICIENT1 * score1 + score0 + score2); // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
+        r2 = (float) (COEFFICIENT1 * score2 - score0 - score1) / (COEFFICIENT1 * score2 + score0 + score1); // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
         
+        r0 += COEFFICIENT2 * ((score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2));
+        r1 += COEFFICIENT2 * ((score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2));
+        r2 += COEFFICIENT2 * ((score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1));
+
+        r0 += COEFFICIENT2 * (hurdle_race_score[0] - hurdle_race_score[1] - hurdle_race_score[2]);
+        r1 += COEFFICIENT2 * (hurdle_race_score[1] - hurdle_race_score[0] - hurdle_race_score[2]);
+        r2 += COEFFICIENT2 * (hurdle_race_score[2] - hurdle_race_score[0] - hurdle_race_score[1]);
+
+        r0 += COEFFICIENT2 * (archery_score[0] - archery_score[1] - archery_score[2]);
+        r1 += COEFFICIENT2 * (archery_score[1] - archery_score[0] - archery_score[2]);
+        r2 += COEFFICIENT2 * (archery_score[2] - archery_score[0] - archery_score[1]);
+
+        r0 += COEFFICIENT2 * (roller_skating_score[0] - roller_skating_score[1] - roller_skating_score[2]);
+        r1 += COEFFICIENT2 * (roller_skating_score[1] - roller_skating_score[0] - roller_skating_score[2]);
+        r2 += COEFFICIENT2 * (roller_skating_score[2] - roller_skating_score[0] - roller_skating_score[1]);
+
+        r0 += COEFFICIENT2 * (diving_score[0] - diving_score[1] - diving_score[2]);
+        r1 += COEFFICIENT2 * (diving_score[1] - diving_score[0] - diving_score[2]);
+        r2 += COEFFICIENT2 * (diving_score[2] - diving_score[0] - diving_score[1]);
+        
+
         //     if (PLAYER_IDX == 0) {
         //         r0 = (float) (score0 - score1 - score2) / sum; // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
         //         r1 = (float) (score1 - 2 * score0 - score2) / sum; // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
