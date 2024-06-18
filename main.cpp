@@ -21,7 +21,8 @@ int NB_GAMES;
 
 int main() {
     
-    std::cerr << sizeof(State) << '\n';
+    std::cerr << "MCTSNode: " << sizeof(MCTSNode) << '\n';
+    std::cerr << "State: " << sizeof(State) << '\n';
 
     std::cin >> PLAYER_IDX;
     std::cin.ignore();
@@ -97,6 +98,15 @@ int main() {
         mcts.run(current_state, (TURN == 0 ? 950 : 45));
         mcts.debug();
 #endif // PSYLEAGUE
+
+        // timer.start();
+
+        // for (int i = 0; i < MCTSNode::last_node; i++) {
+        //     for (int k = 0; k < 3; k++)
+        //         for (int j = 0; j < 4; j++)
+        //             MCTSNode::pool[i].vis[k][j] >>= 1;
+        //     MCTSNode::pool[i].node_vis >>= 1;
+        // }
 
         /*
         if i'm lossing -> attack the lowest link

@@ -18,7 +18,7 @@
  const int ARCHERY_LENGTH = 12 + 3; // 12 + random.nextInt(4);
  const int DIVING_LENGTH = 12 + 3; // 12 + random.nextInt(4);
  
- const int MCTSNODE_POOL = 6'000'000;
+ const int MCTSNODE_POOL = 4'000'000;
  
  // TODO: run psyleague with different C values
  const float C = 0.4f;
@@ -124,38 +124,18 @@
           }
       }
   
-      inline void generate_places(int8_t* places) const {
-          if (pos[0] >= TRACK_LENGTH - 1) {
-              places[0] = 3;
-          }
-          else
-          if (pos[0] < pos[1] && pos[0] < pos[2]) {
-              places[0] = 0;
-          }
-          else {
-              places[0] = 1;
-          }
-  
-          if (pos[1] >= TRACK_LENGTH - 1) {
-              places[1] = 3;
-          }
-          else
-          if (pos[1] < pos[0] && pos[1] < pos[2]) {
-              places[1] = 0;
-          }
-          else {
-              places[1] = 1;
-          }
-  
-          if (pos[2] >= TRACK_LENGTH - 1) {
-              places[2] = 3;
-          }
-          else
-          if (pos[2] < pos[0] && pos[2] < pos[1]) {
-              places[2] = 0;
-          }
-          else {
-              places[2] = 1;
+      void generate_places(int8_t* places) const {
+          for (int i = 0; i < 3; i++) {
+              if (pos[i] >= TRACK_LENGTH - 1) {
+                  places[i] = 3;
+              }
+              else
+              if (pos[i] < pos[(i + 1) % 3] && pos[i] < pos[(i + 2) % 3]) {
+                  places[i] = 0;
+              }
+              else {
+                  places[i] = 1;
+              }
           }
       }
   
@@ -470,43 +450,23 @@
           end = false;
       }
   
-      inline void generate_places(int8_t* places) const {
-          int16_t score[3];
+      void generate_places(int8_t* places) const {
+          int16_t scores[3];
           for (int i = 0; i < 3; i++) {
-              score[i] = (int16_t) x[i] * x[i] + (int16_t) y[i] * y[i]; 
+              scores[i] = (int16_t) x[i] * x[i] + (int16_t) y[i] * y[i]; 
           }
   
-          if (score[0] <= score[1] && score[0] <= score[2]) {
-              places[0] = 3;
-          }
-          else
-          if (score[0] > score[1] && score[0] > score[2]) {
-              places[0] = 0;
-          }
-          else {
-              places[0] = 1;
-          }
-  
-          if (score[1] <= score[0] && score[1] <= score[2]) {
-              places[1] = 3;
-          }
-          else
-          if (score[1] > score[0] && score[1] > score[2]) {
-              places[1] = 0;
-          }
-          else {
-              places[1] = 1;
-          }
-  
-          if (score[2] <= score[0] && score[2] <= score[1]) {
-              places[2] = 3;
-          }
-          else
-          if (score[2] > score[0] && score[2] > score[1]) {
-              places[2] = 0;
-          }
-          else {
-              places[2] = 1;
+          for (int i = 0; i < 3; i++) {
+              if (scores[i] <= scores[(i + 1) % 3] && scores[i] <= scores[(i + 2) % 3]) {
+                  places[i] = 3;
+              }
+              else
+              if (scores[i] > scores[(i + 1) % 3] && scores[i] > scores[(i + 2) % 3]) {
+                  places[i] = 0;
+              }
+              else {
+                  places[i] = 1;
+              }
           }
       }
   
@@ -724,8 +684,8 @@
       228,
   };
   
-  // const uint8_t second_in_permutation[256] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
-  // const uint8_t last_in_permutation[256] =   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
+  const uint8_t second_in_permutation[256] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
+  const uint8_t last_in_permutation[256] =   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
   
   // void index_in_permtation_init() {
   //     for (int i = 0; i < 24; i++) {
@@ -780,8 +740,7 @@
       int8_t turns_left;
       // int8_t turns_done;
   
-      int8_t dist_div10[3];
-      int8_t dist_mod10[3];
+      int8_t dist[3];
       int8_t risk[3];
   
       uint8_t order;
@@ -791,7 +750,7 @@
       void debug() const {
           std::cerr << "TURNS LEFT: " << int(turns_left) << '\n';
           for (int i = 0; i < 3; i++) {
-              std::cerr << "i: " << i << ' ' << int(dist_div10[i] * 10 + dist_mod10[i]) << ' ' << int(risk[i]) << '\n';
+              std::cerr << "i: " << i << ' ' << int(dist[i]) << ' ' << int(risk[i]) << '\n';
           }
           std::cerr << "order: ";
           for (int i = 0; i < 4; i++) {
@@ -801,40 +760,17 @@
       }
   
       inline void generate_places(int8_t* places) {
-          const int8_t d0 = dist_div10[0] * 10 + dist_mod10[0];
-          const int8_t d1 = dist_div10[1] * 10 + dist_mod10[1];
-          const int8_t d2 = dist_div10[2] * 10 + dist_mod10[2];
-  
-          if (d0 >= d1 && d0 >= d2) {
-              places[0] = 3;
-          }
-          if (d0 < d1 && d0 < d2) {
-              places[0] = 0;
-          }
-          else {
-              places[0] = 1;
-          }
-  
-          if (d1 >= d0 && d1 >= d2) {
-              places[1] = 3;
-          }
-          else
-          if (d1 < d0 && d1 < d2) {
-              places[1] = 0;
-          }
-          else {
-              places[1] = 1;
-          }
-  
-          if (d2 >= d0 && d2 >= d1) {
-              places[2] = 3;
-          }
-          else
-          if (d2 < d0 && d2 < d1) {
-              places[2] = 0;
-          }
-          else {
-              places[2] = 1;
+          for (int i = 0; i < 3; i++) {
+              if (dist[i] >= dist[(i + 1) % 3] && dist[i] >= dist[(i + 2) % 3]) {
+                  places[i] = 3;
+              }
+              else
+              if (dist[i] < dist[(i + 1) % 3] && dist[i] < dist[(i + 2) % 3]) {
+                  places[i] = 0;
+              }
+              else {
+                  places[i] = 1;
+              }
           }
       }
   
@@ -844,8 +780,7 @@
           order = all_permutations[fast_rand() % 24];
   
           for (int i = 0; i < 3; i++) {
-              dist_div10[i] = 0;
-              dist_mod10[i] = 0;
+              dist[i] = 0;
               risk[i] = 0;
           }
   
@@ -868,10 +803,10 @@
               else {
                   const int8_t index = (order >> (move[i] << 1)) & 3;
                   
-                  dist_mod10[i] += 2;
+                  dist[i] += 2;
   
                   if (index == 0) {
-                      dist_mod10[i]--;
+                      dist[i]--;
                       risk[i]--;
                   }
                   else
@@ -880,26 +815,25 @@
                   }
                   else
                   if (index == 3) {
-                      dist_mod10[i]++;
+                      dist[i]++;
                       risk[i] += 2;
-                  }
-  
-                  if (dist_mod10[i] >= 10) {
-                      dist_mod10[i] -= 10;
-                      dist_div10[i]++;
                   }
               }
           }
   
-          if (risk[0] >= 0 && (dist_mod10[0] == dist_mod10[1] || dist_mod10[0] == dist_mod10[2])) {
+          const int8_t d0 = dist[0] % 10;
+          const int8_t d1 = dist[1] % 10;
+          const int8_t d2 = dist[2] % 10;
+  
+          if (risk[0] >= 0 && (d0 == d1 || d0 == d2)) {
               risk[0] += 2;
           }
   
-          if (risk[1] >= 0 && (dist_mod10[1] == dist_mod10[0] || dist_mod10[1] == dist_mod10[2])) {
+          if (risk[1] >= 0 && (d1 == d0 || d1 == d2)) {
               risk[1] += 2;
           }
   
-          if (risk[2] >= 0 && (dist_mod10[2] == dist_mod10[0] || dist_mod10[2] == dist_mod10[1])) {
+          if (risk[2] >= 0 && (d2 == d0 || d2 == d1)) {
               risk[2] += 2;
           }
   
@@ -929,19 +863,19 @@
       }
   
       // maybe if for not being stun'ed
-      // inline uint8_t greedy_moves(const int8_t player_idx) const {
-      //     if (end || risk[player_idx] < 0)
-      //         return 0;
+      inline uint8_t greedy_moves(const int8_t player_idx) const {
+          if (end || risk[player_idx] < 0)
+              return 0;
   
-      //     // std::cerr << "order: " << int(order) << ' ' << int(risk[player_idx]) << '\n';
-      //     if (risk[player_idx] + 2 < 5) {
-      //         // std::cerr << "take risk\n";
-      //         return uint8_t(1) << last_in_permutation[order];
-      //         // return uint8_t(1) << ((order >> (2 * 3)) & 3); // if have risk + 2 < 5 then rush 3
-      //     }
-      //     return uint8_t(1) << second_in_permutation[order];
-      //     // return uint8_t(1) << ((order >> (1 * 2)) & 3); // else go 2
-      // }
+          // std::cerr << "order: " << int(order) << ' ' << int(risk[player_idx]) << '\n';
+          if (risk[player_idx] + 2 < 5) {
+              // std::cerr << "take risk\n";
+              return uint8_t(1) << last_in_permutation[order];
+              // return uint8_t(1) << ((order >> (2 * 3)) & 3); // if have risk + 2 < 5 then rush 3
+          }
+          return uint8_t(1) << second_in_permutation[order];
+          // return uint8_t(1) << ((order >> (1 * 2)) & 3); // else go 2
+      }
   };
   
   #endif // ROLLER_SPEED_SKATING
@@ -973,38 +907,18 @@
           }
       }
   
-      inline void generate_places(int8_t* places) const {
-          if (score[0] >= score[1] && score[0] >= score[2]) {
-              places[0] = 3;
-          }
-          else
-          if (score[0] < score[1] && score[0] < score[2]) {
-              places[0] = 0;
-          }
-          else {
-              places[0] = 1;
-          }
-  
-          if (score[1] >= score[0] && score[1] >= score[2]) {
-              places[1] = 3;
-          }
-          else
-          if (score[1] < score[0] && score[1] < score[2]) {
-              places[1] = 0;
-          }
-          else {
-              places[1] = 1;
-          }
-  
-          if (score[2] >= score[0] && score[2] >= score[1]) {
-              places[2] = 3;
-          }
-          else
-          if (score[2] < score[0] && score[2] < score[1]) {
-              places[2] = 0;
-          }
-          else {
-              places[2] = 1;
+      void generate_places(int8_t* places) const {
+          for (int i = 0; i < 3; i++) {
+              if (score[i] >= score[(i + 1) % 3] && score[i] >= score[(i + 2) % 3]) {
+                  places[i] = 3;
+              }
+              else
+              if (score[i] < score[(i + 1) % 3] && score[i] < score[(i + 2) % 3]) {
+                  places[i] = 0;
+              }
+              else {
+                  places[i] = 1;
+              }
           }
       }
   
@@ -1177,39 +1091,13 @@
  
          // maybe change the enemy to win with him?
          // get some values from gameplay? (with whom likely to win at the end)
-         // int sum = score0 + score1 + score2;
+         int sum = score0 + score1 + score2;
  
          // maybe the place could be weighted after few turns (on the beginning just focus on own scores?)
  
-         // if (turn == 100) {
-         //     // if simulated to the end of the game, just get the current leaderboard
-         //     r0 = (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
-         //     r1 = (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
-         //     r2 = (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
-         // }
-         // else {
-             // assuming that opponents are litle against me
-         r0 = (float) (2 * score0 - score1 - score2) / (2 * score0 + score1 + score2); // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
-         r1 = (float) (2 * score1 - score0 - score2) / (2 * score1 + score0 + score2); // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
-         r2 = (float) (2 * score2 - score0 - score1) / (2 * score2 + score0 + score1); // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
-         
-         //     if (PLAYER_IDX == 0) {
-         //         r0 = (float) (score0 - score1 - score2) / sum; // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
-         //         r1 = (float) (score1 - 2 * score0 - score2) / sum; // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
-         //         r2 = (float) (score2 - 2 * score0 - score1) / sum; // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
-         //     }
-         //     else
-         //     if (PLAYER_IDX == 1) {
-         //         r0 = (float) (score0 - 2 * score1 - score2) / sum; // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
-         //         r1 = (float) (score1 - score0 - score2) / sum; // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
-         //         r2 = (float) (score2 - score0 - 2 * score1) / sum; // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
-         //     }
-         //     else {
-         //         r0 = (float) (score0 - score1 - 2 * score2) / sum; // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
-         //         r1 = (float) (score1 - score0 - 2 * score2) / sum; // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
-         //         r2 = (float) (score2 - score0 - score1) / sum; // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
-         //     }
-         // }
+         r0 = (float) (score0 - score1 - score2) / sum; // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
+         r1 = (float) (score1 - score0 - score2) / sum; // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
+         r2 = (float) (score2 - score0 - score1) / sum; // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
  
          // losing -> attack the weakest link (secret strategy: dont care about the winning guy)
          // if (PLAYER_IDX == 0 && score0 < score1 && score0 < score2) {
@@ -1273,7 +1161,7 @@
          if (gpu[1] == "GAME_OVER") {
              archery.end = true;
  
-             archery_left = 0; // 1;
+             archery_left = 1;
          }
          else { // archery
              archery.wind_index = (int) gpu[1].size() - 1;
@@ -1312,9 +1200,7 @@
              }
  
              for (int i = 0; i < 3; i++) {
-                 roller_skating.dist_div10[i] = reg[2][i] / 10;
-                 roller_skating.dist_mod10[i] = reg[2][i] % 10;
- 
+                 roller_skating.dist[i] = reg[2][i];
                  roller_skating.risk[i] = reg[2][i + 3];
              }
  
@@ -1334,7 +1220,7 @@
  
          if (gpu[3] == "GAME_OVER") {
              diving.end = true;
-             diving_left = 0; // 1;
+             diving_left = 1;
          }
          else { // diving
              diving.goals_left = (int8_t) gpu[3].size();
@@ -1368,118 +1254,118 @@
                 !diving.end;
      }
  
-     // inline void greedy_moves(int8_t* move) const {
-     //     for (int i = 0; i < 3; i++) {
+     inline void greedy_moves(int8_t* move) const {
+         for (int i = 0; i < 3; i++) {
  
-     //         uint8_t moves = hurdle_race.greedy_moves(i) |
-     //                         archery.greedy_moves(i) |
-     //                         roller_skating.greedy_moves(i) |
-     //                         diving.greedy_moves(i) | 
-     //                         (uint8_t(1) << (fast_rand() & 3));
+             uint8_t moves = hurdle_race.greedy_moves(i) |
+                             archery.greedy_moves(i) |
+                             roller_skating.greedy_moves(i) |
+                             diving.greedy_moves(i) | 
+                             (uint8_t(1) << (fast_rand() & 3));
              
-     //         uint8_t order = all_permutations[fast_rand() % 24];
+             uint8_t order = all_permutations[fast_rand() % 24];
  
-     //         move[i] = -1;
-     //         for (int j = 0; j < 4; j++) {
-     //             if ((moves >> (order & 3)) & 1) {
-     //                 move[i] = j;
-     //                 break;
-     //             }
+             move[i] = -1;
+             for (int j = 0; j < 4; j++) {
+                 if ((moves >> (order & 3)) & 1) {
+                     move[i] = j;
+                     break;
+                 }
  
-     //             order >>= 2;
-     //         }
+                 order >>= 2;
+             }
  
-     //         // assert(0 <= move[i] && move[i] <= 3);
+             // assert(0 <= move[i] && move[i] <= 3);
  
-     //         // // std::cerr << "player: " << i << '\n';
+             // // std::cerr << "player: " << i << '\n';
  
-     //         // int eval[4] = {0, 0, 0, 0};
+             // int eval[4] = {0, 0, 0, 0};
  
-     //         // if (hurdle_race.playable(i)) {
-     //         //     uint8_t good_moves = hurdle_race.greedy_moves(i);
-     //         //     for (int j = 0; j < 4; j++) {
-     //         //         if (good_moves & (1 << j)) {
-     //         //             eval[j] += int(archery_score[i]) * roller_skating_score[i] * diving_score[i] + 1;
-     //         //         }
-     //         //     }
-     //         // }
-     //         // // else {
-     //         // //     std::cerr << "hurdles useless\n";
-     //         // // }
+             // if (hurdle_race.playable(i)) {
+             //     uint8_t good_moves = hurdle_race.greedy_moves(i);
+             //     for (int j = 0; j < 4; j++) {
+             //         if (good_moves & (1 << j)) {
+             //             eval[j] += int(archery_score[i]) * roller_skating_score[i] * diving_score[i] + 1;
+             //         }
+             //     }
+             // }
+             // // else {
+             // //     std::cerr << "hurdles useless\n";
+             // // }
  
-     //         // if (archery.playable(i)) {
-     //         //     uint8_t good_moves = archery.greedy_moves(i);
-     //         //     for (int j = 0; j < 4; j++) {
-     //         //         if (good_moves & (1 << j)) {
-     //         //             eval[j] += int(hurdle_race_score[i]) * roller_skating_score[i] * diving_score[i] + 1;
-     //         //         }
-     //         //     }
-     //         // }
-     //         // // else {
-     //         // //     std::cerr << "archery useless\n";
-     //         // // }
+             // if (archery.playable(i)) {
+             //     uint8_t good_moves = archery.greedy_moves(i);
+             //     for (int j = 0; j < 4; j++) {
+             //         if (good_moves & (1 << j)) {
+             //             eval[j] += int(hurdle_race_score[i]) * roller_skating_score[i] * diving_score[i] + 1;
+             //         }
+             //     }
+             // }
+             // // else {
+             // //     std::cerr << "archery useless\n";
+             // // }
  
-     //         // if (roller_skating.playable(i)) {
-     //         //     uint8_t good_moves = roller_skating.greedy_moves(i);
-     //         //     for (int j = 0; j < 4; j++) {
-     //         //         if (good_moves & (1 << j)) {
-     //         //             eval[j] += int(hurdle_race_score[i]) * archery_score[i] * diving_score[i] + 1;
-     //         //         }
-     //         //     }
-     //         // }
-     //         // // else {
-     //         // //     std::cerr << "skating useless\n";
-     //         // // }
+             // if (roller_skating.playable(i)) {
+             //     uint8_t good_moves = roller_skating.greedy_moves(i);
+             //     for (int j = 0; j < 4; j++) {
+             //         if (good_moves & (1 << j)) {
+             //             eval[j] += int(hurdle_race_score[i]) * archery_score[i] * diving_score[i] + 1;
+             //         }
+             //     }
+             // }
+             // // else {
+             // //     std::cerr << "skating useless\n";
+             // // }
  
-     //         // if (diving.playable(i)) {
-     //         //     uint8_t good_moves = diving.greedy_moves(i);
-     //         //     for (int j = 0; j < 4; j++) {
-     //         //         if (good_moves & (1 << j)) {
-     //         //             eval[j] += int(hurdle_race_score[i]) * archery_score[i] * roller_skating_score[i] + 1;
-     //         //         }
-     //         //     }
-     //         // }
-     //         // // else {
-     //         // //     std::cerr << "diving useless\n";
-     //         // // }
+             // if (diving.playable(i)) {
+             //     uint8_t good_moves = diving.greedy_moves(i);
+             //     for (int j = 0; j < 4; j++) {
+             //         if (good_moves & (1 << j)) {
+             //             eval[j] += int(hurdle_race_score[i]) * archery_score[i] * roller_skating_score[i] + 1;
+             //         }
+             //     }
+             // }
+             // // else {
+             // //     std::cerr << "diving useless\n";
+             // // }
  
-     //         // // std::cerr << "eval: ";
-     //         // // for (int j = 0; j < 4; j++) {
-     //         //     // std::cerr << int(eval[j]) << ' ';
-     //         // // }
-     //         // // std::cerr << '\n';
+             // // std::cerr << "eval: ";
+             // // for (int j = 0; j < 4; j++) {
+             //     // std::cerr << int(eval[j]) << ' ';
+             // // }
+             // // std::cerr << '\n';
  
-     //         // int best_score = -1;
-     //         // for (int j = 0; j < 4; j++) {
-     //         //     if (best_score < eval[j]) {
-     //         //         best_score = eval[j];
-     //         //         move[i] = j;
-     //         //     }
-     //         //     else
-     //         //     if (best_score == eval[j] && fast_rand() & 1) {
-     //         //         best_score = eval[j];
-     //         //         move[i] = j;
-     //         //     }
-     //         // }
-     //     }
-     // }
+             // int best_score = -1;
+             // for (int j = 0; j < 4; j++) {
+             //     if (best_score < eval[j]) {
+             //         best_score = eval[j];
+             //         move[i] = j;
+             //     }
+             //     else
+             //     if (best_score == eval[j] && fast_rand() & 1) {
+             //         best_score = eval[j];
+             //         move[i] = j;
+             //     }
+             // }
+         }
+     }
  
-     // void play_greedy() {
-     //     int8_t move[3];
+     void play_greedy() {
+         int8_t move[3];
  
-     //     greedy_moves(move);
-     //     play(move[0], move[1], move[2]);
-     // }
+         greedy_moves(move);
+         play(move[0], move[1], move[2]);
+     }
  
      void play(int8_t p0, int8_t p1, int8_t p2) {
+         static int8_t places[3];
  
          const int8_t move[3] = {p0, p1, p2};
  
-         static int8_t places[3];
          bool was_hurdle_race_end = hurdle_race.end;
-         // bool was_archery_end = archery.end;
+         bool was_archery_end = archery.end;
          bool was_roller_skating_end = roller_skating.end;
-         // bool was_diving_end = diving.end;
+         bool was_diving_end = diving.end;
  
          hurdle_race.play(move);
          archery.play(move);
@@ -1497,15 +1383,15 @@
              hurdle_race_left--;
          }
  
-         // if (was_archery_end && archery_left) {
-         //     archery.generate_places(places);
-         //     for (int i = 0; i < 3; i++) {
-         //         archery_score[i] += places[i];
-         //     }
+         if (was_archery_end && archery_left) {
+             archery.generate_places(places);
+             for (int i = 0; i < 3; i++) {
+                 archery_score[i] += places[i];
+             }
  
-         //     archery.randomize();
-         //     archery_left--;
-         // }
+             archery.randomize();
+             archery_left--;
+         }
  
          if (was_roller_skating_end && roller_skating_left) {
              roller_skating.generate_places(places);
@@ -1517,15 +1403,15 @@
              roller_skating_left--;
          }
  
-         // if (was_diving_end && diving_left) {
-         //     diving.generate_places(places);
-         //     for (int i = 0; i < 3; i++) {
-         //         diving_score[i] += places[i];
-         //     }
+         if (was_diving_end && diving_left) {
+             diving.generate_places(places);
+             for (int i = 0; i < 3; i++) {
+                 diving_score[i] += places[i];
+             }
  
-         //     diving.randomize();
-         //     diving_left--;
-         // }
+             diving.randomize();
+             diving_left--;
+         }
      }
  
      void debug() const {
@@ -1640,7 +1526,8 @@
          for (int8_t move = 0; move < 4; move++) {
              float reward_variance = var[player_idx][move] / vis[player_idx][move];
              float variance_term = reward_variance + fastsqrtf(2 * fastlogf(node_vis) / vis[player_idx][move]);
-             float ucb_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]) * std::min(0.25f, variance_term);
+             // float ucb_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]) * std::min(0.25f, variance_term);
+             float ucb_score = avg[player_idx][move] + sqrt_log_node_vis * std::sqrt(std::min(0.25f, variance_term) / vis[player_idx][move]);
  
              // float ucb_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]); // C * std::sqrt(log_node_vis / vis[player_idx][move]);
  
@@ -1788,8 +1675,7 @@ int NB_GAMES;
 
 int main() {
     
-    std::cerr << "MCTSNode: " << sizeof(MCTSNode) << '\n';
-    std::cerr << "State: " << sizeof(State) << '\n';
+    std::cerr << sizeof(State) << '\n';
 
     std::cin >> PLAYER_IDX;
     std::cin.ignore();
@@ -1865,15 +1751,6 @@ int main() {
         mcts.run(current_state, (TURN == 0 ? 950 : 45));
         mcts.debug();
 #endif // PSYLEAGUE
-
-        // timer.start();
-
-        // for (int i = 0; i < MCTSNode::last_node; i++) {
-        //     for (int k = 0; k < 3; k++)
-        //         for (int j = 0; j < 4; j++)
-        //             MCTSNode::pool[i].vis[k][j] >>= 1;
-        //     MCTSNode::pool[i].node_vis >>= 1;
-        // }
 
         /*
         if i'm lossing -> attack the lowest link

@@ -32,23 +32,84 @@ struct Archery {
         }
     }
 
-    void generate_places(int8_t* places) const {
-        int16_t scores[3];
-        for (int i = 0; i < 3; i++) {
-            scores[i] = (int16_t) x[i] * x[i] + (int16_t) y[i] * y[i]; 
-        }
+    void randomize() {
+        int8_t sx = 5 + fast_rand() % 5;
+        int8_t sy = 5 + fast_rand() % 5;
+
+        if (fast_rand() & 1)
+            sx = -sx;
+        
+        if (fast_rand() & 1)
+            sy = -sy;
+        
+        wind_index = 12 + fast_rand() % 4 - 1;
 
         for (int i = 0; i < 3; i++) {
-            if (scores[i] <= scores[(i + 1) % 3] && scores[i] <= scores[(i + 2) % 3]) {
-                places[i] = 3;
+            x[i] = sx;
+            y[i] = sy;
+        }
+
+        constexpr float weights[10] = { 0, 2, 2, 2, 0.5, 0.5, 0.25, 0.25, 0.25, 0.2 };
+        constexpr float sum = weights[0] + weights[1] + weights[2] + 
+                              weights[3] + weights[4] + weights[5] + 
+                              weights[6] + weights[7] + weights[8] + 
+                              weights[9];
+
+        for (int i = 0; i <= wind_index; i++) {
+            wind[i] = 9;
+
+            float w = (fast_rand() % 1000) * sum;
+
+            for (int j = 1; j < 9; j++) {
+                w -= weights[j] * 1000;
+
+                if (w < 0) {
+                    wind[i] = j;
+                    break;
+                }
             }
-            else
-            if (scores[i] > scores[(i + 1) % 3] && scores[i] > scores[(i + 2) % 3]) {
-                places[i] = 0;
-            }
-            else {
-                places[i] = 1;
-            }
+        }
+
+        end = false;
+    }
+
+    inline void generate_places(int8_t* places) const {
+        int16_t score[3];
+        for (int i = 0; i < 3; i++) {
+            score[i] = (int16_t) x[i] * x[i] + (int16_t) y[i] * y[i]; 
+        }
+
+        if (score[0] <= score[1] && score[0] <= score[2]) {
+            places[0] = 3;
+        }
+        else
+        if (score[0] > score[1] && score[0] > score[2]) {
+            places[0] = 0;
+        }
+        else {
+            places[0] = 1;
+        }
+
+        if (score[1] <= score[0] && score[1] <= score[2]) {
+            places[1] = 3;
+        }
+        else
+        if (score[1] > score[0] && score[1] > score[2]) {
+            places[1] = 0;
+        }
+        else {
+            places[1] = 1;
+        }
+
+        if (score[2] <= score[0] && score[2] <= score[1]) {
+            places[2] = 3;
+        }
+        else
+        if (score[2] > score[0] && score[2] > score[1]) {
+            places[2] = 0;
+        }
+        else {
+            places[2] = 1;
         }
     }
 

@@ -33,8 +33,8 @@ constexpr uint8_t all_permutations[24] = {
     228,
 };
 
-const uint8_t second_in_permutation[256] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
-const uint8_t last_in_permutation[256] =   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
+// const uint8_t second_in_permutation[256] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
+// const uint8_t last_in_permutation[256] =   {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0,0,0,0,0,0,3,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,};
 
 // void index_in_permtation_init() {
 //     for (int i = 0; i < 24; i++) {
@@ -89,7 +89,8 @@ struct RollerSkating {
     int8_t turns_left;
     // int8_t turns_done;
 
-    int8_t dist[3];
+    int8_t dist_div10[3];
+    int8_t dist_mod10[3];
     int8_t risk[3];
 
     uint8_t order;
@@ -99,7 +100,7 @@ struct RollerSkating {
     void debug() const {
         std::cerr << "TURNS LEFT: " << int(turns_left) << '\n';
         for (int i = 0; i < 3; i++) {
-            std::cerr << "i: " << i << ' ' << int(dist[i]) << ' ' << int(risk[i]) << '\n';
+            std::cerr << "i: " << i << ' ' << int(dist_div10[i] * 10 + dist_mod10[i]) << ' ' << int(risk[i]) << '\n';
         }
         std::cerr << "order: ";
         for (int i = 0; i < 4; i++) {
@@ -109,18 +110,55 @@ struct RollerSkating {
     }
 
     inline void generate_places(int8_t* places) {
-        for (int i = 0; i < 3; i++) {
-            if (dist[i] >= dist[(i + 1) % 3] && dist[i] >= dist[(i + 2) % 3]) {
-                places[i] = 3;
-            }
-            else
-            if (dist[i] < dist[(i + 1) % 3] && dist[i] < dist[(i + 2) % 3]) {
-                places[i] = 0;
-            }
-            else {
-                places[i] = 1;
-            }
+        const int8_t d0 = dist_div10[0] * 10 + dist_mod10[0];
+        const int8_t d1 = dist_div10[1] * 10 + dist_mod10[1];
+        const int8_t d2 = dist_div10[2] * 10 + dist_mod10[2];
+
+        if (d0 >= d1 && d0 >= d2) {
+            places[0] = 3;
         }
+        if (d0 < d1 && d0 < d2) {
+            places[0] = 0;
+        }
+        else {
+            places[0] = 1;
+        }
+
+        if (d1 >= d0 && d1 >= d2) {
+            places[1] = 3;
+        }
+        else
+        if (d1 < d0 && d1 < d2) {
+            places[1] = 0;
+        }
+        else {
+            places[1] = 1;
+        }
+
+        if (d2 >= d0 && d2 >= d1) {
+            places[2] = 3;
+        }
+        else
+        if (d2 < d0 && d2 < d1) {
+            places[2] = 0;
+        }
+        else {
+            places[2] = 1;
+        }
+    }
+
+    void randomize() {
+        turns_left = 15;
+
+        order = all_permutations[fast_rand() % 24];
+
+        for (int i = 0; i < 3; i++) {
+            dist_div10[i] = 0;
+            dist_mod10[i] = 0;
+            risk[i] = 0;
+        }
+
+        end = false;
     }
 
     // TODO:
@@ -139,10 +177,10 @@ struct RollerSkating {
             else {
                 const int8_t index = (order >> (move[i] << 1)) & 3;
                 
-                dist[i] += 2;
+                dist_mod10[i] += 2;
 
                 if (index == 0) {
-                    dist[i]--;
+                    dist_mod10[i]--;
                     risk[i]--;
                 }
                 else
@@ -151,25 +189,26 @@ struct RollerSkating {
                 }
                 else
                 if (index == 3) {
-                    dist[i]++;
+                    dist_mod10[i]++;
                     risk[i] += 2;
+                }
+
+                if (dist_mod10[i] >= 10) {
+                    dist_mod10[i] -= 10;
+                    dist_div10[i]++;
                 }
             }
         }
 
-        const int8_t d0 = dist[0] % 10;
-        const int8_t d1 = dist[1] % 10;
-        const int8_t d2 = dist[2] % 10;
-
-        if (risk[0] >= 0 && (d0 == d1 || d0 == d2)) {
+        if (risk[0] >= 0 && (dist_mod10[0] == dist_mod10[1] || dist_mod10[0] == dist_mod10[2])) {
             risk[0] += 2;
         }
 
-        if (risk[1] >= 0 && (d1 == d0 || d1 == d2)) {
+        if (risk[1] >= 0 && (dist_mod10[1] == dist_mod10[0] || dist_mod10[1] == dist_mod10[2])) {
             risk[1] += 2;
         }
 
-        if (risk[2] >= 0 && (d2 == d0 || d2 == d1)) {
+        if (risk[2] >= 0 && (dist_mod10[2] == dist_mod10[0] || dist_mod10[2] == dist_mod10[1])) {
             risk[2] += 2;
         }
 
@@ -199,19 +238,19 @@ struct RollerSkating {
     }
 
     // maybe if for not being stun'ed
-    inline uint8_t greedy_moves(const int8_t player_idx) const {
-        if (end || risk[player_idx] < 0)
-            return 0;
+    // inline uint8_t greedy_moves(const int8_t player_idx) const {
+    //     if (end || risk[player_idx] < 0)
+    //         return 0;
 
-        // std::cerr << "order: " << int(order) << ' ' << int(risk[player_idx]) << '\n';
-        if (risk[player_idx] + 2 < 5) {
-            // std::cerr << "take risk\n";
-            return uint8_t(1) << last_in_permutation[order];
-            // return uint8_t(1) << ((order >> (2 * 3)) & 3); // if have risk + 2 < 5 then rush 3
-        }
-        return uint8_t(1) << second_in_permutation[order];
-        // return uint8_t(1) << ((order >> (1 * 2)) & 3); // else go 2
-    }
+    //     // std::cerr << "order: " << int(order) << ' ' << int(risk[player_idx]) << '\n';
+    //     if (risk[player_idx] + 2 < 5) {
+    //         // std::cerr << "take risk\n";
+    //         return uint8_t(1) << last_in_permutation[order];
+    //         // return uint8_t(1) << ((order >> (2 * 3)) & 3); // if have risk + 2 < 5 then rush 3
+    //     }
+    //     return uint8_t(1) << second_in_permutation[order];
+    //     // return uint8_t(1) << ((order >> (1 * 2)) & 3); // else go 2
+    // }
 };
 
 #endif // ROLLER_SPEED_SKATING

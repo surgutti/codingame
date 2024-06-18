@@ -2,6 +2,7 @@
 #define DIVING_HPP
 
 #include "../const.hpp"
+#include "../random.hpp"
 
 struct Diving {
 
@@ -25,19 +26,51 @@ struct Diving {
         }
     }
 
-    void generate_places(int8_t* places) const {
-        for (int i = 0; i < 3; i++) {
-            if (score[i] >= score[(i + 1) % 3] && score[i] >= score[(i + 2) % 3]) {
-                places[i] = 3;
-            }
-            else
-            if (score[i] < score[(i + 1) % 3] && score[i] < score[(i + 2) % 3]) {
-                places[i] = 0;
-            }
-            else {
-                places[i] = 1;
-            }
+    inline void generate_places(int8_t* places) const {
+        if (score[0] >= score[1] && score[0] >= score[2]) {
+            places[0] = 3;
         }
+        else
+        if (score[0] < score[1] && score[0] < score[2]) {
+            places[0] = 0;
+        }
+        else {
+            places[0] = 1;
+        }
+
+        if (score[1] >= score[0] && score[1] >= score[2]) {
+            places[1] = 3;
+        }
+        else
+        if (score[1] < score[0] && score[1] < score[2]) {
+            places[1] = 0;
+        }
+        else {
+            places[1] = 1;
+        }
+
+        if (score[2] >= score[0] && score[2] >= score[1]) {
+            places[2] = 3;
+        }
+        else
+        if (score[2] < score[0] && score[2] < score[1]) {
+            places[2] = 0;
+        }
+        else {
+            places[2] = 1;
+        }
+    }
+
+    void randomize() {
+        goals_left = 12 + fast_rand() % 4;
+        goal = fast_rand(); // dont care about the rest? -> just slowing down
+
+        for (int i = 0; i < 3; i++) {
+            score[i] = 0;
+            combo[i] = 0;
+        }
+
+        end = false;
     }
 
     inline void play(const int8_t* move) {
