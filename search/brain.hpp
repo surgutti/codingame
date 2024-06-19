@@ -23,6 +23,7 @@ struct BrainNode {
     uint8_t last_move;
 
     inline void init(const uint8_t _last_move) {
+        sons = 0;
         avg = 0;
         var = 0;
         vis = 0;
@@ -31,9 +32,15 @@ struct BrainNode {
 
     inline void expand() {
         sons = (pool + last);
+
         for (uint8_t move = 0; move < 4; move++) {
             pool[last++].init(move);
         }
+
+        // random shuffle sons
+        std::swap(pool[last - 1], pool[last - 1 - fast_rand() % 4]);
+        std::swap(pool[last - 2], pool[last - 2 - fast_rand() % 3]);
+        std::swap(pool[last - 3], pool[last - 3 - fast_rand() % 2]);
     }
 
     inline BrainNode* select() const {
@@ -91,44 +98,68 @@ struct Brain {
 
             BrainNode::last++;
         }
-
-        BrainNode::last++;
     }
 
     void optimize(BrainNode** heads, State &state, float* reward) {
         if (state.is_terminal()) {
             state.get_stats(reward[0], reward[1], reward[2]);
+            
+            for (int i = 0; i < 3; i++) {
+                if (heads[i]) {
+                    heads[i]->apply(reward[i]);
+                }
+            }
             return;
         }
 
-        for (int i = 0; i < 3; i++) {
-            if (heads[i]->vis == 0) {
-                heads[i]->expand();
-            }
+        if (heads[0] == 0 && heads[1] == 0 && heads[2] == 0) {
+            do {
+                uint8_t moves = fast_rand();
+                state.play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
+            } while (!state.is_terminal());
 
-            heads[i] = heads[i]->select();
+            state.get_stats(reward[0], reward[1], reward[2]);
+            return;
         }
 
-         state.play(heads[0]->last_move,
-                    heads[1]->last_move,
-                    heads[2]->last_move);
-        
-        optimize(heads, state, reward);
+        BrainNode* childs[3];
+        int8_t moves[3];
 
-        heads[0]->apply(reward[0]);
-        heads[1]->apply(reward[1]);
-        heads[2]->apply(reward[2]);
+        for (int i = 0; i < 3; i++) {
+            if (heads[i] == 0 || heads[i]->vis == 0) {
+                childs[i] = 0;
+                moves[i] = fast_rand() & 3;
+            }
+            else {
+                if (heads[i]->sons == 0) {
+                    heads[i]->expand();
+                }
+
+                childs[i] = heads[i]->select();
+                moves[i] = childs[i]->last_move;
+            }
+        }
+
+        state.play(moves[0], moves[1], moves[2]);
+    
+        optimize(childs, state, reward);
+
+        for (int i = 0; i < 3; i++) if (heads[i]) {
+            heads[i]->apply(reward[i]);
+        }
     }
 
     void run(const State& root_state, int timeout) {
         reset();
 
         do {
+            State state = root_state;
             BrainNode* heads[3] = {roots[0], roots[1], roots[2]};
+            float reward[3];
 
-
+            optimize(heads, state, reward);
         } while (timer.get_elapsed() < timeout &&
-                 BrainNode::last + 3 < BRAIN_POOL);
+                 BrainNode::last + 12 < BRAIN_POOL);
     }
 };
 
