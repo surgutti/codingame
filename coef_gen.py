@@ -3,10 +3,10 @@ cnt = 0
 with open("bot.cpp", "r") as file:
     code = "".join(file.readlines())
     
-    for c1 in [30, 50, 70]:
-        for c2 in [7, 10, 20, 30]:
-            for c3 in [1, 5, 20, 40]:
-                for c4 in [1, 4, 16]:        
+    for c1 in [65, 70, 75]:
+        for c2 in [25, 30, 35]:
+            for c3 in [3, 5, 7]:
+                for c4 in [1, 2]:        
                     coef1 = c1 / 100
                     coef2 = c2 / 100
                     coef3 = c3 / 100
@@ -15,7 +15,7 @@ with open("bot.cpp", "r") as file:
                     if coef1 + coef2 + coef3 + coef4 < 1:
                         continue
                     
-                    if coef1 + coef2 + coef3 + coef4 > 3:
+                    if coef1 + coef2 + coef3 + coef4 > 2:
                         continue
                         
                     print("sum: ", coef1 + coef2 + coef3 + coef4)

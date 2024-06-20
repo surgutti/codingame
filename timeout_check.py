@@ -38,7 +38,7 @@ def analyze_games(games):
         ).json()
 
         print("game_id: ", game_id)        
-        print(replay)
+        # print(replay)
 
         # print(replay)
 
@@ -151,7 +151,7 @@ def get_top_players(cnt):
 # top_players = get_top_players(7)
 # print(top_players)
 
-top_players = [5459201]
+top_players = [5474752]
 # print(786967972, 3844625)
 # exit(-1)
 

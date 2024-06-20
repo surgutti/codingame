@@ -267,7 +267,7 @@ struct Brain {
             float reward[3];
 
             random_walk(heads, state, reward);
-        } while (timer.get_elapsed() < timeout * 0.1 &&
+        } while (timer.get_elapsed() < timeout * 0.15 &&
                  BrainNode::last + 40 < BRAIN_POOL);
 
         // debug();
