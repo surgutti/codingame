@@ -1,4 +1,4 @@
-for file in *.cpp; do
+for file in brain_log.cpp; do
   filename=$(basename "$file" .cpp)
   
   echo "$file $filename.exe"

@@ -1993,7 +1993,7 @@ int main() {
         current_state.turn = TURN;
 
 #ifdef PSYLEAGUE
-        brain.run(current_state, 45);
+        brain.run(current_state, 20);
         // brain.debug();
 #else
         brain.run(current_state, (TURN == 0 ? 950 : 45));
