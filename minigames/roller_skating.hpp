@@ -109,6 +109,10 @@ struct RollerSkating {
         std::cerr << '\n';
     }
 
+    inline int expected_end() const {
+        return turns_left;
+    }
+
     inline void generate_places(int8_t* places) {
         const int8_t d0 = dist_div10[0] * 10 + dist_mod10[0];
         const int8_t d1 = dist_div10[1] * 10 + dist_mod10[1];

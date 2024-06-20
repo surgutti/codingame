@@ -73,8 +73,16 @@ struct MCTSNode {
         float sqrt_log_node_vis = fastsqrtf(fastlogf(node_vis));
         for (int8_t move = 0; move < 4; move++) {
             float reward_variance = var[player_idx][move] / vis[player_idx][move];
-            float variance_term = reward_variance + fastsqrtf(2 * fastlogf(node_vis) / vis[player_idx][move]);
-            float ucb_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]) * std::min(0.25f, variance_term);
+            float rsqrt_log_node_vis_vis = sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]);
+            float variance_term = reward_variance + rsqrt_log_node_vis_vis;
+            float ucb_score = avg[player_idx][move];
+
+            if (variance_term < 0.25) {
+                ucb_score += rsqrt_log_node_vis_vis * variance_term;
+            }
+            else {
+                ucb_score += rsqrt_log_node_vis_vis * 0.25;
+            }
 
             // float ucb_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]); // C * std::sqrt(log_node_vis / vis[player_idx][move]);
 
@@ -156,8 +164,10 @@ struct MCTS {
                 //     state.play_greedy();
                 // }
                 // else {
-                    uint8_t moves = fast_rand();
-                    state.play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
+                    // uint8_t moves = fast_rand();
+                    // state.play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
+                    
+                    state.play(random_move(), random_move(), random_move()); 
                 // }
             } while (!state.is_terminal());
 

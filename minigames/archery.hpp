@@ -32,6 +32,10 @@ struct Archery {
         }
     }
 
+    inline int expected_end() const {
+        return wind_index + 1;
+    }
+
     void randomize() {
         int8_t sx = 5 + fast_rand() % 5;
         int8_t sy = 5 + fast_rand() % 5;

@@ -74,7 +74,7 @@ def analyze_games(games):
 
 
   
-		print(hurdle_games, archery_games, skating_games, diving_games)
+		# print(hurdle_games, archery_games, skating_games, diving_games)
 		print(command_cnt)
 
 	hurdle_games /= len(games)
@@ -129,3 +129,11 @@ analyze_games(games)
 # p of move
 # {'LEFT': 32502, 'RIGHT': 45302, 'DOWN': 40132, 'UP': 59298, '': 18}
 # 0.1833846778834761 0.25560558357877156 0.22643510838778114 0.33457463014997124
+
+
+
+# current avg sets in one match
+# 5.601613716591023 6.480080685829551 5.995965708522441 6.481089258698941
+
+# current p of move
+# {'RIGHT': 51321, 'UP': 65589, 'DOWN': 45100, 'LEFT': 35962, '': 7}

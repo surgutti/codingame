@@ -26,6 +26,10 @@ struct Diving {
         }
     }
 
+    inline int expected_end() const {
+        return goals_left;
+    }
+
     inline void generate_places(int8_t* places) const {
         if (score[0] >= score[1] && score[0] >= score[2]) {
             places[0] = 3;
