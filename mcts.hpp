@@ -10,6 +10,8 @@
 #include <cmath>
 #include <iostream>
 
+// get some mask of 2 * 3 bits to randomly shuffle the moves by xor with it?
+
 struct MCTSNode {
     static MCTSNode pool[MCTSNODE_POOL];
     static int last_node;
@@ -58,6 +60,10 @@ struct MCTSNode {
         }
 
         return best_move;
+    }
+
+    MCTSNode* get_node(int8_t moves) {
+        return &pool[first_son + moves];
     }
 
     inline int8_t select_per_player(int player_idx) const {
@@ -204,12 +210,16 @@ struct MCTS {
         return root->best_move_per_player(player_idx);
     }
 
+    void pass_move(int8_t moves) {
+        root = root->get_node(moves);
+    }
+
     void debug() const {
         root->debug();
     }
 
     void run(const State& root_state, int timeout) {
-        reset();
+        // reset();
 
         do {
             State state = root_state;

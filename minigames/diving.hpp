@@ -14,8 +14,26 @@ struct Diving {
 
     bool end;
 
+    bool operator== (const Diving &other) const {
+        if (end != other.end)
+            return false;
+        
+        if (end)
+            return true;
+
+        for (int i = 0; i < 3; i++) {
+            if (score[i] != other.score[i])
+                return false;
+            
+            if (combo[i] != other.combo[i])
+                return false;
+        }
+
+        return goal == other.goal;
+    }
+
     void debug() const {
-        std::cerr << "goals_left: " << goals_left << '\n';
+        std::cerr << "goals_left: " << int(goals_left) << '\n';
         std::cerr << "goal: ";
         for (int i = 0; i < goals_left; i++) {
             std::cerr << int((goal >> (i * 2)) & 3) << ' ';

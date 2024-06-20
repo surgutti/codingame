@@ -33,6 +33,12 @@ int main() {
 
     MCTS mcts;
 
+    mcts.reset();
+
+    State last_state;
+
+    int8_t last_move;
+
     for (TURN = 0; ; TURN++) {
         State current_state;
         
@@ -91,11 +97,92 @@ int main() {
 
         current_state.turn = TURN;
 
+
+        const std::vector<std::string> move_list = {
+            "UP", "LEFT", "DOWN", "RIGHT"
+        };
+
+
+        // if (MCTSNode::last_node > MCTSNODE_POOL * 0.5) {
+            mcts.reset();
+        // }
+        /*
+        else 
+        if (TURN > 0) {
+            bool found = false;
+            int8_t found_moves = -1;
+            int found_count = 0;
+            for (int8_t a = 0; a < 4; a++) {
+                for (int8_t b = 0; b < 4; b++) {
+                    State prev_state = last_state;
+                    int8_t moves; 
+
+                    if (PLAYER_IDX == 0) {
+                        prev_state.play(last_move, a, b);
+                        moves = last_move | (a << 2) | (b << 4);
+                    }
+                    else
+                    if (PLAYER_IDX == 1) {
+                        prev_state.play(a, last_move, b);
+                        moves = a | (last_move << 2) | (b << 4);
+                    }
+                    else {
+                        prev_state.play(a, b, last_move);
+                        moves = a | (b << 2) | (last_move << 4);
+                    }
+
+                    prev_state.apply_places();
+
+                    if (last_state.hurdle_race.end) {
+                        for (int i = 0; i < 3; i++) {
+                            prev_state.hurdle_race_score[i] = current_state.hurdle_race_score[i];
+                        }
+                    }
+
+                    if (last_state.archery.end) {
+                        for (int i = 0; i < 3; i++) {
+                            prev_state.archery_score[i] = current_state.archery_score[i];
+                        }
+                    }
+
+                    if (last_state.roller_skating.end) {
+                        for (int i = 0; i < 3; i++) {
+                            prev_state.roller_skating_score[i] = current_state.roller_skating_score[i];
+                        }
+                    }
+
+                    if (last_state.diving.end) {
+                        for (int i = 0; i < 3; i++) {
+                            prev_state.diving_score[i] = current_state.diving_score[i];
+                        }
+                    }
+
+                    if (prev_state == current_state) {
+                        found = true;
+                        found_moves = moves;
+                        found_count++;
+                    }
+                }
+            }
+            
+            std::cerr << "FOUND: " << found << ' ' << found_moves << '\n';
+            std::cerr << "> " << move_list[found_moves & 3] << ' ' << move_list[(found_moves >> 2) & 3] << ' ' << move_list[(found_moves >> 4) & 3] << '\n';
+
+            assert(found);
+            // assert(found_count == 1);
+
+            mcts.pass_move(found_moves);
+        }
+        // */
+
+        // std::cerr << "pre mcts: " << MCTSNode::last_node << '\n';
+        // mcts.debug();
+
 #ifdef PSYLEAGUE
         mcts.run(current_state, 20);
         mcts.debug();
 #else
-        mcts.run(current_state, (TURN == 0 ? 950 : 45));
+        mcts.run(current_state, (TURN == 0 ? 600 : 45));
         mcts.debug();
 #endif // PSYLEAGUE
 
@@ -127,10 +214,9 @@ int main() {
         // std::cerr << '\n';
 
         int move = mcts.best_move(PLAYER_IDX);
-        
-        std::vector<std::string> move_list = {
-            "UP", "LEFT", "DOWN", "RIGHT"
-        };
+
+        last_state = current_state;
+        last_move = move;
 
         std::cout << move_list[move] << std::endl;
 

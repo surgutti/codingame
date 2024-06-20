@@ -20,6 +20,27 @@ struct Archery {
 
     bool end;
 
+    bool operator== (const Archery &other) const {
+        if (end != other.end)
+            return false;
+
+        if (end)
+            return true;
+
+        for (int i = 0; i <= wind_index; i++)
+            if (wind[i] != other.wind[i])
+                return false;
+
+        for (int i = 0; i < 3; i++) {
+            if (x[i] != other.x[i])
+                return false;
+            if (y[i] != other.y[i])
+                return false;
+        }
+
+        return wind_index == other.wind_index;
+    }
+
     void debug() const {
         std::cerr << "wind_index: " << wind_index << '\n';
         std::cerr << "wind: ";

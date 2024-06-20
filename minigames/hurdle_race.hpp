@@ -22,6 +22,23 @@ struct HurdleRace {
     int8_t pos[3], stun[3];
     bool end;
 
+    bool operator== (const HurdleRace &other) const {
+        if (end != other.end)
+            return false;
+        
+        if (end)
+            return true;
+        
+        for (int i = 0; i < 3; i++) {
+            if (pos[i] != other.pos[i])
+                return false;
+            if (stun[i] != other.stun[i])
+                return false;
+        }
+
+        return track == other.track;
+    }
+
     void debug() const {
         std::cerr << "TRACK: ";
         for (int i = 0; i < TRACK_LENGTH; i++) {
@@ -113,7 +130,7 @@ struct HurdleRace {
                 else
                 if (move[i] == 2) {
                     pos[i]++;
-                    if (track & (1U << pos[i])) {
+                    if ((track >> pos[i]) & 1) {
                         stun[i] = 2;
                     }
                     else {
@@ -122,12 +139,12 @@ struct HurdleRace {
                 }
                 else {
                     pos[i]++;
-                    if (track & (1U << pos[i])) {
+                    if ((track >> pos[i]) & 1) {
                         stun[i] = 2;
                     }
                     else {
                         pos[i]++;
-                        if (track & (1U << pos[i])) {
+                        if ((track >> pos[i]) & 1) {
                             stun[i] = 2;
                         }
                         else {
@@ -136,7 +153,7 @@ struct HurdleRace {
                     }
                 }
 
-                if (track & (1U << pos[i])) {
+                if ((track >> pos[i]) & 1) {
                     stun[i] = 2;
                 }
                 else

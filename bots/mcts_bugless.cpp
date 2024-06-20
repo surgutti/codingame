@@ -132,35 +132,19 @@
       bool end;
   
       bool operator== (const HurdleRace &other) const {
-          if (end != other.end) {
-              std::cerr << "END FAIL: " << int(end) << " vs " << int(other.end) << '\n';
+          if (end != other.end)
               return false;
-          }
-
+          
           if (end)
-            return true;
+              return true;
           
           for (int i = 0; i < 3; i++) {
-              if (pos[i] != other.pos[i]) {
-                    std::cerr << track << " vs " << other.track << '\n';
-                    std::cerr << int(end) << " vs " << int(other.end) << '\n';
-
-                  for (int j = 0; j < 3; j++) {
-                    std::cerr << "pos[" << j << "]: " << int(pos[j]) << " vs " << int(other.pos[j]) << '\n';
-                    std::cerr << "stun[" << j << "]: " << int(stun[j]) << " vs " << int(other.stun[j]) << '\n';
-                  }
-
+              if (pos[i] != other.pos[i])
                   return false;
-              }
-              if (stun[i] != other.stun[i]) {
-                  std::cerr << "STUN FAIL: " << i << ' ' << int(stun[i]) << " vs " << int(other.stun[i]) << '\n';
+              if (stun[i] != other.stun[i])
                   return false;
-              }
           }
   
-            if (track != other.track) {
-                std::cerr << "TRACK FAIL: " << track << " vs " << other.track << '\n';
-            }
           return track == other.track;
       }
   
@@ -178,7 +162,7 @@
               std::cerr << "i: " << i << " => " << int(pos[i]) << ' ' << int(stun[i]) << '\n';
           }
       }
-
+  
       inline int expected_end() const {
           if (pos[0] > pos[1] && pos[0] > pos[2])
               return TRACK_LENGTH - 1 - pos[0];
@@ -255,24 +239,21 @@
                   else
                   if (move[i] == 2) {
                       pos[i]++;
-                      if (track & (1U << pos[i])) {
-                        std::cerr << "STUN on DOWN " << int(pos[i]) << '\n';
+                      if ((track >> pos[i]) & 1) {
                           stun[i] = 2;
                       }
                       else {
                           pos[i]++;
                       }
-                  } // .......#...#...#..............|
+                  }
                   else {
                       pos[i]++;
-                      if (track & (1U << pos[i])) {
+                      if ((track >> pos[i]) & 1) {
                           stun[i] = 2;
-                          std::cerr << "STUN on RIGHT " << int(pos[i]) << '\n';
                       }
                       else {
                           pos[i]++;
-                          if (track & (1U << pos[i])) {
-                            std::cerr << "STUN on RIGHT 2 " << int(pos[i]) << '\n';
+                          if ((track >> pos[i]) & 1) {
                               stun[i] = 2;
                           }
                           else {
@@ -280,12 +261,9 @@
                           }
                       }
                   }
-
-                  std::cerr << "NOW: " << int(i) << " => " << int(pos[i]) << '\n';
-
-                  if (track & (1U << pos[i])) {
+  
+                  if ((track >> pos[i]) & 1) {
                       stun[i] = 2;
-                      std::cerr << "STUN on the end " << int(pos[i]) << '\n';
                   }
                   else
                   if (pos[i] >= TRACK_LENGTH - 1) {
@@ -488,42 +466,28 @@
       bool end;
   
       bool operator== (const Archery &other) const {
-          if (end != other.end) {
-              std::cerr << "END FAIL\n";
+          if (end != other.end)
               return false;
-          }
-
-          if (end)
-            return true;
-
-          if (wind_index != other.wind_index) {
-            std::cerr << "WIND INDEX FAIL: " << wind_index << " vs " << other.wind_index << '\n';
-            return false;
-          }
   
-          for (int i = 0; i <= wind_index; i++) {
-              if (wind[i] != other.wind[i]) {
-                  std::cerr << "WIND FAIL: " << i << ' ' << wind[i] << " vs " << other.wind[i] << '\n';
+          if (end)
+              return true;
+  
+          for (int i = 0; i <= wind_index; i++)
+              if (wind[i] != other.wind[i])
                   return false;
-              }
-          }
   
           for (int i = 0; i < 3; i++) {
-              if (x[i] != other.x[i]) {
-                  std::cerr << "X fail: " << i << ' ' << x[i] << " vs " << other.x[i] << '\n';
+              if (x[i] != other.x[i])
                   return false;
-              }
-              if (y[i] != other.y[i]) {
-                  std::cerr << "Y fail: " << i << ' ' << y[i] << " vs " << other.y[i] << '\n';
+              if (y[i] != other.y[i])
                   return false;
-              }
           }
   
           return wind_index == other.wind_index;
       }
   
       void debug() const {
-          std::cerr << "wind_index: " << int(wind_index) << '\n';
+          std::cerr << "wind_index: " << wind_index << '\n';
           std::cerr << "wind: ";
           for (int i = wind_index; i >= 0; i--) {
               std::cerr << int(wind[i]) << ' ';
@@ -898,38 +862,26 @@
       bool end;
   
       bool operator== (const RollerSkating &other) const {
-          if (end != other.end) {
-              std::cerr << "END FAIL\n";
+          if (end != other.end)
               return false;
-          }
-
-          if (end)
-            return true;
           
+          if (end)
+              return true;
+  
           for (int i = 0; i < 3; i++) {
-              if (dist_div10[i] != other.dist_div10[i]) {
-                  std::cerr << "DIV10 FAIL: " << i << ' ' << int(dist_div10[i]) << " vs " << int(other.dist_div10[i]) << '\n';
+              if (dist_div10[i] != other.dist_div10[i])
                   return false;
-              }
-              if (dist_mod10[i] != other.dist_mod10[i]) {
-                  std::cerr << "MOD10 FAIL: " << i << ' ' << int(dist_mod10[i]) << " vs " << int(other.dist_mod10[i]) << '\n';
+              if (dist_mod10[i] != other.dist_mod10[i])
                   return false;
-              }
-              if (risk[i] != other.risk[i]) {
-                  std::cerr << "RISK FAIL: " << i << ' ' << int(risk[i]) << " vs " << int(other.risk[i]) << '\n';
+              if (risk[i] != other.risk[i])
                   return false;
-              }
           }
   
-        //   if (order != other.order) {
-        //     std::cerr << "ORDER FAIL\n";
-        //   }
-        //   return order == other.order &&
-            return turns_left == other.turns_left;
+          // return order == other.order &&
+          return turns_left == other.turns_left;
       }
   
       void debug() const {
-          std::cerr << "SKATING end: " << int(end) << '\n';
           std::cerr << "TURNS LEFT: " << int(turns_left) << '\n';
           for (int i = 0; i < 3; i++) {
               std::cerr << "i: " << i << ' ' << int(dist_div10[i] * 10 + dist_mod10[i]) << ' ' << int(risk[i]) << '\n';
@@ -1018,8 +970,9 @@
   
                   if (index == 0) {
                       dist_mod10[i]--;
+                      
                       if (risk[i] > 0)
-                        risk[i]--;
+                          risk[i]--;
                   }
                   else
                   if (index == 2) {
@@ -1111,10 +1064,10 @@
       bool operator== (const Diving &other) const {
           if (end != other.end)
               return false;
-            
-            if (end)
-                return true;
           
+          if (end)
+              return true;
+  
           for (int i = 0; i < 3; i++) {
               if (score[i] != other.score[i])
                   return false;
@@ -1299,114 +1252,7 @@
  
      int8_t turn;
  
-    inline void apply_places() {
-
-        int8_t places[3];
-
-        if (hurdle_race.end) {
-            hurdle_race.generate_places(places);
-            for (int i = 0; i < 3; i++) {
-                hurdle_race_score[i] += places[i];
-            }
-        }
-
-        if (archery.end) {
-            archery.generate_places(places);
-            for (int i = 0; i < 3; i++) {
-                archery_score[i] += places[i];
-            }
-        }
-
-        if (roller_skating.end) {
-            roller_skating.generate_places(places);
-            for (int i = 0; i < 3; i++) {
-                roller_skating_score[i] += places[i];
-            }
-        }
-
-        if (diving.end) {
-            diving.generate_places(places);
-            for (int i = 0; i < 3; i++) {
-                diving_score[i] += places[i];
-            }
-        }
-    }
-
-    bool operator== (const State &other) const {
-        if (!hurdle_race.end && !other.hurdle_race.end &&
-            !(hurdle_race == other.hurdle_race)) {
-            std::cerr << "HURDLE FAIL\n";
-            return false;
-        }
-
-        for (int i = 0; i < 3; i++) {
-            if (hurdle_race_score[i] != other.hurdle_race_score[i]) {
-                std::cerr << "HURDLE SCORE FAIL\n";
-                return false;
-            }
-        }
-
-        if (!archery.end && !other.archery.end &&
-            !(archery == other.archery)) {
-            std::cerr << "ARCHERY FAIL\n";
-            return false;
-        }
-
-        for (int i = 0; i < 3; i++) {
-            if (archery_score[i] != other.archery_score[i]) {
-                std::cerr << "ARCHERY SCORE FAIL\n";
-                return false;
-            }
-        }
-
-        if (!roller_skating.end && !other.roller_skating.end &&
-            !(roller_skating == other.roller_skating)) {
-            std::cerr << "SKATING FAIL\n";
-            return false;
-        }
-        
-        for (int i = 0; i < 3; i++) {
-            if (roller_skating_score[i] != other.roller_skating_score[i]) {
-                for (int j = 0; j < 3; j++) {
-                    std::cerr << int(roller_skating_score[j]) << " vs " << int(other.roller_skating_score[i]) << '\n';
-                }
-                
-                std::cerr << "SKATING SCORE FAIL\n";
-                return false;
-            }
-        }
-
-        if (!diving.end && !other.diving.end &&
-            !(diving == other.diving)) {
-            std::cerr << "DIVING FAIL\n";
-            return false;
-        }
-
-        for (int i = 0; i < 3; i++) {
-            if (diving_score[i] != other.diving_score[i]) {
-                std::cerr << "DIVING SCORE FAIL\n";
-                return false;
-            }
-        }
-
-        if (turn != other.turn) {
-            std::cerr << "TURN FAIL\n";
-            return false;
-        }
-
-        return true;
-    }
- 
-     bool is_terminal() const {
-         return (hurdle_race.end && hurdle_race_left == 0 &&
-                 archery.end && archery_left == 0 &&
-                 roller_skating.end && roller_skating_left == 0 &&
-                 diving.end && diving_left == 0) ||
-                turn >= 100;
-     }
- 
-     // return how much does a player earn from games
-     void get_stats(float& r0, float& r1, float& r2) {
+     inline void apply_places() {
  
          int8_t places[3];
  
@@ -1437,6 +1283,81 @@
                  diving_score[i] += places[i];
              }
          }
+     }
+ 
+     bool operator== (const State &other) const {
+         if (!hurdle_race.end && !other.hurdle_race.end &&
+             !(hurdle_race == other.hurdle_race)) {
+             // std::cerr << "HURDLE FAIL\n";
+             return false;
+         }
+ 
+         for (int i = 0; i < 3; i++) {
+             if (hurdle_race_score[i] != other.hurdle_race_score[i]) {
+                 // std::cerr << "HURDLE SCORE FAIL\n";
+                 return false;
+             }
+         }
+ 
+         if (!archery.end && !other.archery.end &&
+             !(archery == other.archery)) {
+             // std::cerr << "ARCHERY FAIL\n";
+             return false;
+         }
+ 
+         for (int i = 0; i < 3; i++) {
+             if (archery_score[i] != other.archery_score[i]) {
+                 // std::cerr << "ARCHERY SCORE FAIL\n";
+                 return false;
+             }
+         }
+ 
+         if (!roller_skating.end && !other.roller_skating.end &&
+             !(roller_skating == other.roller_skating)) {
+             // std::cerr << "SKATING FAIL\n";
+             return false;
+         }
+         
+         for (int i = 0; i < 3; i++) {
+             if (roller_skating_score[i] != other.roller_skating_score[i]) {
+                 // std::cerr << "SKATING SCORE FAIL\n";
+                 return false;
+             }
+         }
+ 
+         if (!diving.end && !other.diving.end &&
+             !(diving == other.diving)) {
+             // std::cerr << "DIVING FAIL\n";
+             return false;
+         }
+ 
+         for (int i = 0; i < 3; i++) {
+             if (diving_score[i] != other.diving_score[i]) {
+                 // std::cerr << "DIVING SCORE FAIL\n";
+                 return false;
+             }
+         }
+ 
+         if (turn != other.turn) {
+             // std::cerr << "TURN FAIL\n";
+             return false;
+         }
+ 
+         return true;
+     }
+ 
+     bool is_terminal() const {
+         return (hurdle_race.end && hurdle_race_left == 0 &&
+                 archery.end && archery_left == 0 &&
+                 roller_skating.end && roller_skating_left == 0 &&
+                 diving.end && diving_left == 0) ||
+                turn >= 100;
+     }
+ 
+     // return how much does a player earn from games
+     void get_stats(float& r0, float& r1, float& r2) {
+ 
+         apply_places();
  
          const int score0 = std::max<int>(1, hurdle_race_score[0]) * std::max<int>(1, archery_score[0]) * std::max<int>(1, roller_skating_score[0]) * std::max<int>(1, diving_score[0]);
          const int score1 = std::max<int>(1, hurdle_race_score[1]) * std::max<int>(1, archery_score[1]) * std::max<int>(1, roller_skating_score[1]) * std::max<int>(1, diving_score[1]);
@@ -1891,27 +1812,6 @@
  
      void debug() const {
          std::cerr << "state: " << hurdle_race.end << ' ' << archery.end << ' ' << roller_skating.end << ' ' << diving.end << '\n';
-         std::cerr << "hurdle scores: ";
-         for (int i = 0; i < 3; i++){ 
-            std::cerr << int(hurdle_race_score[i]) << ' ';
-         }
-         std::cerr << '\n';
-         std::cerr << "archery scores: ";
-         for (int i = 0; i < 3; i++){ 
-            std::cerr << int(archery_score[i]) << ' ';
-         }
-         std::cerr << '\n';
-         std::cerr << "skating scores: ";
-         for (int i = 0; i < 3; i++){ 
-            std::cerr << int(roller_skating_score[i]) << ' ';
-         }
-         std::cerr << '\n';
-         std::cerr << "diving scores: ";
-         for (int i = 0; i < 3; i++) { 
-            std::cerr << int(diving_score[i]) << ' ';
-         }
-         std::cerr << '\n';
-
          hurdle_race.debug();
          archery.debug();
          roller_skating.debug();
@@ -2266,11 +2166,6 @@ int main() {
 
         current_state.turn = TURN;
 
-        std::vector<std::string> move_list = {
-            "UP", "LEFT", "DOWN", "RIGHT"
-        };
-
-        std::cerr << "TURN: " << TURN << '\n';
         if (MCTSNode::last_node > MCTSNODE_POOL * 0.5) {
             mcts.reset();
         }
@@ -2278,20 +2173,10 @@ int main() {
         if (TURN > 0) {
             bool found = false;
             int8_t found_moves = -1;
-
-            std::cerr << "PREV:\n";
-            last_state.debug();
-
-            std::cerr << "CURR:\n";
-            current_state.debug();
-
-            std::cerr << "WTF\n";
             for (int8_t a = 0; a < 4 && !found; a++) {
                 for (int8_t b = 0; b < 4 && !found; b++) {
                     State prev_state = last_state;
                     int8_t moves; 
-
-                    std::cerr << " TESTING: " << move_list[last_move] << ' ' << move_list[a] << ' ' << move_list[b] << ' ' << int(moves) << '\n';
 
                     if (PLAYER_IDX == 0) {
                         prev_state.play(last_move, a, b);
@@ -2333,12 +2218,6 @@ int main() {
                         }
                     }
 
-                    if (prev_state.roller_skating.end) {
-                        std::cerr << "roller skating end...\n";
-                    }
-
-                    // prev_state.debug();
-
                     if (prev_state == current_state) {
                         found = true;
                         found_moves = moves;
@@ -2349,14 +2228,16 @@ int main() {
             
             std::cerr << "FOUND: " << found << ' ' << found_moves << '\n';
             assert(found);
+
+            mcts.pass_move(found_moves);
         }
 
 #ifdef PSYLEAGUE
-        // mcts.run(current_state, 20);
-        // mcts.debug();
+        mcts.run(current_state, 20);
+        mcts.debug();
 #else
-        // mcts.run(current_state, (TURN == 0 ?  : 45));
-        // mcts.debug();
+        mcts.run(current_state, (TURN == 0 ? 950 : 45));
+        mcts.debug();
 #endif // PSYLEAGUE
 
         // timer.start();
@@ -2386,7 +2267,11 @@ int main() {
         // }
         // std::cerr << '\n';
 
-        int move = fast_rand() % 4; // mcts.best_move(PLAYER_IDX);
+        int move = mcts.best_move(PLAYER_IDX);
+        
+        std::vector<std::string> move_list = {
+            "UP", "LEFT", "DOWN", "RIGHT"
+        };
 
         last_state = current_state;
         last_move = move;

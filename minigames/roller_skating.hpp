@@ -97,6 +97,26 @@ struct RollerSkating {
 
     bool end;
 
+    bool operator== (const RollerSkating &other) const {
+        if (end != other.end)
+            return false;
+        
+        if (end)
+            return true;
+
+        for (int i = 0; i < 3; i++) {
+            if (dist_div10[i] != other.dist_div10[i])
+                return false;
+            if (dist_mod10[i] != other.dist_mod10[i])
+                return false;
+            if (risk[i] != other.risk[i])
+                return false;
+        }
+
+        // return order == other.order &&
+        return turns_left == other.turns_left;
+    }
+
     void debug() const {
         std::cerr << "TURNS LEFT: " << int(turns_left) << '\n';
         for (int i = 0; i < 3; i++) {
@@ -121,6 +141,7 @@ struct RollerSkating {
         if (d0 >= d1 && d0 >= d2) {
             places[0] = 3;
         }
+        else
         if (d0 < d1 && d0 < d2) {
             places[0] = 0;
         }
@@ -185,7 +206,9 @@ struct RollerSkating {
 
                 if (index == 0) {
                     dist_mod10[i]--;
-                    risk[i]--;
+                    
+                    if (risk[i] > 0)
+                        risk[i]--;
                 }
                 else
                 if (index == 2) {
@@ -222,7 +245,7 @@ struct RollerSkating {
             }
         }
 
-        if (turns_left == 0 /*|| turns_done == 10*/) {
+        if (turns_left == 1 /*|| turns_done == 10*/) {
             end = true;
         }
         else {
