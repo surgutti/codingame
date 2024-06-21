@@ -2543,3 +2543,286 @@
 [2024-06-21 12:47:49] [Action] Show
 [2024-06-21 12:48:20] [Action] Run
 [2024-06-21 13:08:19] [Action] Show
+[2024-06-21 13:14:53] [Action] Run
+[2024-06-21 13:49:40] [Action] Show
+[2024-06-21 13:49:46] [Action] Run
+[2024-06-21 13:49:50] [Action] Run
+[2024-06-21 13:49:52] [Action] Show
+[2024-06-21 13:52:52] [Action] Add Bot brain_14
+[2024-06-21 13:53:01] [Action] Add Bot brain_13
+[2024-06-21 13:53:09] [Action] Add Bot brain_12
+[2024-06-21 13:53:18] [Action] Add Bot brain_16
+[2024-06-21 13:53:26] [Action] Add Bot brain_17
+[2024-06-21 13:53:36] [Action] Add Bot brain_18
+[2024-06-21 13:53:43] [Action] Add Bot brain_19
+[2024-06-21 13:53:49] [Action] Show
+[2024-06-21 13:54:04] [Action] Run
+[2024-06-21 13:56:34] [Action] Show
+[2024-06-21 14:02:12] [Action] Run
+[2024-06-21 14:02:15] [Action] Show
+[2024-06-21 14:03:54] [Action] Show
+[2024-06-21 14:05:29] [Action] Show
+[2024-06-21 14:07:31] [Action] Show
+[2024-06-21 14:11:17] [Action] Run
+[2024-06-21 14:47:30] [Action] Show
+[2024-06-21 14:48:49] [Action] Run
+[2024-06-21 14:50:12] [Action] Show
+[2024-06-21 15:23:34] [Action] Show
+[2024-06-21 15:28:56] [Action] Show
+[2024-06-21 15:39:52] [Action] Run
+[2024-06-21 15:40:23] [Action] Add Bot brain_mcts_speedup
+[2024-06-21 15:40:45] [Action] Add Bot brain_mcts_speedup_03
+[2024-06-21 15:41:01] [Action] Add Bot brain_mcts_speedup_02
+[2024-06-21 15:41:16] [Action] Add Bot brain_mcts_speedup_035
+[2024-06-21 15:41:27] [Action] Add Bot brain_mcts_speedup_045
+[2024-06-21 15:41:38] [Action] Add Bot brain_mcts_speedup_05
+[2024-06-21 15:41:55] [Action] Add Bot brain_mcts_speedup_055
+[2024-06-21 15:42:05] [Action] Show
+[2024-06-21 15:42:07] [Action] Show
+[2024-06-21 15:42:38] [Action] Show
+[2024-06-21 15:45:24] [Action] Remove Bot coef_bot_70-25-5-1
+[2024-06-21 15:45:24] [Action] Remove Bot coef_bot_75-25-5-1
+[2024-06-21 15:45:25] [Action] Remove Bot coef_bot_70-25-7-2
+[2024-06-21 15:45:25] [Action] Remove Bot coef_bot_75-30-3-1
+[2024-06-21 15:45:25] [Action] Remove Bot coef_bot_70-25-3-2
+[2024-06-21 15:45:26] [Action] Remove Bot coef_bot_75-25-7-1
+[2024-06-21 15:45:26] [Action] Remove Bot coef_bot_65-30-5-2
+[2024-06-21 15:45:26] [Action] Remove Bot coef_bot_70-30-3-1
+[2024-06-21 15:45:26] [Action] Remove Bot coef_bot_70-30-5-1
+[2024-06-21 15:45:27] [Action] Remove Bot coef_bot_65-30-3-2
+[2024-06-21 15:45:27] [Action] Remove Bot coef_bot_70-30-3-2
+[2024-06-21 15:45:27] [Action] Remove Bot coef_bot_70-30-7-1
+[2024-06-21 15:45:27] [Action] Remove Bot coef_bot_65-30-7-2
+[2024-06-21 15:45:27] [Action] Remove Bot coef_bot_70-25-5-2
+[2024-06-21 15:45:28] [Action] Remove Bot coef_bot_65-30-5-1
+[2024-06-21 15:45:28] [Action] Remove Bot coef_bot_65-30-7-1
+[2024-06-21 15:45:28] [Action] Remove Bot coef_bot_65-35-3-2
+[2024-06-21 15:45:29] [Action] Remove Bot coef_bot_75-30-7-1
+[2024-06-21 15:45:29] [Action] Remove Bot coef_bot_70-30-5-2
+[2024-06-21 15:45:29] [Action] Remove Bot coef_bot_75-35-3-1
+[2024-06-21 15:45:29] [Action] Remove Bot coef_bot_75-30-3-2
+[2024-06-21 15:45:30] [Action] Remove Bot coef_bot_75-30-5-1
+[2024-06-21 15:45:30] [Action] Remove Bot coef_bot_75-35-5-2
+[2024-06-21 15:45:30] [Action] Remove Bot coef_bot_70-35-7-2
+[2024-06-21 15:45:30] [Action] Remove Bot coef_bot_75-35-5-1
+[2024-06-21 15:45:30] [Action] Remove Bot coef_bot_75-35-3-2
+[2024-06-21 15:45:31] [Action] Remove Bot coef_bot_75-30-7-2
+[2024-06-21 15:45:31] [Action] Remove Bot coef_bot_65-35-5-1
+[2024-06-21 15:45:31] [Action] Remove Bot coef_bot_70-35-3-2
+[2024-06-21 15:45:31] [Action] Remove Bot coef_bot_75-35-7-2
+[2024-06-21 15:45:31] [Action] Remove Bot coef_bot_65-35-7-1
+[2024-06-21 15:45:31] [Action] Remove Bot coef_bot_70-35-5-1
+[2024-06-21 15:45:32] [Action] Remove Bot coef_bot_70-30-7-2
+[2024-06-21 15:45:32] [Action] Remove Bot coef_bot_65-35-3-1
+[2024-06-21 15:45:32] [Action] Remove Bot coef_bot_65-35-5-2
+[2024-06-21 15:45:32] [Action] Remove Bot coef_bot_65-35-7-2
+[2024-06-21 15:45:32] [Action] Remove Bot coef_bot_70-35-7-1
+[2024-06-21 15:45:32] [Action] Remove Bot coef_bot_70-35-3-1
+[2024-06-21 15:45:33] [Action] Remove Bot coef_bot_75-35-7-1
+[2024-06-21 15:45:33] [Action] Remove Bot coef_bot_70-35-5-2
+[2024-06-21 15:45:33] [Action] Remove Bot early_quit
+[2024-06-21 15:45:40] [Action] Show
+[2024-06-21 15:47:58] [Action] Show
+[2024-06-21 15:48:30] [Action] Show
+[2024-06-21 15:48:31] [Action] Show
+[2024-06-21 15:48:31] [Action] Show
+[2024-06-21 15:48:32] [Action] Show
+[2024-06-21 15:48:32] [Action] Show
+[2024-06-21 15:48:33] [Action] Show
+[2024-06-21 15:48:33] [Action] Show
+[2024-06-21 15:48:34] [Action] Show
+[2024-06-21 15:48:52] [Action] Show
+[2024-06-21 15:48:59] [Action] Show
+[2024-06-21 15:49:00] [Action] Show
+[2024-06-21 15:49:01] [Action] Show
+[2024-06-21 15:49:01] [Action] Show
+[2024-06-21 15:49:02] [Action] Show
+[2024-06-21 15:49:02] [Action] Show
+[2024-06-21 15:49:03] [Action] Show
+[2024-06-21 15:49:03] [Action] Show
+[2024-06-21 15:49:03] [Action] Show
+[2024-06-21 15:49:03] [Action] Show
+[2024-06-21 15:49:04] [Action] Show
+[2024-06-21 15:49:04] [Action] Show
+[2024-06-21 15:49:04] [Action] Show
+[2024-06-21 15:49:04] [Action] Show
+[2024-06-21 15:49:05] [Action] Show
+[2024-06-21 15:49:05] [Action] Show
+[2024-06-21 15:49:41] [Action] Show
+[2024-06-21 15:49:41] [Action] Show
+[2024-06-21 15:49:42] [Action] Show
+[2024-06-21 15:49:42] [Action] Show
+[2024-06-21 15:49:43] [Action] Show
+[2024-06-21 15:49:43] [Action] Show
+[2024-06-21 15:49:43] [Action] Show
+[2024-06-21 15:49:43] [Action] Show
+[2024-06-21 15:49:44] [Action] Show
+[2024-06-21 15:49:44] [Action] Show
+[2024-06-21 15:49:44] [Action] Show
+[2024-06-21 15:49:45] [Action] Show
+[2024-06-21 15:49:54] [Action] Run
+[2024-06-21 15:53:24] [Action] Show
+[2024-06-21 16:44:02] [Action] Add Bot new_brain
+[2024-06-21 16:44:05] [Action] Run
+[2024-06-21 16:44:21] [Action] Show
+[2024-06-21 16:51:52] [Action] Run
+[2024-06-21 16:51:56] [Action] Show
+[2024-06-21 16:59:48] [Action] Show
+[2024-06-21 17:07:05] [Action] Show
+[2024-06-21 17:37:06] [Action] Show
+[2024-06-21 18:03:49] [Action] Run
+[2024-06-21 18:05:12] [Action] Add Bot brain_variance
+[2024-06-21 18:06:38] [Action] Add Bot mcts_novariance
+[2024-06-21 18:14:20] [Action] Add Bot mcts_vis_skip
+[2024-06-21 18:15:00] [Action] Add Bot brain_variance2
+[2024-06-21 18:28:51] [Action] Add Bot brain_upgrade
+[2024-06-21 18:29:03] [Action] Show
+[2024-06-21 18:30:20] [Action] Add Bot brain_different_rollouts
+[2024-06-21 18:30:25] [Action] Show
+[2024-06-21 18:34:34] [Action] Show
+[2024-06-21 18:46:04] [Action] Add Bot brain_update
+[2024-06-21 18:46:06] [Action] Show
+[2024-06-21 18:50:47] [Action] Add Bot brain_init_speedup
+[2024-06-21 18:53:53] [Action] Add Bot brain_next_update
+[2024-06-21 18:54:09] [Action] Add Bot mcts_next_update
+[2024-06-21 18:54:16] [Action] Run
+[2024-06-21 19:05:55] [Action] Show
+[2024-06-21 19:11:48] [Action] Show
+[2024-06-21 19:12:47] [Action] Run
+[2024-06-21 19:14:41] [Action] Run
+[2024-06-21 19:16:21] [Action] Show
+[2024-06-21 19:33:00] [Action] Add Bot brain_just_do_it
+[2024-06-21 19:33:02] [Action] Show
+[2024-06-21 19:33:15] [Action] Show
+[2024-06-21 19:33:16] [Action] Show
+[2024-06-21 19:33:17] [Action] Show
+[2024-06-21 19:33:18] [Action] Show
+[2024-06-21 19:34:07] [Action] Run
+[2024-06-21 19:34:25] [Action] Add Bot old1
+[2024-06-21 19:34:39] [Action] Add Bot old2
+[2024-06-21 19:35:20] [Action] Add Bot cg
+[2024-06-21 19:35:51] [Action] Add Bot new1
+[2024-06-21 19:35:54] [Action] Show
+[2024-06-21 19:39:15] [Action] Show
+[2024-06-21 19:42:51] [Action] Add Bot coef_brainV1_100-100
+[2024-06-21 19:42:57] [Action] Add Bot coef_brainV1_100-110
+[2024-06-21 19:43:02] [Action] Add Bot coef_brainV1_100-120
+[2024-06-21 19:43:05] [Action] Add Bot coef_brainV1_100-40
+[2024-06-21 19:43:10] [Action] Add Bot coef_brainV1_100-60
+[2024-06-21 19:43:14] [Action] Add Bot coef_brainV1_100-80
+[2024-06-21 19:43:19] [Action] Add Bot coef_brainV1_110-100
+[2024-06-21 19:43:23] [Action] Add Bot coef_brainV1_110-110
+[2024-06-21 19:43:27] [Action] Add Bot coef_brainV1_110-120
+[2024-06-21 19:43:32] [Action] Add Bot coef_brainV1_110-40
+[2024-06-21 19:43:36] [Action] Add Bot coef_brainV1_110-60
+[2024-06-21 19:43:41] [Action] Add Bot coef_brainV1_110-80
+[2024-06-21 19:43:46] [Action] Add Bot coef_brainV1_120-100
+[2024-06-21 19:43:51] [Action] Add Bot coef_brainV1_120-110
+[2024-06-21 19:43:55] [Action] Add Bot coef_brainV1_120-120
+[2024-06-21 19:44:01] [Action] Add Bot coef_brainV1_120-40
+[2024-06-21 19:44:05] [Action] Add Bot coef_brainV1_120-60
+[2024-06-21 19:44:09] [Action] Add Bot coef_brainV1_120-80
+[2024-06-21 19:44:13] [Action] Add Bot coef_brainV1_60-100
+[2024-06-21 19:44:17] [Action] Add Bot coef_brainV1_60-110
+[2024-06-21 19:44:21] [Action] Add Bot coef_brainV1_60-120
+[2024-06-21 19:44:25] [Action] Add Bot coef_brainV1_60-40
+[2024-06-21 19:44:29] [Action] Add Bot coef_brainV1_60-60
+[2024-06-21 19:44:33] [Action] Add Bot coef_brainV1_60-80
+[2024-06-21 19:44:37] [Action] Add Bot coef_brainV1_80-100
+[2024-06-21 19:44:40] [Action] Add Bot coef_brainV1_80-110
+[2024-06-21 19:44:44] [Action] Add Bot coef_brainV1_80-120
+[2024-06-21 19:44:48] [Action] Add Bot coef_brainV1_80-40
+[2024-06-21 19:44:52] [Action] Add Bot coef_brainV1_80-60
+[2024-06-21 19:44:56] [Action] Add Bot coef_brainV1_80-80
+[2024-06-21 19:45:02] [Action] Show
+[2024-06-21 19:45:15] [Action] Run
+[2024-06-21 20:08:35] [Action] Show
+[2024-06-21 20:18:31] [Action] Show
+[2024-06-21 20:19:12] [Action] Show
+[2024-06-21 20:19:51] [Action] Show
+[2024-06-21 20:20:14] [Action] Remove Bot coef_brainV1_80-120
+[2024-06-21 20:20:19] [Action] Remove Bot coef_brainV1_80-40
+[2024-06-21 20:20:23] [Action] Remove Bot coef_brainV1_110-40
+[2024-06-21 20:20:28] [Action] Remove Bot coef_brainV1_60-80
+[2024-06-21 20:20:34] [Action] Remove Bot coef_brainV1_80-60
+[2024-06-21 20:20:38] [Action] Remove Bot coef_brainV1_110-80
+[2024-06-21 20:20:42] [Action] Remove Bot coef_brainV1_100-120
+[2024-06-21 20:20:48] [Action] Remove Bot coef_brainV1_110-120
+[2024-06-21 20:20:53] [Action] Remove Bot coef_brainV1_120-60
+[2024-06-21 20:20:57] [Action] Remove Bot coef_brainV1_110-60
+[2024-06-21 20:21:02] [Action] Remove Bot coef_brainV1_100-110
+[2024-06-21 20:21:06] [Action] Remove Bot coef_brainV1_60-60
+[2024-06-21 20:21:10] [Action] Remove Bot coef_brainV1_80-80
+[2024-06-21 20:21:14] [Action] Remove Bot coef_brainV1_100-60
+[2024-06-21 20:21:16] [Action] Show
+[2024-06-21 20:21:39] [Action] Show
+[2024-06-21 20:22:45] [Action] Show
+[2024-06-21 20:22:46] [Action] Show
+[2024-06-21 20:22:47] [Action] Show
+[2024-06-21 20:22:48] [Action] Show
+[2024-06-21 20:22:48] [Action] Show
+[2024-06-21 20:22:49] [Action] Show
+[2024-06-21 20:22:49] [Action] Show
+[2024-06-21 20:22:49] [Action] Show
+[2024-06-21 20:22:49] [Action] Show
+[2024-06-21 20:22:50] [Action] Show
+[2024-06-21 20:22:50] [Action] Show
+[2024-06-21 20:22:50] [Action] Show
+[2024-06-21 20:22:51] [Action] Show
+[2024-06-21 20:22:51] [Action] Show
+[2024-06-21 20:22:51] [Action] Show
+[2024-06-21 20:22:52] [Action] Show
+[2024-06-21 20:22:52] [Action] Show
+[2024-06-21 20:22:52] [Action] Show
+[2024-06-21 20:22:53] [Action] Show
+[2024-06-21 20:22:53] [Action] Show
+[2024-06-21 20:22:53] [Action] Show
+[2024-06-21 20:22:54] [Action] Show
+[2024-06-21 20:22:54] [Action] Show
+[2024-06-21 20:22:55] [Action] Show
+[2024-06-21 20:22:56] [Action] Show
+[2024-06-21 20:22:56] [Action] Show
+[2024-06-21 20:22:56] [Action] Show
+[2024-06-21 20:22:57] [Action] Show
+[2024-06-21 20:22:57] [Action] Show
+[2024-06-21 20:22:58] [Action] Show
+[2024-06-21 20:22:58] [Action] Show
+[2024-06-21 20:22:58] [Action] Show
+[2024-06-21 20:22:59] [Action] Show
+[2024-06-21 20:22:59] [Action] Show
+[2024-06-21 20:23:00] [Action] Show
+[2024-06-21 20:23:00] [Action] Show
+[2024-06-21 20:23:01] [Action] Show
+[2024-06-21 20:23:01] [Action] Show
+[2024-06-21 20:23:06] [Action] Show
+[2024-06-21 20:23:06] [Action] Show
+[2024-06-21 20:23:07] [Action] Show
+[2024-06-21 20:23:07] [Action] Show
+[2024-06-21 20:23:08] [Action] Show
+[2024-06-21 20:23:09] [Action] Show
+[2024-06-21 20:23:09] [Action] Show
+[2024-06-21 20:23:10] [Action] Show
+[2024-06-21 20:23:10] [Action] Show
+[2024-06-21 20:23:11] [Action] Show
+[2024-06-21 20:23:11] [Action] Show
+[2024-06-21 20:23:12] [Action] Show
+[2024-06-21 20:23:18] [Action] Show
+[2024-06-21 20:23:19] [Action] Show
+[2024-06-21 20:23:19] [Action] Show
+[2024-06-21 20:23:19] [Action] Show
+[2024-06-21 20:23:20] [Action] Show
+[2024-06-21 20:23:20] [Action] Show
+[2024-06-21 20:23:20] [Action] Show
+[2024-06-21 20:23:21] [Action] Show
+[2024-06-21 20:23:21] [Action] Show
+[2024-06-21 20:23:22] [Action] Show
+[2024-06-21 20:24:57] [Action] Show
+[2024-06-21 20:30:11] [Action] Show
+[2024-06-21 20:32:58] [Action] Show
+[2024-06-21 20:36:36] [Action] Show
+[2024-06-21 20:39:50] [Action] Show
+[2024-06-21 21:32:36] [Action] Show
+[2024-06-21 21:33:24] [Action] Show
+[2024-06-21 21:35:07] [Action] Show
+[2024-06-21 21:38:42] [Action] Show
+[2024-06-21 21:40:35] [Action] Show

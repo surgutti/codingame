@@ -55,15 +55,16 @@ struct HurdleRace {
     }
 
     inline int expected_end() const {
-        int t0 = pd[pos[0]] + stun[0];
-        int t1 = pd[pos[1]] + stun[1];
-        int t2 = pd[pos[2]] + stun[2];
+        const int t0 = pd[pos[0]] + stun[0];
+        const int t1 = pd[pos[1]] + stun[1];
+        const int t2 = pd[pos[2]] + stun[2];
 
         if (t0 <= t1 && t0 <= t2)
             return t0;
         else
         if (t1 <= t0 && t1 <= t2)
             return t1;
+
         return t2;
     }
 
@@ -102,7 +103,7 @@ struct HurdleRace {
         }
     }
 
-    void randomize() {
+    inline void randomize() {
 
         track = all_tracks[fast_rand() % tracks_count];
 

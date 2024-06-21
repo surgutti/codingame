@@ -21,19 +21,22 @@ struct MCTSNode {
     uint8_t last_moves;
 
     float avg[3][4];
-    float var[3][4];
+    // float var[3][4];
     unsigned vis[3][4];
 
     unsigned node_vis;
+
+    uint8_t todo[3];
 
     inline void init(const uint8_t& _last_moves) {
         last_moves = _last_moves;
         first_son = -1;
 
         for (int i = 0; i < 3; i++) {
+            todo[i] = 0;
             for (int j = 0; j < 4; j++) {
                 avg[i][j] = 0;
-                var[i][j] = 0;
+                // var[i][j] = 0;
                 vis[i][j] = 0;
             }
         }
@@ -66,31 +69,35 @@ struct MCTSNode {
         return &pool[first_son + moves];
     }
 
-    inline int8_t select_per_player(int player_idx) const {
-        for (int8_t move = 0; move < 4; move++) {
-            if (vis[player_idx][move] == 0) {
-                return move;
-            }
+    inline int8_t select_per_player(int player_idx) {
+        if (todo[player_idx] < 4) {
+            return todo[player_idx]++;
         }
+
+        // for (int8_t move = 0; move < 4; move++) {
+        //     if (vis[player_idx][move] == 0) {
+        //         return move;
+        //     }
+        // }
 
         float best_score = -INF;
         int8_t best_move = -1;
         
-        float sqrt_log_node_vis = fastsqrtf(fastlogf(node_vis));
+        const float sqrt_log_node_vis = fastsqrtf(fastlogf(node_vis));
         for (int8_t move = 0; move < 4; move++) {
-            float reward_variance = var[player_idx][move] / vis[player_idx][move];
-            float rsqrt_log_node_vis_vis = sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]);
-            float variance_term = reward_variance + rsqrt_log_node_vis_vis;
-            float ucb_score = avg[player_idx][move];
+            // float reward_variance = var[player_idx][move] / vis[player_idx][move];
+            // float rsqrt_log_node_vis_vis = sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]);
+            // float variance_term = reward_variance + rsqrt_log_node_vis_vis;
+            // float ucb_score = avg[player_idx][move];
 
-            if (variance_term < 0.25) {
-                ucb_score += rsqrt_log_node_vis_vis * variance_term;
-            }
-            else {
-                ucb_score += rsqrt_log_node_vis_vis * 0.25;
-            }
+            // if (variance_term < 0.25) {
+            //     ucb_score += rsqrt_log_node_vis_vis * variance_term;
+            // }
+            // else {
+            //     ucb_score += rsqrt_log_node_vis_vis * 0.25;
+            // }
 
-            // float ucb_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]); // C * std::sqrt(log_node_vis / vis[player_idx][move]);
+            float ucb_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]);
 
             if (best_score < ucb_score) {
                 best_score = ucb_score;
@@ -101,7 +108,7 @@ struct MCTSNode {
         return best_move;
     }
 
-    inline MCTSNode* select() const {
+    inline MCTSNode* select() {
         const uint8_t moves = (select_per_player(0) << 0) |
                               (select_per_player(1) << 2) |
                               (select_per_player(2) << 4);
@@ -116,14 +123,14 @@ struct MCTSNode {
     }
 
     inline void apply_per_player(int player_idx, uint8_t move, float reward) {
-        float delta = reward - avg[player_idx][move];
+        // float delta = reward - avg[player_idx][move];
 
         avg[player_idx][move] *= vis[player_idx][move];
         avg[player_idx][move] += reward;
         vis[player_idx][move] += 1;
         avg[player_idx][move] /= vis[player_idx][move];
 
-        var[player_idx][move] += delta * (reward - avg[player_idx][move]);
+        // var[player_idx][move] += delta * (reward - avg[player_idx][move]);
     }
 
     inline void apply(uint8_t moves, float r0, float r1, float r2) {
@@ -143,7 +150,7 @@ struct MCTSNode {
         for (int i = 0; i < 3; i++) {
             std::cerr << "PLAYER: " << i << '\n';
             for (int move = 0; move < 4; move++) {
-                std::cerr << avg[i][move] << '/' << vis[i][move] << "(" << var[i][move] << ") ";
+                std::cerr << avg[i][move] << '/' << vis[i][move] << '\n'; // << "(" << var[i][move] << ") ";
             }
             std::cerr << '\n';
         }

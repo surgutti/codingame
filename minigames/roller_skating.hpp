@@ -86,13 +86,13 @@ constexpr uint8_t all_permutations[24] = {
 
 struct RollerSkating {
 
-    int8_t turns_left;
     // int8_t turns_done;
 
+    int8_t risk[3];
     int8_t dist_div10[3];
     int8_t dist_mod10[3];
-    int8_t risk[3];
-
+    
+    int8_t turns_left;
     uint8_t order;
 
     bool end;
