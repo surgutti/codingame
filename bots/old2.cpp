@@ -164,12 +164,16 @@
       }
   
       inline int expected_end() const {
-          if (pos[0] > pos[1] && pos[0] > pos[2])
-              return TRACK_LENGTH - 1 - pos[0];
+          int t0 = pd[pos[0]] + stun[0];
+          int t1 = pd[pos[1]] + stun[1];
+          int t2 = pd[pos[2]] + stun[2];
+  
+          if (t0 <= t1 && t0 <= t2)
+              return t0;
           else
-          if (pos[1] > pos[1] && pos[1] > pos[2])
-              return TRACK_LENGTH - 1 - pos[1];
-          return TRACK_LENGTH - 1 - pos[2];
+          if (t1 <= t0 && t1 <= t2)
+              return t1;
+          return t2;
       }
   
       inline void generate_places(int8_t* places) const {
@@ -2123,7 +2127,7 @@
              float reward[3];
  
              random_walk(heads, state, reward);
-         } while (timer.get_elapsed() < timeout * 0.15 &&
+         } while (timer.get_elapsed() < timeout * 0.12 &&
                   BrainNode::last + 40 < BRAIN_POOL);
  
          // debug();
@@ -2227,7 +2231,7 @@ int main() {
         brain.run(current_state, 20);
         // brain.debug();
 #else
-        brain.run(current_state, (TURN == 0 ? 950 : 45));
+        brain.run(current_state, (TURN == 0 ? 600 : 45));
         // brain.debug();
 #endif // PSYLEAGUE
 

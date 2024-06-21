@@ -1,5 +1,7 @@
 #include "utils.hpp"
+#include "minigames/archery.hpp"
 
+#include <algorithm>
 #include <iostream>
 #include <cassert>
 #include <cmath>
@@ -39,7 +41,91 @@ std::string random_track() {
     return track.substr(0, 29) + ".";
 }
 
+void test_diving() {
+    int length = 15;
+
+    std::vector<std::pair<int, int>> all;
+
+    all.emplace_back(0, 0);
+
+    for (int i = 0; i < length; i++) {
+        std::vector<std::pair<int, int>> nxt;
+        
+        for (auto [a, b] : all) {
+            nxt.emplace_back(a, 0);
+
+            b++;
+            nxt.emplace_back(a + b, b);
+        }
+
+        all = nxt;
+    }
+
+    std::sort(all.begin(), all.end());
+    all.erase(std::unique(all.begin(), all.end()), all.end());
+
+    for (auto [a, b] : all) {
+        std::cerr << a << ' ' << b << '\n';
+    }
+
+    std::cerr << all.size() << '\n';
+}
+
+void test_archery() {
+    std::map<std::pair<int, int>, int> cnt;
+
+    const int REP = 100000;
+
+    for (int rep = 0; rep < REP; rep++) {
+        int dx[3] = {0, 0, 0};
+        int dy[3] = {0, 0, 0};
+
+        Archery archery;
+        archery.randomize();
+
+        while (!archery.end) {
+            int8_t moves[3];
+
+            for (int i = 0; i < 3; i++) {
+                moves[i] = fast_rand() % 4;
+
+                if (moves[i] == 0)
+                    dy[i]++;
+                if (moves[i] == 1)
+                    dx[i]--;
+                if (moves[i] == 2)
+                    dy[i]--;
+                if (moves[i] == 3)
+                    dx[i]++;
+            }
+
+            archery.play(moves);
+        }
+
+        int8_t places[3];
+        archery.generate_places(places);
+
+        for (int i = 0; i < 3; i++) {
+            std::pair<int, int> key = std::make_pair(abs(dx[i]), abs(dy[i]));
+
+            cnt[key] += places[i];
+        }
+    }
+
+    for (int i = 0; i <= 15; i++) {
+        for (int j = 0; j <= 15; j++) {
+            std::cerr << cnt[std::make_pair(i, j)] << ' ';
+        }
+        std::cerr << '\n';
+    }
+}
+
 int main() {
+
+    test_diving();
+    // test_archery();
+
+    return 0;
 
     std::map<std::string, int> cnt;
 

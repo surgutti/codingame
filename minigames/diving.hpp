@@ -127,13 +127,13 @@ struct Diving {
         const int8_t enemy1_idx = (player_idx + 1) % 3;
         const int8_t enemy2_idx = (player_idx + 2) % 3;
 
-        int best_player = score[player_idx] + combo[player_idx] * goals_left + ((uint8_t(goals_left) * (goals_left + 1)) >> 1);
+        int best_player = score[player_idx] + combo[player_idx] * goals_left + ((int(goals_left) * (goals_left + 1)) >> 1);
         int worst_player = score[player_idx];
 
-        int best_enemy1 = score[enemy1_idx] + combo[enemy1_idx] * goals_left + ((uint8_t(goals_left) * (goals_left + 1)) >> 1);
+        int best_enemy1 = score[enemy1_idx] + combo[enemy1_idx] * goals_left + ((int(goals_left) * (goals_left + 1)) >> 1);
         int worst_enemy1 = score[enemy1_idx];
 
-        int best_enemy2 = score[enemy2_idx] + combo[enemy2_idx] * goals_left + ((uint8_t(goals_left) * (goals_left + 1)) >> 1);
+        int best_enemy2 = score[enemy2_idx] + combo[enemy2_idx] * goals_left + ((int(goals_left) * (goals_left + 1)) >> 1);
         int worst_enemy2 = score[enemy2_idx];
 
         if (worst_player >= best_enemy1 && worst_player >= best_enemy2) {

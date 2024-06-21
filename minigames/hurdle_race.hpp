@@ -69,37 +69,72 @@ struct HurdleRace {
     }
 
     inline void generate_places(int8_t* places) const {
-        if (pos[0] >= TRACK_LENGTH - 1) {
-            places[0] = 3;
-        }
-        else
-        if (pos[0] < pos[1] && pos[0] < pos[2]) {
-            places[0] = 0;
-        }
-        else {
-            places[0] = 1;
-        }
+        if (end) {
+            if (pos[0] >= TRACK_LENGTH - 1) {
+                places[0] = 3;
+            }
+            else
+            if (pos[0] < pos[1] && pos[0] < pos[2]) {
+                places[0] = 0;
+            }
+            else {
+                places[0] = 1;
+            }
 
-        if (pos[1] >= TRACK_LENGTH - 1) {
-            places[1] = 3;
-        }
-        else
-        if (pos[1] < pos[0] && pos[1] < pos[2]) {
-            places[1] = 0;
-        }
-        else {
-            places[1] = 1;
-        }
+            if (pos[1] >= TRACK_LENGTH - 1) {
+                places[1] = 3;
+            }
+            else
+            if (pos[1] < pos[0] && pos[1] < pos[2]) {
+                places[1] = 0;
+            }
+            else {
+                places[1] = 1;
+            }
 
-        if (pos[2] >= TRACK_LENGTH - 1) {
-            places[2] = 3;
-        }
-        else
-        if (pos[2] < pos[0] && pos[2] < pos[1]) {
-            places[2] = 0;
+            if (pos[2] >= TRACK_LENGTH - 1) {
+                places[2] = 3;
+            }
+            else
+            if (pos[2] < pos[0] && pos[2] < pos[1]) {
+                places[2] = 0;
+            }
+            else {
+                places[2] = 1;
+            }
         }
         else {
-            places[2] = 1;
+            float win_p0  = win_dp [pos[0]][stun[0]][pos[1]][stun[1]] *
+                            win_dp [pos[0]][stun[0]][pos[2]][stun[2]];
+
+            float lost_p0 = lost_dp[pos[0]][stun[0]][pos[1]][stun[1]] * 
+                            lost_dp[pos[0]][stun[0]][pos[2]][stun[2]];
+        
+            float second_p0 = 1.0 - win_p0 - lost_p0;
+
+            places[0] = 3 * win_p0 + 1 * second_p0;
+
+
+            float win_p1  = win_dp [pos[1]][stun[1]][pos[0]][stun[0]] *
+                            win_dp [pos[1]][stun[1]][pos[2]][stun[2]];
+
+            float lost_p1 = lost_dp[pos[1]][stun[1]][pos[0]][stun[0]] * 
+                            lost_dp[pos[1]][stun[1]][pos[2]][stun[2]];
+        
+            float second_p1 = 1.0 - win_p1 - lost_p1;
+
+            places[1] = 3 * win_p1 + 1 * second_p1;
+
+
+            float win_p2  = win_dp [pos[2]][stun[2]][pos[0]][stun[0]] *
+                            win_dp [pos[2]][stun[2]][pos[1]][stun[1]];
+
+            float lost_p2 = lost_dp[pos[2]][stun[2]][pos[0]][stun[0]] * 
+                            lost_dp[pos[2]][stun[2]][pos[1]][stun[1]];
+        
+            float second_p2 = 1.0 - win_p2 - lost_p2;
+
+            places[2] = 3 * win_p2 + 1 * second_p2;
         }
     }
 
@@ -332,10 +367,57 @@ struct HurdleRace {
 
         return dp_opt[pos[player_idx]];
     }
+
+    static float win_dp[TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3]; // p of winning or draw if players are on positions <p1, s1> <p2, s2>
+    static float lose_dp[TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3]; // p of losing if players are on positions <p1, s1> <p2, s2>
+
+    inline int make_move(int p, int s) {
+
+    }
+
+    // potential opt: if for feasible state (like one on the beginning and second at the end)
+    void build_win_lose_dp() const {
+        for (int p1 = TRACK_LENGTH - 2; p1 >= 0; p1--) {
+            for (int s1 = 0; s1 <= 2; s1++) {
+                for (int p2 = TRACK_LENGTH - 2; p2 >= 0; p2--) {
+                    for (int s2 = 0; s2 <= 2; s2++) {
+                        for (int m1 = 0; m1 < 4; m1++) {
+                            for (int m2 = 0; m2 < 4; m2++) {
+                                const float moves_p = MOVE_P[m1] * MOVE_P[m2];
+                                
+                                int pp1 = make_move(p1, s1);
+                                int pp2 = make_move(p2, s2);
+                                int ss1 = (s1 > 0 ? s1 - 1 : 0);
+                                int ss2 = (s2 > 0 ? s2 - 1 : 0);
+
+                                if (pp1 >= TRACK_LENGTH - 1) {
+                                    win_dp[p1][s1][p2][s2] += moves_p * 1.0f;
+                                }
+                                else 
+                                if (pp2 < TRACK_LENGTH - 1) {
+                                    win_dp[p1][s1][p2][s2] += moves_p * win_dp[pp1][ss1][pp2][ss2];
+                                }
+
+                                if (pp2 >= TRACK_LENGTH - 1 && pp1 < TRACK_LENGTH - 1) {
+                                    lose_dp[p1][s1][p2][s2] += moves_p * 1.0f;
+                                }
+                                else
+                                if (pp1 < TRACK_LENGTH - 1) {
+                                    lose_dp[p1][s1][p2][s2] += moves_p * lose_dp[pp1][ss1][pp2][ss2];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 };
 
 int HurdleRace::dp[TRACK_LENGTH + 2];
 int HurdleRace::pd[TRACK_LENGTH + 2];
 uint8_t HurdleRace::dp_opt[TRACK_LENGTH];
+float HurdleRace::win_dp[TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
+float HurdleRace::lose_dp[TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
 
 #endif // HURDLE_RACE

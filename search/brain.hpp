@@ -167,8 +167,9 @@ struct Brain {
 
         if (heads[0] == 0 && heads[1] == 0 && heads[2] == 0) {
             do {
-                state.play(random_move(), random_move(), random_move());
-            } while (!state.is_terminal());
+                state.play_random();
+                // state.play(random_move(), random_move(), random_move());
+            } while (!state.is_rollout_terminal());
 
             state.get_stats(reward);
             return;
@@ -215,8 +216,9 @@ struct Brain {
 
         if (heads[0] == 0 && heads[1] == 0 && heads[2] == 0) {
             do {
-                state.play(random_move(), random_move(), random_move());
-            } while (!state.is_terminal());
+                state.play_random();
+                // state.play(random_move(), random_move(), random_move());
+            } while (!state.is_rollout_terminal());
 
             state.get_stats(reward);
             return;
@@ -264,18 +266,16 @@ struct Brain {
 
         State state;
         float reward[3];
+        BrainNode* heads[3] = {roots[0], roots[1], roots[2]};
+        
         do {
             state = root_state;
-            BrainNode* heads[3] = {roots[0], roots[1], roots[2]};
-
             random_walk(heads, state, reward);
         } while (timer.get_elapsed() < timeout * 0.12 &&
                  BrainNode::last + 40 < BRAIN_POOL);
         
         do {
             state = root_state;
-            BrainNode* heads[3] = {roots[0], roots[1], roots[2]};
-
             optimize(heads, state, reward);
         } while (timer.get_elapsed() < timeout &&
                  BrainNode::last + 40 < BRAIN_POOL);

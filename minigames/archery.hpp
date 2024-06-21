@@ -5,6 +5,7 @@
 #include "../random.hpp"
 
 #include <vector>
+#include <iostream>
 
 struct Archery {
 

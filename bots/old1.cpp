@@ -19,7 +19,7 @@
  const int DIVING_LENGTH = 12 + 3; // 12 + random.nextInt(4);
  
  const int MCTSNODE_POOL = 6'000'000;
- const int BRAIN_POOL = 6'000'000;
+ const int BRAIN_POOL = 10'000'000;
  
  // TODO: run psyleague with different C values
  const float C = 0.4f;
@@ -27,6 +27,7 @@
  int PLAYER_IDX;
  
  #endif // CONST_HPP
+ 
  // *** End of: /home/olaf/codingame/const.hpp *** 
  // *** Start of: /home/olaf/codingame/state.hpp *** 
  #ifndef STATE_HPP
@@ -164,15 +165,16 @@
       }
   
       inline int expected_end() const {
-          int t0 = pd[pos[0]] + stun[0];
-          int t1 = pd[pos[1]] + stun[1];
-          int t2 = pd[pos[2]] + stun[2];
+          const int t0 = pd[pos[0]] + stun[0];
+          const int t1 = pd[pos[1]] + stun[1];
+          const int t2 = pd[pos[2]] + stun[2];
   
           if (t0 <= t1 && t0 <= t2)
               return t0;
           else
           if (t1 <= t0 && t1 <= t2)
               return t1;
+  
           return t2;
       }
   
@@ -211,7 +213,7 @@
           }
       }
   
-      void randomize() {
+      inline void randomize() {
   
           track = all_tracks[fast_rand() % tracks_count];
   
@@ -854,13 +856,13 @@
   
   struct RollerSkating {
   
-      int8_t turns_left;
       // int8_t turns_done;
   
+      int8_t risk[3];
       int8_t dist_div10[3];
       int8_t dist_mod10[3];
-      int8_t risk[3];
-  
+      
+      int8_t turns_left;
       uint8_t order;
   
       bool end;
@@ -1359,14 +1361,53 @@
      }
  
      // return how much does a player earn from games
-     void get_stats(float& r0, float& r1, float& r2) {
+     inline void get_stats(float* rewards) {
  
          apply_places();
  
-         const int score0 = std::max<int>(1, hurdle_race_score[0]) * std::max<int>(1, archery_score[0]) * std::max<int>(1, roller_skating_score[0]) * std::max<int>(1, diving_score[0]);
-         const int score1 = std::max<int>(1, hurdle_race_score[1]) * std::max<int>(1, archery_score[1]) * std::max<int>(1, roller_skating_score[1]) * std::max<int>(1, diving_score[1]);
-         const int score2 = std::max<int>(1, hurdle_race_score[2]) * std::max<int>(1, archery_score[2]) * std::max<int>(1, roller_skating_score[2]) * std::max<int>(1, diving_score[2]);
-         
+         int scores[3] = {1, 1, 1};
+ 
+         for (int i = 0; i < 3; i++) {
+             if (hurdle_race_score[i] > 0)
+                 scores[i] *= hurdle_race_score[i];
+ 
+             if (archery_score[i] > 0)
+                 scores[i] *= archery_score[i];
+             
+             if (roller_skating_score[i] > 0)
+                 scores[i] *= roller_skating_score[i];
+             
+             if (diving_score[i] > 0)
+                 scores[i] *= diving_score[i];
+         }
+ 
+         const int sum = (scores[0] + scores[1] + scores[2]);
+ 
+         {
+             int max_enemy = std::max<int>(scores[1], scores[2]);
+             int min_enemy = std::min<int>(scores[1], scores[2]);
+ 
+             rewards[0] = float(scores[0] - 0.6 * max_enemy - 1.0 * min_enemy) / (scores[0] + 0.6 * max_enemy + 1.0 * min_enemy);
+         }
+ 
+         {
+             int max_enemy = std::max<int>(scores[0], scores[2]);
+             int min_enemy = std::min<int>(scores[0], scores[2]);
+ 
+             rewards[1] = float(scores[1] - 0.6 * max_enemy - 1.0 * min_enemy) / (scores[1] + 0.6 * max_enemy + 1.0 * min_enemy);
+         }
+ 
+         {
+             int max_enemy = std::max<int>(scores[0], scores[1]);
+             int min_enemy = std::min<int>(scores[0], scores[1]);
+ 
+             rewards[2] = float(scores[2] - 0.6 * max_enemy - 1.0 * min_enemy) / (scores[2] + 0.6 * max_enemy + 1.0 * min_enemy);
+         }
+ 
+         // rewards[0] = float(scores[0] - scores[1] - scores[2]) / sum;
+         // rewards[1] = float(scores[1] - scores[0] - scores[2]) / sum;
+         // rewards[2] = float(scores[2] - scores[0] - scores[1]) / sum;
+ 
          // r0 = (float) (score0 - score1 - score2) / (score0 + score1 + score2); // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
          // r1 = (float) (score1 - score0 - score2) / (score1 + score0 + score2); // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
          // r2 = (float) (score2 - score0 - score1) / (score2 + score0 + score1); // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
@@ -1414,13 +1455,13 @@
  
          // const float turn_log = fastlogf(turn + 1);
  
-         // r0 = (float) COEFFICIENT1 * (score0_log - score1_log - score2_log) / (score0_log + score1_log + score2_log);
-         // r1 = (float) COEFFICIENT1 * (score1_log - score0_log - score2_log) / (score1_log + score0_log + score2_log);
-         // r2 = (float) COEFFICIENT1 * (score2_log - score0_log - score1_log) / (score2_log + score0_log + score1_log);
+         // r0 = (float) 0.6 * (score0_log - score1_log - score2_log) / (score0_log + score1_log + score2_log);
+         // r1 = (float) 0.6 * (score1_log - score0_log - score2_log) / (score1_log + score0_log + score2_log);
+         // r2 = (float) 0.6 * (score2_log - score0_log - score1_log) / (score2_log + score0_log + score1_log);
  
-         r0 = (float) (score0 - score1 - score2) / (score0 + score1 + score2);
-         r1 = (float) (score1 - score0 - score2) / (score1 + score0 + score2);
-         r2 = (float) (score2 - score0 - score1) / (score2 + score0 + score1);
+         // r0 = (float) (score0 - score1 - score2) / (score0 + score1 + score2);
+         // r1 = (float) (score1 - score0 - score2) / (score1 + score0 + score2);
+         // r2 = (float) (score2 - score0 - score1) / (score2 + score0 + score1);
          
          // r0 += COEFFICIENT3 * turn_log * ((score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2));
          // r1 += COEFFICIENT3 * turn_log * ((score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2));
@@ -1442,25 +1483,25 @@
          // r1 += COEFFICIENT4 * (float) (diving_score[1] - diving_score[0] - diving_score[2]) / (1 + diving_score[0] + diving_score[1] + diving_score[2]);
          // r2 += COEFFICIENT4 * (float) (diving_score[2] - diving_score[0] - diving_score[1]) / (1 + diving_score[0] + diving_score[1] + diving_score[2]);
  
-         // r0 += COEFFICIENT2 * ((score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2));
-         // r1 += COEFFICIENT2 * ((score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2));
-         // r2 += COEFFICIENT2 * ((score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1));
+         // r0 += 1.0 * ((score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2));
+         // r1 += 1.0 * ((score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2));
+         // r2 += 1.0 * ((score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1));
  
-         // r0 += COEFFICIENT2 * (hurdle_race_score[0] - hurdle_race_score[1] - hurdle_race_score[2]);
-         // r1 += COEFFICIENT2 * (hurdle_race_score[1] - hurdle_race_score[0] - hurdle_race_score[2]);
-         // r2 += COEFFICIENT2 * (hurdle_race_score[2] - hurdle_race_score[0] - hurdle_race_score[1]);
+         // r0 += 1.0 * (hurdle_race_score[0] - hurdle_race_score[1] - hurdle_race_score[2]);
+         // r1 += 1.0 * (hurdle_race_score[1] - hurdle_race_score[0] - hurdle_race_score[2]);
+         // r2 += 1.0 * (hurdle_race_score[2] - hurdle_race_score[0] - hurdle_race_score[1]);
  
-         // r0 += COEFFICIENT2 * (archery_score[0] - archery_score[1] - archery_score[2]);
-         // r1 += COEFFICIENT2 * (archery_score[1] - archery_score[0] - archery_score[2]);
-         // r2 += COEFFICIENT2 * (archery_score[2] - archery_score[0] - archery_score[1]);
+         // r0 += 1.0 * (archery_score[0] - archery_score[1] - archery_score[2]);
+         // r1 += 1.0 * (archery_score[1] - archery_score[0] - archery_score[2]);
+         // r2 += 1.0 * (archery_score[2] - archery_score[0] - archery_score[1]);
  
-         // r0 += COEFFICIENT2 * (roller_skating_score[0] - roller_skating_score[1] - roller_skating_score[2]);
-         // r1 += COEFFICIENT2 * (roller_skating_score[1] - roller_skating_score[0] - roller_skating_score[2]);
-         // r2 += COEFFICIENT2 * (roller_skating_score[2] - roller_skating_score[0] - roller_skating_score[1]);
+         // r0 += 1.0 * (roller_skating_score[0] - roller_skating_score[1] - roller_skating_score[2]);
+         // r1 += 1.0 * (roller_skating_score[1] - roller_skating_score[0] - roller_skating_score[2]);
+         // r2 += 1.0 * (roller_skating_score[2] - roller_skating_score[0] - roller_skating_score[1]);
  
-         // r0 += COEFFICIENT2 * (diving_score[0] - diving_score[1] - diving_score[2]);
-         // r1 += COEFFICIENT2 * (diving_score[1] - diving_score[0] - diving_score[2]);
-         // r2 += COEFFICIENT2 * (diving_score[2] - diving_score[0] - diving_score[1]);
+         // r0 += 1.0 * (diving_score[0] - diving_score[1] - diving_score[2]);
+         // r1 += 1.0 * (diving_score[1] - diving_score[0] - diving_score[2]);
+         // r2 += 1.0 * (diving_score[2] - diving_score[0] - diving_score[1]);
          
  
          //     if (PLAYER_IDX == 0) {
@@ -1548,7 +1589,7 @@
          if (gpu[1] == "GAME_OVER") {
              archery.end = true;
  
-             archery_left = 0; // 1;
+             archery_left = 1; // 1;
          }
          else { // archery
              archery.wind_index = (int) gpu[1].size() - 1;
@@ -1564,18 +1605,18 @@
  
              archery.end = false;
  
-             archery.build_dp();
+             // archery.build_dp();
  
              if (archery.expected_end() <= 3) {
                  archery_left = 1;
                  std::cerr << "Archery once more\n";
              }
-             else
-             if (!archery.playable(0) &&
-                 !archery.playable(1) &&
-                 !archery.playable(2)) {
-                 archery.end = true;
-             }
+             // else
+             // if (!archery.playable(0) &&
+             //     !archery.playable(1) &&
+             //     !archery.playable(2)) {
+             //     archery.end = true;
+             // }
              else {
                  archery_left = 0; // 1;
              }
@@ -1604,7 +1645,7 @@
  
              roller_skating.end = false;
  
-             if (roller_skating.expected_end() <= 3) {
+             if (roller_skating.expected_end() <= 4) {
                  roller_skating_left = 1;
                  std::cerr << "Skating once more\n";
              }
@@ -1621,7 +1662,7 @@
  
          if (gpu[3] == "GAME_OVER") {
              diving.end = true;
-             diving_left = 0; // 1;
+             diving_left = 1; // 1;
          }
          else { // diving
              diving.goals_left = (int8_t) gpu[3].size();
@@ -1897,43 +1938,46 @@
              pool[last++].init(move);
          }
  
-         // random shuffle sons
-         std::swap(pool[last - 1], pool[last - 1 - fast_rand() % 4]);
-         std::swap(pool[last - 2], pool[last - 2 - fast_rand() % 3]);
-         std::swap(pool[last - 3], pool[last - 3 - fast_rand() % 2]);
+         // // random shuffle sons
+         std::swap(pool[last - 1], pool[last - 1 - (fast_rand() & 3)]);
+         std::swap(pool[last - 2], pool[last - 2 - (fast_rand() % 3)]);
+         std::swap(pool[last - 3], pool[last - 3 - (fast_rand() & 1)]);
      }
  
-     inline BrainNode* select() const {
+     inline BrainNode* select() {
          for (int8_t move = 0; move < 4; move++) {
              if ((sons + move)->vis == 0) {
                  return sons + move;
              }
          }
  
-         float best_score = -INF;
-         BrainNode* best_node = 0;
+         const float sqrt_log_node_vis = C * fastsqrtf(fastlogf(vis));
  
-         float sqrt_log_node_vis = C * fastsqrtf(fastlogf(vis));
-         for (int8_t move = 0; move < 4; move++) {
-             BrainNode* node = sons + move;
+         BrainNode* node = sons;
+ 
+         float best_score = node->avg + sqrt_log_node_vis * rsqrt_fast(node->vis);
+         BrainNode* best_node = node;
+ 
+         for (int8_t move = 1; move < 4; move++) {
+             node++;
  
              // float reward_variance = node->var / node->vis;
              // float variance_term = reward_variance + fastsqrtf(2 * fastlogf(vis) / node->vis);
              // float ucb_score = node->avg + sqrt_log_node_vis * rsqrt_fast(node->vis) * std::min(0.25f, variance_term);
  
-             float ucb_score = node->avg + sqrt_log_node_vis * rsqrt_fast(node->vis);
-             // float ucb_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]); // C * std::sqrt(log_node_vis / vis[player_idx][move]);
+             const float ucb_score = node->avg + sqrt_log_node_vis * rsqrt_fast(node->vis);
  
              if (best_score < ucb_score) {
                  best_score = ucb_score;
                  best_node = node;
              }
          }
+ 
          return best_node;
      }
  
      inline BrainNode* random_select() const {
-         return (sons + (fast_rand() & 3));
+         return (sons + random_move());
      }
  
      inline int8_t best_move() const {
@@ -1953,7 +1997,7 @@
      }
  
      inline void apply(float reward) {
-         // float delta = reward - avg;
+         // const float delta = reward - avg;
  
          avg *= vis;
          avg += reward;
@@ -1971,7 +2015,7 @@
  
          std::cerr << "sons:\n";
  
-         // float sqrt_log_node_vis = fastsqrtf(fastlogf(vis));
+         float sqrt_log_node_vis = fastsqrtf(fastlogf(vis));
          for (int8_t move = 0; move < 4; move++) {
              BrainNode* node = (sons + move);
              
@@ -1984,7 +2028,9 @@
              // float variance_term = reward_variance + fastsqrtf(2 * fastlogf(vis) / node->vis);
              // float ucb_score = node->avg + sqrt_log_node_vis * rsqrt_fast(node->vis) * std::min(0.25f, variance_term);
  
-             // std::cerr << " ucb > " << ucb_score << '\n';
+             float ucb_score = node->avg + sqrt_log_node_vis * rsqrt_fast(node->vis);
+ 
+             std::cerr << " ucb > " << ucb_score << '\n';
              
              std::cerr << '\n';
          }
@@ -2008,9 +2054,9 @@
          }
      }
  
-     void optimize(BrainNode** heads, State &state, float* reward) {
+     inline void optimize(BrainNode** heads, State &state, float* reward) {
          if (state.is_terminal()) {
-             state.get_stats(reward[0], reward[1], reward[2]);
+             state.get_stats(reward);
              
              for (int i = 0; i < 3; i++) {
                  if (heads[i]) {
@@ -2022,12 +2068,10 @@
  
          if (heads[0] == 0 && heads[1] == 0 && heads[2] == 0) {
              do {
-                 // uint8_t moves = fast_rand();
-                 // state.play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
                  state.play(random_move(), random_move(), random_move());
              } while (!state.is_terminal());
  
-             state.get_stats(reward[0], reward[1], reward[2]);
+             state.get_stats(reward);
              return;
          }
  
@@ -2037,7 +2081,7 @@
          for (int i = 0; i < 3; i++) {
              if (heads[i] == 0 || heads[i]->vis == 0) {
                  childs[i] = 0;
-                 moves[i] = random_move(); // fast_rand() & 3;
+                 moves[i] = random_move();
              }
              else {
                  if (heads[i]->sons == 0) {
@@ -2058,9 +2102,9 @@
          }
      }
  
-     void random_walk(BrainNode** heads, State &state, float* reward) {
+     inline void random_walk(BrainNode** heads, State &state, float* reward) {
          if (state.is_terminal()) {
-             state.get_stats(reward[0], reward[1], reward[2]);
+             state.get_stats(reward);
              
              for (int i = 0; i < 3; i++) {
                  if (heads[i]) {
@@ -2072,12 +2116,10 @@
  
          if (heads[0] == 0 && heads[1] == 0 && heads[2] == 0) {
              do {
-                 // uint8_t moves = fast_rand();
-                 // state.play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
                  state.play(random_move(), random_move(), random_move());
              } while (!state.is_terminal());
  
-             state.get_stats(reward[0], reward[1], reward[2]);
+             state.get_stats(reward);
              return;
          }
  
@@ -2087,7 +2129,7 @@
          for (int i = 0; i < 3; i++) {
              if (heads[i] == 0 || heads[i]->vis == 0) {
                  childs[i] = 0;
-                 moves[i] = random_move(); // fast_rand() & 3;
+                 moves[i] = random_move();
              }
              else {
                  if (heads[i]->sons == 0) {
@@ -2108,7 +2150,7 @@
          }
      }
  
-     int best_move(int player_idx) const {
+     inline int best_move(int player_idx) const {
          return roots[player_idx]->best_move();
      }
  
@@ -2121,31 +2163,28 @@
      void run(const State& root_state, int timeout) {
          reset();
  
+         State state;
+         float reward[3];
          do {
-             State state = root_state;
+             state = root_state;
              BrainNode* heads[3] = {roots[0], roots[1], roots[2]};
-             float reward[3];
  
              random_walk(heads, state, reward);
          } while (timer.get_elapsed() < timeout * 0.12 &&
                   BrainNode::last + 40 < BRAIN_POOL);
- 
-         // debug();
- 
+         
          do {
-             State state = root_state;
+             state = root_state;
              BrainNode* heads[3] = {roots[0], roots[1], roots[2]};
-             float reward[3];
  
-             // maybe first 20% of time use on random rollouts from the begginning and then the rest
              optimize(heads, state, reward);
          } while (timer.get_elapsed() < timeout &&
                   BrainNode::last + 40 < BRAIN_POOL);
-         
      }
  };
  
  #endif // BRAIN_HPP
+ 
  // *** End of: /home/olaf/codingame/search/brain.hpp *** 
 
 #include <iostream>
@@ -2281,4 +2320,5 @@ int main() {
     }
 
 }
+
 // *** End of: /home/olaf/codingame/brain.cpp *** 

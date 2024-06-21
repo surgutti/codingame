@@ -133,7 +133,15 @@ struct State {
                 archery.end && archery_left == 0 &&
                 roller_skating.end && roller_skating_left == 0 &&
                 diving.end && diving_left == 0) ||
-               turn >= 100;
+                turn >= 100;
+    }
+
+    inline bool is_rollout_terminal() const {
+        return (hurdle_race.end &&
+                archery.end &&
+                roller_skating.end &&
+                diving.end) ||
+                turn >= 100;
     }
 
     // return how much does a player earn from games
@@ -159,30 +167,30 @@ struct State {
 
         const int sum = (scores[0] + scores[1] + scores[2]);
 
-        {
-            int max_enemy = std::max<int>(scores[1], scores[2]);
-            int min_enemy = std::min<int>(scores[1], scores[2]);
+        // {
+        //     int max_enemy = std::max<int>(scores[1], scores[2]);
+        //     int min_enemy = std::min<int>(scores[1], scores[2]);
 
-            rewards[0] = float(scores[0] - COEFFICIENT1 * max_enemy - COEFFICIENT2 * min_enemy) / (scores[0] + COEFFICIENT1 * max_enemy + COEFFICIENT2 * min_enemy);
-        }
+        //     rewards[0] = float(scores[0] - COEFFICIENT1 * max_enemy - COEFFICIENT2 * min_enemy) / (scores[0] + COEFFICIENT1 * max_enemy + COEFFICIENT2 * min_enemy);
+        // }
 
-        {
-            int max_enemy = std::max<int>(scores[0], scores[2]);
-            int min_enemy = std::min<int>(scores[0], scores[2]);
+        // {
+        //     int max_enemy = std::max<int>(scores[0], scores[2]);
+        //     int min_enemy = std::min<int>(scores[0], scores[2]);
 
-            rewards[1] = float(scores[1] - COEFFICIENT1 * max_enemy - COEFFICIENT2 * min_enemy) / (scores[1] + COEFFICIENT1 * max_enemy + COEFFICIENT2 * min_enemy);
-        }
+        //     rewards[1] = float(scores[1] - COEFFICIENT1 * max_enemy - COEFFICIENT2 * min_enemy) / (scores[1] + COEFFICIENT1 * max_enemy + COEFFICIENT2 * min_enemy);
+        // }
 
-        {
-            int max_enemy = std::max<int>(scores[0], scores[1]);
-            int min_enemy = std::min<int>(scores[0], scores[1]);
+        // {
+        //     int max_enemy = std::max<int>(scores[0], scores[1]);
+        //     int min_enemy = std::min<int>(scores[0], scores[1]);
 
-            rewards[2] = float(scores[2] - COEFFICIENT1 * max_enemy - COEFFICIENT2 * min_enemy) / (scores[2] + COEFFICIENT1 * max_enemy + COEFFICIENT2 * min_enemy);
-        }
+        //     rewards[2] = float(scores[2] - COEFFICIENT1 * max_enemy - COEFFICIENT2 * min_enemy) / (scores[2] + COEFFICIENT1 * max_enemy + COEFFICIENT2 * min_enemy);
+        // }
 
-        // rewards[0] = float(scores[0] - scores[1] - scores[2]) / sum;
-        // rewards[1] = float(scores[1] - scores[0] - scores[2]) / sum;
-        // rewards[2] = float(scores[2] - scores[0] - scores[1]) / sum;
+        rewards[0] = float(scores[0] - scores[1] - scores[2]) / sum;
+        rewards[1] = float(scores[1] - scores[0] - scores[2]) / sum;
+        rewards[2] = float(scores[2] - scores[0] - scores[1]) / sum;
 
         // r0 = (float) (score0 - score1 - score2) / (score0 + score1 + score2); // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
         // r1 = (float) (score1 - score0 - score2) / (score1 + score0 + score2); // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
@@ -438,7 +446,7 @@ struct State {
 
         if (gpu[3] == "GAME_OVER") {
             diving.end = true;
-            diving_left = 1; // 1;
+            diving_left = 0; // 0 because this game is totally random;
         }
         else { // diving
             diving.goals_left = (int8_t) gpu[3].size();
@@ -456,19 +464,19 @@ struct State {
             diving.end = false;
             
 
-            if (diving.expected_end() <= 3) {
-                diving_left = 1;
-                std::cerr << "Diving once more\n";
-            }
-            else
+            // if (diving.expected_end() <= 3) {
+            //     diving_left = 0;
+            //     std::cerr << "Diving once more\n";
+            // }
+            // else
             if (!diving.playable(0) &&
                 !diving.playable(1) &&
                 !diving.playable(2)) {
                 diving.end = true;
             }
-            else {
+            // else {
                 diving_left = 0; // 1;
-            }
+            // }
         }
     }
     
@@ -582,6 +590,17 @@ struct State {
     //     play(move[0], move[1], move[2]);
     // }
 
+    void play_random() {
+        const int8_t move[3] = {random_move(), random_move(), random_move()};
+
+        hurdle_race.play(move);
+        archery.play(move);
+        roller_skating.play(move);
+        diving.play(move);
+
+        turn++;
+    }
+
     void play(int8_t p0, int8_t p1, int8_t p2) {
 
         const int8_t move[3] = {p0, p1, p2};
@@ -596,6 +615,7 @@ struct State {
         archery.play(move);
         roller_skating.play(move);
         diving.play(move);
+
         turn++;
 
         if (was_hurdle_race_end && hurdle_race_left) {
