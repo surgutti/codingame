@@ -2255,7 +2255,7 @@ int main() {
         mcts.run(current_state, 20);
         mcts.debug();
 #else
-        mcts.run(current_state, (TURN == 0 ? 950 : 45));
+        mcts.run(current_state, (TURN == 0 ? 600 : 45));
         mcts.debug();
 #endif // PSYLEAGUE
 

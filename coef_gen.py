@@ -22,7 +22,7 @@ with open("bot.cpp", "r") as file:
                     
                     value_code = code.replace("COEFFICIENT1", str(coef1)).replace("COEFFICIENT2", str(coef2)).replace("COEFFICIENT3", str(coef3)).replace("COEFFICIENT4", str(coef4))
                         
-                    with open("gen_bots/bot_" + str(c1) + "-" + str(c2) + "-" + str(c3) + "-" + str(c4) + ".cpp", "w") as bot_file:
+                    with open("gen_bots/bot2_" + str(c1) + "-" + str(c2) + "-" + str(c3) + "-" + str(c4) + ".cpp", "w") as bot_file:
                         bot_file.write(value_code)
                     
                     cnt += 1

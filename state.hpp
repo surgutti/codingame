@@ -128,7 +128,7 @@ struct State {
         return true;
     }
 
-    bool is_terminal() const {
+    inline bool is_terminal() const {
         return (hurdle_race.end && hurdle_race_left == 0 &&
                 archery.end && archery_left == 0 &&
                 roller_skating.end && roller_skating_left == 0 &&
@@ -190,55 +190,55 @@ struct State {
         // const float score1_log = fastlogf(score1);
         // const float score2_log = fastlogf(score2);
 
-        const float turn_log = fastlogf(turn + 1);
+        // const float turn_log = fastlogf(turn + 1);
 
-        r0 = (float) COEFFICIENT1 * (score0_log - score1_log - score2_log) / (score0_log + score1_log + score2_log);
-        r1 = (float) COEFFICIENT1 * (score1_log - score0_log - score2_log) / (score1_log + score0_log + score2_log);
-        r2 = (float) COEFFICIENT1 * (score2_log - score0_log - score1_log) / (score2_log + score0_log + score1_log);
+        // r0 = (float) COEFFICIENT1 * (score0_log - score1_log - score2_log) / (score0_log + score1_log + score2_log);
+        // r1 = (float) COEFFICIENT1 * (score1_log - score0_log - score2_log) / (score1_log + score0_log + score2_log);
+        // r2 = (float) COEFFICIENT1 * (score2_log - score0_log - score1_log) / (score2_log + score0_log + score1_log);
 
-        r0 += (float) (score0 - score1 - score2) / (score0 + score1 + score2);
-        r1 += (float) (score1 - score0 - score2) / (score1 + score0 + score2);
-        r2 += (float) (score2 - score0 - score1) / (score2 + score0 + score1);
+        r0 = (float) (score0 - score1 - score2) / (score0 + score1 + score2);
+        r1 = (float) (score1 - score0 - score2) / (score1 + score0 + score2);
+        r2 = (float) (score2 - score0 - score1) / (score2 + score0 + score1);
         
-        r0 += COEFFICIENT3 * turn_log * ((score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2));
-        r1 += COEFFICIENT3 * turn_log * ((score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2));
-        r2 += COEFFICIENT3 * turn_log * ((score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1));
+        // r0 += COEFFICIENT3 * turn_log * ((score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2));
+        // r1 += COEFFICIENT3 * turn_log * ((score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2));
+        // r2 += COEFFICIENT3 * turn_log * ((score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1));
 
-        r0 += COEFFICIENT4 * (float) (hurdle_race_score[0] - hurdle_race_score[1] - hurdle_race_score[2]) / (1 + hurdle_race_score[0] + hurdle_race_score[1] + hurdle_race_score[2]);
-        r1 += COEFFICIENT4 * (float) (hurdle_race_score[1] - hurdle_race_score[0] - hurdle_race_score[2]) / (1 + hurdle_race_score[0] + hurdle_race_score[1] + hurdle_race_score[2]);
-        r2 += COEFFICIENT4 * (float) (hurdle_race_score[2] - hurdle_race_score[0] - hurdle_race_score[1]) / (1 + hurdle_race_score[0] + hurdle_race_score[1] + hurdle_race_score[2]);
+        // r0 += COEFFICIENT4 * (float) (hurdle_race_score[0] - hurdle_race_score[1] - hurdle_race_score[2]) / (1 + hurdle_race_score[0] + hurdle_race_score[1] + hurdle_race_score[2]);
+        // r1 += COEFFICIENT4 * (float) (hurdle_race_score[1] - hurdle_race_score[0] - hurdle_race_score[2]) / (1 + hurdle_race_score[0] + hurdle_race_score[1] + hurdle_race_score[2]);
+        // r2 += COEFFICIENT4 * (float) (hurdle_race_score[2] - hurdle_race_score[0] - hurdle_race_score[1]) / (1 + hurdle_race_score[0] + hurdle_race_score[1] + hurdle_race_score[2]);
 
-        r0 += COEFFICIENT4 * (float) (archery_score[0] - archery_score[1] - archery_score[2]) / (1 + archery_score[0] + archery_score[1] + archery_score[2]);
-        r1 += COEFFICIENT4 * (float) (archery_score[1] - archery_score[0] - archery_score[2]) / (1 + archery_score[0] + archery_score[1] + archery_score[2]);
-        r2 += COEFFICIENT4 * (float) (archery_score[2] - archery_score[0] - archery_score[1]) / (1 + archery_score[0] + archery_score[1] + archery_score[2]);
+        // r0 += COEFFICIENT4 * (float) (archery_score[0] - archery_score[1] - archery_score[2]) / (1 + archery_score[0] + archery_score[1] + archery_score[2]);
+        // r1 += COEFFICIENT4 * (float) (archery_score[1] - archery_score[0] - archery_score[2]) / (1 + archery_score[0] + archery_score[1] + archery_score[2]);
+        // r2 += COEFFICIENT4 * (float) (archery_score[2] - archery_score[0] - archery_score[1]) / (1 + archery_score[0] + archery_score[1] + archery_score[2]);
 
-        r0 += COEFFICIENT4 * (float) (roller_skating_score[0] - roller_skating_score[1] - roller_skating_score[2]) / (1 + roller_skating_score[0] + roller_skating_score[1] + roller_skating_score[2]);
-        r1 += COEFFICIENT4 * (float) (roller_skating_score[1] - roller_skating_score[0] - roller_skating_score[2]) / (1 + roller_skating_score[0] + roller_skating_score[1] + roller_skating_score[2]);
-        r2 += COEFFICIENT4 * (float) (roller_skating_score[2] - roller_skating_score[0] - roller_skating_score[1]) / (1 + roller_skating_score[0] + roller_skating_score[1] + roller_skating_score[2]);
+        // r0 += COEFFICIENT4 * (float) (roller_skating_score[0] - roller_skating_score[1] - roller_skating_score[2]) / (1 + roller_skating_score[0] + roller_skating_score[1] + roller_skating_score[2]);
+        // r1 += COEFFICIENT4 * (float) (roller_skating_score[1] - roller_skating_score[0] - roller_skating_score[2]) / (1 + roller_skating_score[0] + roller_skating_score[1] + roller_skating_score[2]);
+        // r2 += COEFFICIENT4 * (float) (roller_skating_score[2] - roller_skating_score[0] - roller_skating_score[1]) / (1 + roller_skating_score[0] + roller_skating_score[1] + roller_skating_score[2]);
 
-        r0 += COEFFICIENT4 * (float) (diving_score[0] - diving_score[1] - diving_score[2]) / (1 + diving_score[0] + diving_score[1] + diving_score[2]);
-        r1 += COEFFICIENT4 * (float) (diving_score[1] - diving_score[0] - diving_score[2]) / (1 + diving_score[0] + diving_score[1] + diving_score[2]);
-        r2 += COEFFICIENT4 * (float) (diving_score[2] - diving_score[0] - diving_score[1]) / (1 + diving_score[0] + diving_score[1] + diving_score[2]);
+        // r0 += COEFFICIENT4 * (float) (diving_score[0] - diving_score[1] - diving_score[2]) / (1 + diving_score[0] + diving_score[1] + diving_score[2]);
+        // r1 += COEFFICIENT4 * (float) (diving_score[1] - diving_score[0] - diving_score[2]) / (1 + diving_score[0] + diving_score[1] + diving_score[2]);
+        // r2 += COEFFICIENT4 * (float) (diving_score[2] - diving_score[0] - diving_score[1]) / (1 + diving_score[0] + diving_score[1] + diving_score[2]);
 
-        r0 += COEFFICIENT2 * ((score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2));
-        r1 += COEFFICIENT2 * ((score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2));
-        r2 += COEFFICIENT2 * ((score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1));
+        // r0 += COEFFICIENT2 * ((score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2));
+        // r1 += COEFFICIENT2 * ((score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2));
+        // r2 += COEFFICIENT2 * ((score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1));
 
-        r0 += COEFFICIENT2 * (hurdle_race_score[0] - hurdle_race_score[1] - hurdle_race_score[2]);
-        r1 += COEFFICIENT2 * (hurdle_race_score[1] - hurdle_race_score[0] - hurdle_race_score[2]);
-        r2 += COEFFICIENT2 * (hurdle_race_score[2] - hurdle_race_score[0] - hurdle_race_score[1]);
+        // r0 += COEFFICIENT2 * (hurdle_race_score[0] - hurdle_race_score[1] - hurdle_race_score[2]);
+        // r1 += COEFFICIENT2 * (hurdle_race_score[1] - hurdle_race_score[0] - hurdle_race_score[2]);
+        // r2 += COEFFICIENT2 * (hurdle_race_score[2] - hurdle_race_score[0] - hurdle_race_score[1]);
 
-        r0 += COEFFICIENT2 * (archery_score[0] - archery_score[1] - archery_score[2]);
-        r1 += COEFFICIENT2 * (archery_score[1] - archery_score[0] - archery_score[2]);
-        r2 += COEFFICIENT2 * (archery_score[2] - archery_score[0] - archery_score[1]);
+        // r0 += COEFFICIENT2 * (archery_score[0] - archery_score[1] - archery_score[2]);
+        // r1 += COEFFICIENT2 * (archery_score[1] - archery_score[0] - archery_score[2]);
+        // r2 += COEFFICIENT2 * (archery_score[2] - archery_score[0] - archery_score[1]);
 
-        r0 += COEFFICIENT2 * (roller_skating_score[0] - roller_skating_score[1] - roller_skating_score[2]);
-        r1 += COEFFICIENT2 * (roller_skating_score[1] - roller_skating_score[0] - roller_skating_score[2]);
-        r2 += COEFFICIENT2 * (roller_skating_score[2] - roller_skating_score[0] - roller_skating_score[1]);
+        // r0 += COEFFICIENT2 * (roller_skating_score[0] - roller_skating_score[1] - roller_skating_score[2]);
+        // r1 += COEFFICIENT2 * (roller_skating_score[1] - roller_skating_score[0] - roller_skating_score[2]);
+        // r2 += COEFFICIENT2 * (roller_skating_score[2] - roller_skating_score[0] - roller_skating_score[1]);
 
-        r0 += COEFFICIENT2 * (diving_score[0] - diving_score[1] - diving_score[2]);
-        r1 += COEFFICIENT2 * (diving_score[1] - diving_score[0] - diving_score[2]);
-        r2 += COEFFICIENT2 * (diving_score[2] - diving_score[0] - diving_score[1]);
+        // r0 += COEFFICIENT2 * (diving_score[0] - diving_score[1] - diving_score[2]);
+        // r1 += COEFFICIENT2 * (diving_score[1] - diving_score[0] - diving_score[2]);
+        // r2 += COEFFICIENT2 * (diving_score[2] - diving_score[0] - diving_score[1]);
         
 
         //     if (PLAYER_IDX == 0) {
@@ -307,20 +307,20 @@ struct State {
             hurdle_race.end = false;
 
             hurdle_race.build_dp();
-            
-            // can't skip the game if number of its turns is important
-            // if (!hurdle_race.playable(0) &&
-            //     !hurdle_race.playable(1) &&
-            //     !hurdle_race.playable(2)) {    
-            //     hurdle_race.end = true;
-            // }
 
             if (hurdle_race.expected_end() <= 5) {
                 hurdle_race_left = 1;
                 std::cerr << "Hurdle once more\n";
             }
             else
+            if (!hurdle_race.playable(0) &&
+                !hurdle_race.playable(1) &&
+                !hurdle_race.playable(2)) {    
+                hurdle_race.end = true;
+            }
+            else {
                 hurdle_race_left = 0; // 1;
+            }
         }
 
         if (gpu[1] == "GAME_OVER") {
@@ -344,18 +344,19 @@ struct State {
 
             archery.build_dp();
 
-            // if (!archery.playable(0) &&
-            //     !archery.playable(1) &&
-            //     !archery.playable(2)) {
-            //     archery.end = true;
-            // }
-
-            // if (archery.expected_end() <= 5) {
-            //     archery_left = 1;
-            //     std::cerr << "Archery once more\n";
-            // }
-            // else
-                // archery_left = 0; // 1;
+            if (archery.expected_end() <= 3) {
+                archery_left = 1;
+                std::cerr << "Archery once more\n";
+            }
+            else
+            if (!archery.playable(0) &&
+                !archery.playable(1) &&
+                !archery.playable(2)) {
+                archery.end = true;
+            }
+            else {
+                archery_left = 0; // 1;
+            }
         }
 
         if (gpu[2] == "GAME_OVER") {
@@ -381,18 +382,19 @@ struct State {
 
             roller_skating.end = false;
 
-            // if (!roller_skating.playable(0) &&
-            //     !roller_skating.playable(1) &&
-            //     !roller_skating.playable(2)) {
-            //     roller_skating.end = true;
-            // }
-
-            // if (roller_skating.expected_end() <= 5) {
-            //     roller_skating_left = 1;
-            //     std::cerr << "Skating once more\n";
-            // }
-            // else
-            roller_skating_left = 0; // 1;
+            if (roller_skating.expected_end() <= 3) {
+                roller_skating_left = 1;
+                std::cerr << "Skating once more\n";
+            }
+            else
+            if (!roller_skating.playable(0) &&
+                !roller_skating.playable(1) &&
+                !roller_skating.playable(2)) {
+                roller_skating.end = true;
+            }
+            else {
+                roller_skating_left = 0; // 1;
+            }
         }
 
         if (gpu[3] == "GAME_OVER") {
@@ -414,18 +416,20 @@ struct State {
 
             diving.end = false;
             
-            // if (!diving.playable(0) &&
-            //     !diving.playable(1) &&
-            //     !diving.playable(2)) {
-            //     diving.end = true;
-            // }
 
-            // if (diving.expected_end() <= 5) {
-            //     diving_left = 1;
-            //     std::cerr << "Diving once more\n";
-            // }
-            // else
-            diving_left = 0; // 1;
+            if (diving.expected_end() <= 3) {
+                diving_left = 1;
+                std::cerr << "Diving once more\n";
+            }
+            else
+            if (!diving.playable(0) &&
+                !diving.playable(1) &&
+                !diving.playable(2)) {
+                diving.end = true;
+            }
+            else {
+                diving_left = 0; // 1;
+            }
         }
     }
     
@@ -543,11 +547,11 @@ struct State {
 
         const int8_t move[3] = {p0, p1, p2};
 
-        // static int8_t places[3];
-        // bool was_hurdle_race_end = hurdle_race.end;
-        // bool was_archery_end = archery.end;
-        // bool was_roller_skating_end = roller_skating.end;
-        // bool was_diving_end = diving.end;
+        static int8_t places[3];
+        bool was_hurdle_race_end = hurdle_race.end;
+        bool was_archery_end = archery.end;
+        bool was_roller_skating_end = roller_skating.end;
+        bool was_diving_end = diving.end;
 
         hurdle_race.play(move);
         archery.play(move);
@@ -555,45 +559,45 @@ struct State {
         diving.play(move);
         turn++;
 
-        // if (was_hurdle_race_end && hurdle_race_left) {
-        //     hurdle_race.generate_places(places);
-        //     for (int i = 0; i < 3; i++) {
-        //         hurdle_race_score[i] += places[i];
-        //     }
+        if (was_hurdle_race_end && hurdle_race_left) {
+            hurdle_race.generate_places(places);
+            for (int i = 0; i < 3; i++) {
+                hurdle_race_score[i] += places[i];
+            }
 
-        //     hurdle_race.randomize();
-        //     hurdle_race_left--;
-        // }
+            hurdle_race.randomize();
+            hurdle_race_left--;
+        }
 
-        // if (was_archery_end && archery_left) {
-        //     archery.generate_places(places);
-        //     for (int i = 0; i < 3; i++) {
-        //         archery_score[i] += places[i];
-        //     }
+        if (was_archery_end && archery_left) {
+            archery.generate_places(places);
+            for (int i = 0; i < 3; i++) {
+                archery_score[i] += places[i];
+            }
 
-        //     archery.randomize();
-        //     archery_left--;
-        // }
+            archery.randomize();
+            archery_left--;
+        }
 
-        // if (was_roller_skating_end && roller_skating_left) {
-        //     roller_skating.generate_places(places);
-        //     for (int i = 0; i < 3; i++) {
-        //         roller_skating_score[i] += places[i];
-        //     }
+        if (was_roller_skating_end && roller_skating_left) {
+            roller_skating.generate_places(places);
+            for (int i = 0; i < 3; i++) {
+                roller_skating_score[i] += places[i];
+            }
 
-        //     roller_skating.randomize();
-        //     roller_skating_left--;
-        // }
+            roller_skating.randomize();
+            roller_skating_left--;
+        }
 
-        // if (was_diving_end && diving_left) {
-        //     diving.generate_places(places);
-        //     for (int i = 0; i < 3; i++) {
-        //         diving_score[i] += places[i];
-        //     }
+        if (was_diving_end && diving_left) {
+            diving.generate_places(places);
+            for (int i = 0; i < 3; i++) {
+                diving_score[i] += places[i];
+            }
 
-        //     diving.randomize();
-        //     diving_left--;
-        // }
+            diving.randomize();
+            diving_left--;
+        }
     }
 
     void debug() const {
