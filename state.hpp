@@ -20,23 +20,23 @@ struct State {
     RollerSkating roller_skating;
     Diving diving;
 
-    uint8_t hurdle_race_score[3];
+    float hurdle_race_score[3];
     int8_t hurdle_race_left;
     
-    uint8_t archery_score[3];
+    float archery_score[3];
     int8_t archery_left;
 
-    uint8_t roller_skating_score[3];
+    float roller_skating_score[3];
     int8_t roller_skating_left;
 
-    uint8_t diving_score[3];
+    float diving_score[3];
     int8_t diving_left;
 
     int8_t turn;
 
     inline void apply_places() {
 
-        int8_t places[3];
+        float places[3];
 
         if (hurdle_race.end) {
             hurdle_race.generate_places(places);
@@ -605,7 +605,7 @@ struct State {
 
         const int8_t move[3] = {p0, p1, p2};
 
-        static int8_t places[3];
+        static float places[3];
         bool was_hurdle_race_end = hurdle_race.end;
         bool was_archery_end = archery.end;
         bool was_roller_skating_end = roller_skating.end;

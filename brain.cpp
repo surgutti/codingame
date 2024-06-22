@@ -22,11 +22,43 @@ int main() {
     
     std::cerr << "BrainNode: " << sizeof(BrainNode) << '\n';
     std::cerr << "State: " << sizeof(State) << '\n';
+    
+    timer.start();
+    RollerSkating::build_dp();
+    std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
+    
+    Diving::build_dp();
+    std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
+
+    HurdleRace::build_fst_snd_dp();
+    std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
+
+    std::cerr << "Hurdle :\n";
+    for (int i = 0; i <= 30; i++) {
+        std::cerr << "i: " << i << ' ';
+        std::cerr << HurdleRace::fst_dp[0][i][0][i][0] << ' ';
+        std::cerr << HurdleRace::snd_dp[0][i][0][i][0] << '\n';
+    }
+
+    std::cerr << "Skating:\n";
+    for (int i = 0; i <= 15; i++) {
+        std::cerr << "i: " << i << ' ';
+        std::cerr << RollerSkating::fst_dp[i][0][2][0][2] << ' ';
+        std::cerr << RollerSkating::snd_dp[i][0][2][0][2] << '\n';
+    }
+
+    std::cerr << "Diving:\n";
+    for (int i = 0; i <= 15; i++) {
+        std::cerr << "i: " << i << ' ';
+        std::cerr << Diving::fst_dp[i][0][0] << ' ';
+        std::cerr << Diving::snd_dp[i][0][0] << '\n';
+    }
 
     std::cin >> PLAYER_IDX;
     std::cin.ignore();
     std::cin >> NB_GAMES;
     std::cin.ignore();
+
 
     timer.start();
 

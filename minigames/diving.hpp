@@ -4,6 +4,10 @@
 #include "../const.hpp"
 #include "../random.hpp"
 
+#include <algorithm>
+#include <vector>
+#include <utility>
+
 struct Diving {
 
     int32_t goal;
@@ -48,38 +52,72 @@ struct Diving {
         return goals_left;
     }
 
-    inline void generate_places(int8_t* places) const {
-        if (score[0] >= score[1] && score[0] >= score[2]) {
-            places[0] = 3;
-        }
-        else
-        if (score[0] < score[1] && score[0] < score[2]) {
-            places[0] = 0;
-        }
-        else {
-            places[0] = 1;
-        }
+    inline void generate_places(float* places) const {
+        if (end) {
+            if (score[0] >= score[1] && score[0] >= score[2]) {
+                places[0] = 3;
+            }
+            else
+            if (score[0] < score[1] && score[0] < score[2]) {
+                places[0] = 0;
+            }
+            else {
+                places[0] = 1;
+            }
 
-        if (score[1] >= score[0] && score[1] >= score[2]) {
-            places[1] = 3;
-        }
-        else
-        if (score[1] < score[0] && score[1] < score[2]) {
-            places[1] = 0;
-        }
-        else {
-            places[1] = 1;
-        }
+            if (score[1] >= score[0] && score[1] >= score[2]) {
+                places[1] = 3;
+            }
+            else
+            if (score[1] < score[0] && score[1] < score[2]) {
+                places[1] = 0;
+            }
+            else {
+                places[1] = 1;
+            }
 
-        if (score[2] >= score[0] && score[2] >= score[1]) {
-            places[2] = 3;
-        }
-        else
-        if (score[2] < score[0] && score[2] < score[1]) {
-            places[2] = 0;
+            if (score[2] >= score[0] && score[2] >= score[1]) {
+                places[2] = 3;
+            }
+            else
+            if (score[2] < score[0] && score[2] < score[1]) {
+                places[2] = 0;
+            }
+            else {
+                places[2] = 1;
+            }
         }
         else {
-            places[2] = 1;
+            float fst_p0 = fst_dp[goals_left][id[score[0]][combo[0]]][id[score[1]][combo[1]]] *
+                           fst_dp[goals_left][id[score[0]][combo[0]]][id[score[2]][combo[2]]];
+
+            float trd_p0 = snd_dp[goals_left][id[score[0]][combo[0]]][id[score[1]][combo[1]]] *
+                           snd_dp[goals_left][id[score[0]][combo[0]]][id[score[2]][combo[2]]];
+        
+            float snd_p0 = 1.0 - fst_p0 - trd_p0;
+
+            places[0] = 3 * fst_p0 + 1 * snd_p0;
+
+
+            float fst_p1 = fst_dp[goals_left][id[score[1]][combo[1]]][id[score[0]][combo[0]]] *
+                           fst_dp[goals_left][id[score[1]][combo[1]]][id[score[2]][combo[2]]];
+
+            float trd_p1 = snd_dp[goals_left][id[score[1]][combo[1]]][id[score[0]][combo[0]]] *
+                           snd_dp[goals_left][id[score[1]][combo[1]]][id[score[2]][combo[2]]];
+        
+            float snd_p1 = 1.0 - fst_p1 - trd_p1;
+
+            places[1] = 3 * fst_p1 + 1 * snd_p1;
+
+            float fst_p2 = fst_dp[goals_left][id[score[2]][combo[2]]][id[score[0]][combo[0]]] *
+                           fst_dp[goals_left][id[score[2]][combo[2]]][id[score[1]][combo[1]]];
+
+            float trd_p2 = snd_dp[goals_left][id[score[2]][combo[2]]][id[score[0]][combo[0]]] *
+                           snd_dp[goals_left][id[score[2]][combo[2]]][id[score[1]][combo[1]]];
+        
+            float snd_p2 = 1.0 - fst_p2 - trd_p2;
+
+            places[2] = 3 * fst_p2 + 1 * snd_p2;
         }
     }
 
@@ -173,6 +211,82 @@ struct Diving {
         
         return uint8_t(1) << (goal & 3);
     }
+
+    static float fst_dp[16][341][341];
+    static float snd_dp[16][341][341];
+    static int   id[140][20];
+
+    static void build_dp() {
+        std::vector<std::pair<int, int>> all;
+        
+        all.emplace_back(0, 0);
+        for (int i = 0; i < 15; i++) {
+            std::vector<std::pair<int, int>> nxt = all;
+
+            for (auto [a, b] : all) {
+                
+                nxt.emplace_back(a, 0);
+                b++;
+                nxt.emplace_back(a + b, b);
+            }
+
+            std::sort(nxt.begin(), nxt.end());
+
+            nxt.erase(std::unique(nxt.begin(), nxt.end()), nxt.end());
+            all = nxt;
+        }
+
+        const int possible = (int) all.size();
+
+        std::cerr << "possible: " << possible << '\n';
+        assert(possible == 341);
+
+        for (int i = 0; i < possible; i++) {
+            auto [a, b] = all[i];
+            id[a][b] = i;
+        }
+
+        for (int i = 0; i < possible; i++) {
+            for (int j = 0; j < possible; j++) {
+                if (all[i].first >= all[j].first) {
+                    fst_dp[0][i][j] = 1.0f;
+                }
+
+                if (all[i].first < all[j].first) {
+                    snd_dp[0][i][j] = 1.0f;
+                }
+            }
+        }
+
+        for (int k = 1; k <= 15; k++) {
+            for (int i = 0; i < possible; i++) {
+                auto [score_0, combo_0] = all[i];
+                for (int j = 0; j < possible; j++) {
+                    auto [score_1, combo_1] = all[j];
+
+                    int ii = id[score_0 + combo_0 + 1][combo_0 + 1];
+                    int jj = id[score_1 + combo_1 + 1][combo_1 + 1];
+
+                    if (ii == 0 || jj == 0)
+                        continue;
+
+                    fst_dp[k][i][j] = fst_dp[k - 1][i][j]   * 0.25 +
+                                      fst_dp[k - 1][ii][j]  * 0.25 +
+                                      fst_dp[k - 1][i][jj]  * 0.25 +
+                                      fst_dp[k - 1][ii][jj] * 0.25;
+
+                    snd_dp[k][i][j] = snd_dp[k - 1][i][j]   * 0.25 +
+                                      snd_dp[k - 1][ii][j]  * 0.25 +
+                                      snd_dp[k - 1][i][jj]  * 0.25 +
+                                      snd_dp[k - 1][ii][jj] * 0.25;
+                }
+            }
+        }
+    }
 };
+
+float Diving::fst_dp[16][341][341];
+float Diving::snd_dp[16][341][341];
+int   Diving::id[140][20];
 
 #endif // DIVING_HPP

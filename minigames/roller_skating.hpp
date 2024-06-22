@@ -133,42 +133,80 @@ struct RollerSkating {
         return turns_left;
     }
 
-    inline void generate_places(int8_t* places) {
-        const int8_t d0 = dist_div10[0] * 10 + dist_mod10[0];
-        const int8_t d1 = dist_div10[1] * 10 + dist_mod10[1];
-        const int8_t d2 = dist_div10[2] * 10 + dist_mod10[2];
+    inline void generate_places(float* places) {
+        if (end) {
+            const int8_t d0 = dist_div10[0] * 10 + dist_mod10[0];
+            const int8_t d1 = dist_div10[1] * 10 + dist_mod10[1];
+            const int8_t d2 = dist_div10[2] * 10 + dist_mod10[2];
 
-        if (d0 >= d1 && d0 >= d2) {
-            places[0] = 3;
-        }
-        else
-        if (d0 < d1 && d0 < d2) {
-            places[0] = 0;
+            if (d0 >= d1 && d0 >= d2) {
+                places[0] = 3;
+            }
+            else
+            if (d0 < d1 && d0 < d2) {
+                places[0] = 0;
+            }
+            else {
+                places[0] = 1;
+            }
+
+            if (d1 >= d0 && d1 >= d2) {
+                places[1] = 3;
+            }
+            else
+            if (d1 < d0 && d1 < d2) {
+                places[1] = 0;
+            }
+            else {
+                places[1] = 1;
+            }
+
+            if (d2 >= d0 && d2 >= d1) {
+                places[2] = 3;
+            }
+            else
+            if (d2 < d0 && d2 < d1) {
+                places[2] = 0;
+            }
+            else {
+                places[2] = 1;
+            }
         }
         else {
-            places[0] = 1;
-        }
+            const int dist0 = dist_div10[0] * 10 + dist_mod10[0];
+            const int dist1 = dist_div10[1] * 10 + dist_mod10[1];
+            const int dist2 = dist_div10[2] * 10 + dist_mod10[2];
 
-        if (d1 >= d0 && d1 >= d2) {
-            places[1] = 3;
-        }
-        else
-        if (d1 < d0 && d1 < d2) {
-            places[1] = 0;
-        }
-        else {
-            places[1] = 1;
-        }
+            float fst_p0 = fst_dp[turns_left][dist0][risk[0] + 2][dist1][risk[1] + 2] *
+                           fst_dp[turns_left][dist0][risk[0] + 2][dist2][risk[2] + 2];
 
-        if (d2 >= d0 && d2 >= d1) {
-            places[2] = 3;
-        }
-        else
-        if (d2 < d0 && d2 < d1) {
-            places[2] = 0;
-        }
-        else {
-            places[2] = 1;
+            float trd_p0 = snd_dp[turns_left][dist0][risk[0] + 2][dist1][risk[1] + 2] *
+                           snd_dp[turns_left][dist0][risk[0] + 2][dist2][risk[2] + 2];
+        
+            float snd_p0 = 1.0 - fst_p0 - trd_p0;
+
+            places[0] = 3 * fst_p0 + 1 * snd_p0;
+
+
+            float fst_p1 = fst_dp[turns_left][dist1][risk[1] + 2][dist0][risk[0] + 2] *
+                           fst_dp[turns_left][dist1][risk[1] + 2][dist2][risk[2] + 2];
+
+            float trd_p1 = snd_dp[turns_left][dist1][risk[1] + 2][dist0][risk[0] + 2] *
+                           snd_dp[turns_left][dist1][risk[1] + 2][dist2][risk[2] + 2];;
+        
+            float snd_p1 = 1.0 - fst_p1 - trd_p1;
+
+            places[1] = 3 * fst_p1 + 1 * snd_p1;
+
+            float fst_p2 = fst_dp[turns_left][dist2][risk[2] + 2][dist0][risk[0] + 2] *
+                           fst_dp[turns_left][dist2][risk[2] + 2][dist1][risk[1] + 2];
+
+            float trd_p2 = snd_dp[turns_left][dist2][risk[2] + 2][dist0][risk[0] + 2] *
+                           snd_dp[turns_left][dist2][risk[2] + 2][dist1][risk[1] + 2];
+        
+            float snd_p2 = 1.0 - fst_p2 - trd_p2;
+
+            places[2] = 3 * fst_p2 + 1 * snd_p2;
         }
     }
 
@@ -278,6 +316,112 @@ struct RollerSkating {
     //     return uint8_t(1) << second_in_permutation[order];
     //     // return uint8_t(1) << ((order >> (1 * 2)) & 3); // else go 2
     // }
+
+    static long double fst_dp[16][32][7][32][7];
+    static long double snd_dp[16][32][7][32][7];
+
+    static void build_dp() {
+        for (int a = 0; a < 32; a++) {
+            for (int b = 0; b < 7; b++) {
+                for (int c = 0; c < 32; c++) {
+                    for (int d = 0; d < 7; d++) {
+                        if (a >= c) {
+                            fst_dp[0][a][b][c][d] = 1.0f;
+                        }
+                        else {
+                            fst_dp[0][a][b][c][d] = 0.0f;    
+                        }
+                        
+                        if (a < c) {
+                            snd_dp[0][a][b][c][d] = 1.0f;
+                        }
+                        else {
+                            snd_dp[0][a][b][c][d] = 0.0f;    
+                        }
+                    }
+                }
+            }
+        }
+
+        auto make_move = [&](int a, int b, int &c, int &d, int m) {
+            if (b - 2 < 0) {
+                c = a;
+                d = b + 1;
+            }
+            else {
+                if (m == 0) {
+                    c = a + 1;
+                    d = std::max(2, b - 1);
+                }
+                else
+                if (m == 1) {
+                    c = a + 2;
+                    d = b;
+                }
+                else
+                if (m == 2) {
+                    c = a + 2;
+                    d = b + 1;
+                }
+                else
+                if (m == 3) {
+                    c = a + 3;
+                    d = b + 2;
+                }
+                else {
+                    assert(false);
+                }
+            }
+        };
+
+        for (int k = 1; k <= 15; k++) {
+            for (int a = 0; a <= 28; a++) {
+                for (int b = 0; b < 7; b++) {
+                    for (int c = 0; c <= 28; c++) {
+                        for (int d = 0; d < 7; d++) {
+                            fst_dp[k][a][b][c][d] = 0;
+                            snd_dp[k][a][b][c][d] = 0;
+
+                            for (int m0 = 0; m0 < 4; m0++) {
+                                
+                                for (int m1 = 0; m1 < 4; m1++) {
+
+                                    int aa, bb;
+                                    make_move(a, b, aa, bb, m0);
+
+                                    int cc, dd;
+                                    make_move(c, d, cc, dd, m1);
+
+                                    if (aa % 10 == cc % 10) {
+                                        if (bb - 2 >= 0)
+                                            bb += 2;
+                                        
+                                        if (dd - 2 >= 0)
+                                            dd += 2;
+                                    }
+
+                                    if (bb - 2 >= 5) {
+                                        bb = 0;
+                                    }
+
+                                    if (dd - 2 >= 5) {
+                                        dd = 0;
+                                    }
+
+                                    fst_dp[k][a][b][c][d] += 0.0625 * fst_dp[k - 1][aa][bb][cc][dd];
+                                    snd_dp[k][a][b][c][d] += 0.0625 * snd_dp[k - 1][aa][bb][cc][dd];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 };
+
+long double RollerSkating::fst_dp[16][32][7][32][7];
+long double RollerSkating::snd_dp[16][32][7][32][7];
 
 #endif // ROLLER_SPEED_SKATING

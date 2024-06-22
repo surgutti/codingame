@@ -49,7 +49,7 @@ void test_diving() {
     all.emplace_back(0, 0);
 
     for (int i = 0; i < length; i++) {
-        std::vector<std::pair<int, int>> nxt;
+        std::vector<std::pair<int, int>> nxt = all;
         
         for (auto [a, b] : all) {
             nxt.emplace_back(a, 0);
@@ -59,73 +59,99 @@ void test_diving() {
         }
 
         all = nxt;
+
+        std::sort(all.begin(), all.end());
+        all.erase(std::unique(all.begin(), all.end()), all.end());
+
     }
 
-    std::sort(all.begin(), all.end());
-    all.erase(std::unique(all.begin(), all.end()), all.end());
-
+    int max_score = 0;
+    int max_combo = 0;
     for (auto [a, b] : all) {
         std::cerr << a << ' ' << b << '\n';
+        max_score = std::max(max_score, a);
+        max_combo = std::max(max_combo, b);
     }
+
+    std::cerr << "max score: " << max_score << '\n';
+    std::cerr << "max combo: " << max_combo << '\n';
 
     std::cerr << all.size() << '\n';
 }
 
 void test_archery() {
-    std::map<std::pair<int, int>, int> cnt;
 
-    const int REP = 100000;
+    std::map<int, int> cnt;
 
-    for (int rep = 0; rep < REP; rep++) {
-        int dx[3] = {0, 0, 0};
-        int dy[3] = {0, 0, 0};
-
-        Archery archery;
-        archery.randomize();
-
-        while (!archery.end) {
-            int8_t moves[3];
-
-            for (int i = 0; i < 3; i++) {
-                moves[i] = fast_rand() % 4;
-
-                if (moves[i] == 0)
-                    dy[i]++;
-                if (moves[i] == 1)
-                    dx[i]--;
-                if (moves[i] == 2)
-                    dy[i]--;
-                if (moves[i] == 3)
-                    dx[i]++;
-            }
-
-            archery.play(moves);
-        }
-
-        int8_t places[3];
-        archery.generate_places(places);
-
-        for (int i = 0; i < 3; i++) {
-            std::pair<int, int> key = std::make_pair(abs(dx[i]), abs(dy[i]));
-
-            cnt[key] += places[i];
+    for (int x = 0; x <= 20; x++) {
+        for (int y = 0; y <= 20; y++) {
+            cnt[x * x + y * y]++;
         }
     }
 
-    for (int i = 0; i <= 15; i++) {
-        for (int j = 0; j <= 15; j++) {
-            std::cerr << cnt[std::make_pair(i, j)] << ' ';
-        }
-        std::cerr << '\n';
+    for (auto [a, b] : cnt) {
+        std::cerr << a << ' ' << b << '\n';
     }
+
+    std::cerr << "all:" << cnt.size() << '\n';
+
+    return;
+
+    // std::map<std::pair<int, int>, int> cnt;
+
+    // const int REP = 100000;
+
+    // for (int rep = 0; rep < REP; rep++) {
+    //     int dx[3] = {0, 0, 0};
+    //     int dy[3] = {0, 0, 0};
+
+    //     Archery archery;
+    //     archery.randomize();
+
+    //     while (!archery.end) {
+    //         int8_t moves[3];
+
+    //         for (int i = 0; i < 3; i++) {
+    //             moves[i] = fast_rand() % 4;
+
+    //             if (moves[i] == 0)
+    //                 dy[i]++;
+    //             if (moves[i] == 1)
+    //                 dx[i]--;
+    //             if (moves[i] == 2)
+    //                 dy[i]--;
+    //             if (moves[i] == 3)
+    //                 dx[i]++;
+    //         }
+
+    //         archery.play(moves);
+    //     }
+
+    //     int8_t places[3];
+    //     archery.generate_places(places);
+
+    //     for (int i = 0; i < 3; i++) {
+    //         std::pair<int, int> key = std::make_pair(abs(dx[i]), abs(dy[i]));
+
+    //         cnt[key] += places[i];
+    //     }
+    // }
+
+    // for (int i = 0; i <= 15; i++) {
+    //     for (int j = 0; j <= 15; j++) {
+    //         std::cerr << cnt[std::make_pair(i, j)] << ' ';
+    //     }
+    //     std::cerr << '\n';
+    // }
 }
 
 int main() {
 
-    test_diving();
+    // test_archery();
+    // test_diving();
     // test_archery();
 
-    return 0;
+    // return 0;
 
     std::map<std::string, int> cnt;
 
@@ -157,9 +183,9 @@ int main() {
             }
         }
 
-        while (times--) {
+        // while (times--) {
             tracks.push_back(mask);
-        }
+        // }
     }
 
     for (auto x : tracks) {
