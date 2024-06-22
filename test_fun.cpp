@@ -188,9 +188,12 @@ int main() {
         // }
     }
 
-    for (auto x : tracks) {
-        std::cerr << x << ',';
+    for (int i = 0; i < (int) tracks.size(); i++) {
+        std::cerr << "{" << tracks[i] << "," << i << "},";
     }
+    // for (auto x : tracks) {
+    //     std::cerr << x << ',';
+    // }
 
     std::cerr << '\n';
     std::cerr << "> " << tracks.size() << '\n';

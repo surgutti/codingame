@@ -36,7 +36,7 @@ struct State {
 
     inline void apply_places() {
 
-        float places[3];
+        float places[3] = {0, 0, 0};
 
         if (hurdle_race.end) {
             hurdle_race.generate_places(places);
@@ -605,7 +605,7 @@ struct State {
 
         const int8_t move[3] = {p0, p1, p2};
 
-        static float places[3];
+        float places[3];
         bool was_hurdle_race_end = hurdle_race.end;
         bool was_archery_end = archery.end;
         bool was_roller_skating_end = roller_skating.end;

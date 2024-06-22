@@ -27,14 +27,16 @@ int main() {
     RollerSkating::build_dp();
     std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
     
+    timer.start();
     Diving::build_dp();
     std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
 
+    timer.start();
     HurdleRace::build_fst_snd_dp();
     std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
 
     std::cerr << "Hurdle :\n";
-    for (int i = 0; i <= 30; i++) {
+    for (int i = 0; i < 29; i++) {
         std::cerr << "i: " << i << ' ';
         std::cerr << HurdleRace::fst_dp[0][i][0][i][0] << ' ';
         std::cerr << HurdleRace::snd_dp[0][i][0][i][0] << '\n';
