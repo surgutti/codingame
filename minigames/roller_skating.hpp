@@ -317,13 +317,13 @@ struct RollerSkating {
     //     // return uint8_t(1) << ((order >> (1 * 2)) & 3); // else go 2
     // }
 
-    static long double fst_dp[16][32][7][32][7];
-    static long double snd_dp[16][32][7][32][7];
+    static float fst_dp[16][33][7][33][7];
+    static float snd_dp[16][33][7][33][7];
 
     static void build_dp() {
-        for (int a = 0; a < 32; a++) {
+        for (int a = 0; a < 33; a++) {
             for (int b = 0; b < 7; b++) {
-                for (int c = 0; c < 32; c++) {
+                for (int c = 0; c < 33; c++) {
                     for (int d = 0; d < 7; d++) {
                         if (a >= c) {
                             fst_dp[0][a][b][c][d] = 1.0f;
@@ -375,9 +375,9 @@ struct RollerSkating {
         };
 
         for (int k = 1; k <= 15; k++) {
-            for (int a = 0; a <= 28; a++) {
+            for (int a = 0; a <= 29; a++) {
                 for (int b = 0; b < 7; b++) {
-                    for (int c = 0; c <= 28; c++) {
+                    for (int c = 0; c <= 29; c++) {
                         for (int d = 0; d < 7; d++) {
                             fst_dp[k][a][b][c][d] = 0;
                             snd_dp[k][a][b][c][d] = 0;
@@ -421,7 +421,7 @@ struct RollerSkating {
 
 };
 
-long double RollerSkating::fst_dp[16][32][7][32][7];
-long double RollerSkating::snd_dp[16][32][7][32][7];
+float RollerSkating::fst_dp[16][33][7][33][7];
+float RollerSkating::snd_dp[16][33][7][33][7];
 
 #endif // ROLLER_SPEED_SKATING

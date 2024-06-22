@@ -25,13 +25,13 @@ int main() {
     
     timer.start();
     RollerSkating::build_dp();
-    std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
+    // std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
     
-    timer.start();
+    // timer.start();
     Diving::build_dp();
-    std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
+    // std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
 
-    timer.start();
+    // timer.start();
     HurdleRace::build_fst_snd_dp();
     std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
 
@@ -62,7 +62,7 @@ int main() {
     std::cin.ignore();
 
 
-    timer.start();
+    // timer.start();
 
     Brain brain;
 

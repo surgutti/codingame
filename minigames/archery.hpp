@@ -100,6 +100,8 @@ struct Archery {
     }
 
     inline void generate_places(float* places) const {
+        assert(end);
+
         int16_t score[3];
         for (int i = 0; i < 3; i++) {
             score[i] = (int16_t) x[i] * x[i] + (int16_t) y[i] * y[i]; 

@@ -122,7 +122,7 @@ struct Diving {
     }
 
     void randomize() {
-        goals_left = 12 + fast_rand() % 4;
+        goals_left = 15; // 12 + fast_rand() % 4;
         goal = fast_rand(); // dont care about the rest? -> just slowing down
 
         for (int i = 0; i < 3; i++) {
@@ -220,14 +220,13 @@ struct Diving {
         std::vector<std::pair<int, int>> all;
         
         all.emplace_back(0, 0);
-        for (int i = 0; i < 15; i++) {
+        for (int i = 1; i <= 15; i++) {
             std::vector<std::pair<int, int>> nxt = all;
 
             for (auto [a, b] : all) {
                 
                 nxt.emplace_back(a, 0);
-                b++;
-                nxt.emplace_back(a + b, b);
+                nxt.emplace_back(a + b + 1, b + 1);
             }
 
             std::sort(nxt.begin(), nxt.end());
@@ -238,7 +237,7 @@ struct Diving {
 
         const int possible = (int) all.size();
 
-        std::cerr << "possible: " << possible << '\n';
+        // std::cerr << "possible: " << possible << '\n';
         assert(possible == 341);
 
         for (int i = 0; i < possible; i++) {
@@ -261,24 +260,33 @@ struct Diving {
         for (int k = 1; k <= 15; k++) {
             for (int i = 0; i < possible; i++) {
                 auto [score_0, combo_0] = all[i];
+
+                int ii = id[score_0 + combo_0 + 1][combo_0 + 1];
+
+                if (ii == 0) {
+                    std::cerr << "> " << score_0 + combo_0 + 1 << ' ' << combo_0 + 1 << '\n';
+                    std::cerr << "> " << score_0 << ' ' << combo_0 << '\n';
+                    std::cerr << " id: " << id[score_0][combo_0] << '\n';
+                    continue;
+                }
+
                 for (int j = 0; j < possible; j++) {
                     auto [score_1, combo_1] = all[j];
 
-                    int ii = id[score_0 + combo_0 + 1][combo_0 + 1];
                     int jj = id[score_1 + combo_1 + 1][combo_1 + 1];
 
-                    if (ii == 0 || jj == 0)
+                    if (jj == 0)
                         continue;
 
-                    fst_dp[k][i][j] = fst_dp[k - 1][i][j]   * 0.25 +
-                                      fst_dp[k - 1][ii][j]  * 0.25 +
-                                      fst_dp[k - 1][i][jj]  * 0.25 +
-                                      fst_dp[k - 1][ii][jj] * 0.25;
+                    fst_dp[k][i][j] = fst_dp[k - 1][i][j]   * 0.75 * 0.75 +
+                                      fst_dp[k - 1][ii][j]  * 0.25 * 0.75 +
+                                      fst_dp[k - 1][i][jj]  * 0.75 * 0.25 +
+                                      fst_dp[k - 1][ii][jj] * 0.25 * 0.25;
 
-                    snd_dp[k][i][j] = snd_dp[k - 1][i][j]   * 0.25 +
-                                      snd_dp[k - 1][ii][j]  * 0.25 +
-                                      snd_dp[k - 1][i][jj]  * 0.25 +
-                                      snd_dp[k - 1][ii][jj] * 0.25;
+                    snd_dp[k][i][j] = snd_dp[k - 1][i][j]   * 0.75 * 0.75 +
+                                      snd_dp[k - 1][ii][j]  * 0.25 * 0.75 +
+                                      snd_dp[k - 1][i][jj]  * 0.75 * 0.25 +
+                                      snd_dp[k - 1][ii][jj] * 0.25 * 0.25;
                 }
             }
         }

@@ -26,6 +26,15 @@ struct HurdleRace {
     int8_t pos[3], stun[3];
     bool end;
 
+    void find_current_track() {
+        assert(from_track_to_id.count(track));
+
+        const auto it = from_track_to_id.find(track);
+        assert(it != from_track_to_id.end());
+
+        current_track_id = it->second;
+    }
+
     bool operator== (const HurdleRace &other) const {
         if (end != other.end)
             return false;
@@ -108,37 +117,36 @@ struct HurdleRace {
             }
         }
         else {
-            // float win_p0  = win_dp [pos[0]][stun[0]][pos[1]][stun[1]] *
-            //                 win_dp [pos[0]][stun[0]][pos[2]][stun[2]];
+            float fst_p0 = fst_dp[current_track_id][pos[0]][stun[0]][pos[1]][stun[1]] *
+                           fst_dp[current_track_id][pos[0]][stun[0]][pos[2]][stun[2]];
 
-            // float lost_p0 = lost_dp[pos[0]][stun[0]][pos[1]][stun[1]] * 
-            //                 lost_dp[pos[0]][stun[0]][pos[2]][stun[2]];
+            float trd_p0 = snd_dp[current_track_id][pos[0]][stun[0]][pos[1]][stun[1]] *
+                           snd_dp[current_track_id][pos[0]][stun[0]][pos[2]][stun[2]];
         
-            // float second_p0 = 1.0 - win_p0 - lost_p0;
+            float snd_p0 = 1.0 - fst_p0 - trd_p0;
 
-            // places[0] = 3 * win_p0 + 1 * second_p0;
+            places[0] = 3 * fst_p0 + 1 * snd_p0;
 
 
-            // float win_p1  = win_dp [pos[1]][stun[1]][pos[0]][stun[0]] *
-            //                 win_dp [pos[1]][stun[1]][pos[2]][stun[2]];
+            float fst_p1 = fst_dp[current_track_id][pos[1]][stun[1]][pos[0]][stun[0]] *
+                           fst_dp[current_track_id][pos[1]][stun[1]][pos[2]][stun[2]];
 
-            // float lost_p1 = lost_dp[pos[1]][stun[1]][pos[0]][stun[0]] * 
-            //                 lost_dp[pos[1]][stun[1]][pos[2]][stun[2]];
+            float trd_p1 = snd_dp[current_track_id][pos[1]][stun[1]][pos[0]][stun[0]] *
+                           snd_dp[current_track_id][pos[1]][stun[1]][pos[2]][stun[2]];
         
-            // float second_p1 = 1.0 - win_p1 - lost_p1;
+            float snd_p1 = 1.0 - fst_p1 - trd_p1;
 
-            // places[1] = 3 * win_p1 + 1 * second_p1;
+            places[1] = 3 * fst_p1 + 1 * snd_p1;
 
+            float fst_p2 = fst_dp[current_track_id][pos[2]][stun[2]][pos[0]][stun[0]] *
+                           fst_dp[current_track_id][pos[2]][stun[2]][pos[1]][stun[1]];
 
-            // float win_p2  = win_dp [pos[2]][stun[2]][pos[0]][stun[0]] *
-            //                 win_dp [pos[2]][stun[2]][pos[1]][stun[1]];
-
-            // float lost_p2 = lost_dp[pos[2]][stun[2]][pos[0]][stun[0]] * 
-            //                 lost_dp[pos[2]][stun[2]][pos[1]][stun[1]];
+            float trd_p2 = snd_dp[current_track_id][pos[2]][stun[2]][pos[0]][stun[0]] *
+                           snd_dp[current_track_id][pos[2]][stun[2]][pos[1]][stun[1]];
         
-            // float second_p2 = 1.0 - win_p2 - lost_p2;
+            float snd_p2 = 1.0 - fst_p2 - trd_p2;
 
-            // places[2] = 3 * win_p2 + 1 * second_p2;
+            places[2] = 3 * fst_p2 + 1 * snd_p2;
         }
     }
 
@@ -373,8 +381,9 @@ struct HurdleRace {
     }
 
 
-    static long double fst_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
-    static long double snd_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
+    static float fst_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
+    static float snd_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
+    static int current_track_id;
 
     inline static void make_move(int track_id, int p, int s, int &pp, int &ss, int m) {
         if (s > 0) {
@@ -479,7 +488,9 @@ int HurdleRace::dp[TRACK_LENGTH + 2];
 int HurdleRace::pd[TRACK_LENGTH + 2];
 uint8_t HurdleRace::dp_opt[TRACK_LENGTH];
 
-long double HurdleRace::fst_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
-long double HurdleRace::snd_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
+float HurdleRace::fst_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
+float HurdleRace::snd_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
+
+int HurdleRace::current_track_id = -1;
 
 #endif // HURDLE_RACE

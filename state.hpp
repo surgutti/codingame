@@ -137,19 +137,20 @@ struct State {
     }
 
     inline bool is_rollout_terminal() const {
-        return (hurdle_race.end &&
-                archery.end &&
-                roller_skating.end &&
-                diving.end) ||
-                turn >= 100;
+        return archery.end || turn >= 0;
+        
+        // return (hurdle_race.end &&
+        //         archery.end &&
+        //         roller_skating.end &&
+        //         diving.end) ||
+        //         turn >= 100;
     }
 
-    // return how much does a player earn from games
     inline void get_stats(float* rewards) {
 
         apply_places();
 
-        int scores[3] = {1, 1, 1};
+        float scores[3] = {1, 1, 1};
 
         for (int i = 0; i < 3; i++) {
             if (hurdle_race_score[i] > 0)
@@ -165,169 +166,11 @@ struct State {
                 scores[i] *= diving_score[i];
         }
 
-        const int sum = (scores[0] + scores[1] + scores[2]);
+        const float sum = (scores[0] + scores[1] + scores[2]);
 
-        // {
-        //     int max_enemy = std::max<int>(scores[1], scores[2]);
-        //     int min_enemy = std::min<int>(scores[1], scores[2]);
-
-        //     rewards[0] = float(scores[0] - COEFFICIENT1 * max_enemy - COEFFICIENT2 * min_enemy) / (scores[0] + COEFFICIENT1 * max_enemy + COEFFICIENT2 * min_enemy);
-        // }
-
-        // {
-        //     int max_enemy = std::max<int>(scores[0], scores[2]);
-        //     int min_enemy = std::min<int>(scores[0], scores[2]);
-
-        //     rewards[1] = float(scores[1] - COEFFICIENT1 * max_enemy - COEFFICIENT2 * min_enemy) / (scores[1] + COEFFICIENT1 * max_enemy + COEFFICIENT2 * min_enemy);
-        // }
-
-        // {
-        //     int max_enemy = std::max<int>(scores[0], scores[1]);
-        //     int min_enemy = std::min<int>(scores[0], scores[1]);
-
-        //     rewards[2] = float(scores[2] - COEFFICIENT1 * max_enemy - COEFFICIENT2 * min_enemy) / (scores[2] + COEFFICIENT1 * max_enemy + COEFFICIENT2 * min_enemy);
-        // }
-
-        rewards[0] = float(scores[0] - scores[1] - scores[2]) / sum;
-        rewards[1] = float(scores[1] - scores[0] - scores[2]) / sum;
-        rewards[2] = float(scores[2] - scores[0] - scores[1]) / sum;
-
-        // r0 = (float) (score0 - score1 - score2) / (score0 + score1 + score2); // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
-        // r1 = (float) (score1 - score0 - score2) / (score1 + score0 + score2); // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
-        // r2 = (float) (score2 - score0 - score1) / (score2 + score0 + score1); // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
-        
-        // r0 = (float) (0.4 * score0 - score1 - score2) / (0.4 * score0 + score1 + score2); // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
-        // r1 = (float) (0.4 * score1 - score0 - score2) / (0.4 * score1 + score0 + score2); // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
-        // r2 = (float) (0.4 * score2 - score0 - score1) / (0.4 * score2 + score0 + score1); // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
-        
-        // r0 += 0.01 * ((score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2));
-        // r1 += 0.01 * ((score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2));
-        // r2 += 0.01 * ((score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1));
-
-        // r0 += 0.01 * (hurdle_race_score[0] - hurdle_race_score[1] - hurdle_race_score[2]);
-        // r1 += 0.01 * (hurdle_race_score[1] - hurdle_race_score[0] - hurdle_race_score[2]);
-        // r2 += 0.01 * (hurdle_race_score[2] - hurdle_race_score[0] - hurdle_race_score[1]);
-
-        // r0 += 0.01 * (archery_score[0] - archery_score[1] - archery_score[2]);
-        // r1 += 0.01 * (archery_score[1] - archery_score[0] - archery_score[2]);
-        // r2 += 0.01 * (archery_score[2] - archery_score[0] - archery_score[1]);
-
-        // r0 += 0.01 * (roller_skating_score[0] - roller_skating_score[1] - roller_skating_score[2]);
-        // r1 += 0.01 * (roller_skating_score[1] - roller_skating_score[0] - roller_skating_score[2]);
-        // r2 += 0.01 * (roller_skating_score[2] - roller_skating_score[0] - roller_skating_score[1]);
-
-        // r0 += 0.01 * (diving_score[0] - diving_score[1] - diving_score[2]);
-        // r1 += 0.01 * (diving_score[1] - diving_score[0] - diving_score[2]);
-        // r2 += 0.01 * (diving_score[2] - diving_score[0] - diving_score[1]);
-
-        // maybe change the enemy to win with him?
-        // get some values from gameplay? (with whom likely to win at the end)
-        // int sum = score0 + score1 + score2;
-
-        // maybe the place could be weighted after few turns (on the beginning just focus on own scores?)
-
-        // if (turn == 100) {
-        //     // if simulated to the end of the game, just get the current leaderboard
-
-        // }
-        // else {
-            // assuming that opponents are litle against me
-
-        // const float score0_log = fastlogf(score0);
-        // const float score1_log = fastlogf(score1);
-        // const float score2_log = fastlogf(score2);
-
-        // const float turn_log = fastlogf(turn + 1);
-
-        // r0 = (float) COEFFICIENT1 * (score0_log - score1_log - score2_log) / (score0_log + score1_log + score2_log);
-        // r1 = (float) COEFFICIENT1 * (score1_log - score0_log - score2_log) / (score1_log + score0_log + score2_log);
-        // r2 = (float) COEFFICIENT1 * (score2_log - score0_log - score1_log) / (score2_log + score0_log + score1_log);
-
-        // r0 = (float) (score0 - score1 - score2) / (score0 + score1 + score2);
-        // r1 = (float) (score1 - score0 - score2) / (score1 + score0 + score2);
-        // r2 = (float) (score2 - score0 - score1) / (score2 + score0 + score1);
-        
-        // r0 += COEFFICIENT3 * turn_log * ((score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2));
-        // r1 += COEFFICIENT3 * turn_log * ((score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2));
-        // r2 += COEFFICIENT3 * turn_log * ((score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1));
-
-        // r0 += COEFFICIENT4 * (float) (hurdle_race_score[0] - hurdle_race_score[1] - hurdle_race_score[2]) / (1 + hurdle_race_score[0] + hurdle_race_score[1] + hurdle_race_score[2]);
-        // r1 += COEFFICIENT4 * (float) (hurdle_race_score[1] - hurdle_race_score[0] - hurdle_race_score[2]) / (1 + hurdle_race_score[0] + hurdle_race_score[1] + hurdle_race_score[2]);
-        // r2 += COEFFICIENT4 * (float) (hurdle_race_score[2] - hurdle_race_score[0] - hurdle_race_score[1]) / (1 + hurdle_race_score[0] + hurdle_race_score[1] + hurdle_race_score[2]);
-
-        // r0 += COEFFICIENT4 * (float) (archery_score[0] - archery_score[1] - archery_score[2]) / (1 + archery_score[0] + archery_score[1] + archery_score[2]);
-        // r1 += COEFFICIENT4 * (float) (archery_score[1] - archery_score[0] - archery_score[2]) / (1 + archery_score[0] + archery_score[1] + archery_score[2]);
-        // r2 += COEFFICIENT4 * (float) (archery_score[2] - archery_score[0] - archery_score[1]) / (1 + archery_score[0] + archery_score[1] + archery_score[2]);
-
-        // r0 += COEFFICIENT4 * (float) (roller_skating_score[0] - roller_skating_score[1] - roller_skating_score[2]) / (1 + roller_skating_score[0] + roller_skating_score[1] + roller_skating_score[2]);
-        // r1 += COEFFICIENT4 * (float) (roller_skating_score[1] - roller_skating_score[0] - roller_skating_score[2]) / (1 + roller_skating_score[0] + roller_skating_score[1] + roller_skating_score[2]);
-        // r2 += COEFFICIENT4 * (float) (roller_skating_score[2] - roller_skating_score[0] - roller_skating_score[1]) / (1 + roller_skating_score[0] + roller_skating_score[1] + roller_skating_score[2]);
-
-        // r0 += COEFFICIENT4 * (float) (diving_score[0] - diving_score[1] - diving_score[2]) / (1 + diving_score[0] + diving_score[1] + diving_score[2]);
-        // r1 += COEFFICIENT4 * (float) (diving_score[1] - diving_score[0] - diving_score[2]) / (1 + diving_score[0] + diving_score[1] + diving_score[2]);
-        // r2 += COEFFICIENT4 * (float) (diving_score[2] - diving_score[0] - diving_score[1]) / (1 + diving_score[0] + diving_score[1] + diving_score[2]);
-
-        // r0 += COEFFICIENT2 * ((score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2));
-        // r1 += COEFFICIENT2 * ((score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2));
-        // r2 += COEFFICIENT2 * ((score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1));
-
-        // r0 += COEFFICIENT2 * (hurdle_race_score[0] - hurdle_race_score[1] - hurdle_race_score[2]);
-        // r1 += COEFFICIENT2 * (hurdle_race_score[1] - hurdle_race_score[0] - hurdle_race_score[2]);
-        // r2 += COEFFICIENT2 * (hurdle_race_score[2] - hurdle_race_score[0] - hurdle_race_score[1]);
-
-        // r0 += COEFFICIENT2 * (archery_score[0] - archery_score[1] - archery_score[2]);
-        // r1 += COEFFICIENT2 * (archery_score[1] - archery_score[0] - archery_score[2]);
-        // r2 += COEFFICIENT2 * (archery_score[2] - archery_score[0] - archery_score[1]);
-
-        // r0 += COEFFICIENT2 * (roller_skating_score[0] - roller_skating_score[1] - roller_skating_score[2]);
-        // r1 += COEFFICIENT2 * (roller_skating_score[1] - roller_skating_score[0] - roller_skating_score[2]);
-        // r2 += COEFFICIENT2 * (roller_skating_score[2] - roller_skating_score[0] - roller_skating_score[1]);
-
-        // r0 += COEFFICIENT2 * (diving_score[0] - diving_score[1] - diving_score[2]);
-        // r1 += COEFFICIENT2 * (diving_score[1] - diving_score[0] - diving_score[2]);
-        // r2 += COEFFICIENT2 * (diving_score[2] - diving_score[0] - diving_score[1]);
-        
-
-        //     if (PLAYER_IDX == 0) {
-        //         r0 = (float) (score0 - score1 - score2) / sum; // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
-        //         r1 = (float) (score1 - 2 * score0 - score2) / sum; // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
-        //         r2 = (float) (score2 - 2 * score0 - score1) / sum; // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
-        //     }
-        //     else
-        //     if (PLAYER_IDX == 1) {
-        //         r0 = (float) (score0 - 2 * score1 - score2) / sum; // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
-        //         r1 = (float) (score1 - score0 - score2) / sum; // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
-        //         r2 = (float) (score2 - score0 - 2 * score1) / sum; // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
-        //     }
-        //     else {
-        //         r0 = (float) (score0 - score1 - 2 * score2) / sum; // + (score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2);
-        //         r1 = (float) (score1 - score0 - 2 * score2) / sum; // + (score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2);
-        //         r2 = (float) (score2 - score0 - score1) / sum; // + (score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1);
-        //     }
-        // }
-
-        // losing -> attack the weakest link (secret strategy: dont care about the winning guy)
-        // if (PLAYER_IDX == 0 && score0 < score1 && score0 < score2) {
-        //     r0 = (float) (score0 - std::min(score1, score2)) / (score0 + std::min(score1, score2));
-        // }
-        // else
-        // if (PLAYER_IDX == 1 && score1 < score0 && score1 < score2) {
-        //     r1 = (float) (score1 - std::min(score0, score2)) / (score1 + std::min(score0, score2));
-        // }
-        // else
-        // if (PLAYER_IDX == 2 && score2 < score0 && score2 < score1) {
-        //     r2 = (float) (score2 - std::min(score0, score1)) / (score2 + std::min(score0, score1));
-        // }
-
-        // float score0 = std::max<float>(1, hurdle_race_score[0]) * std::max<float>(0.95, archery_score[0]) * std::max<float>(0.93, roller_skating_score[0]) * std::max<float>(1, diving_score[0]);
-        // float score1 = std::max<float>(1, hurdle_race_score[1]) * std::max<float>(0.95, archery_score[1]) * std::max<float>(0.93, roller_skating_score[1]) * std::max<float>(1, diving_score[1]);
-        // float score2 = std::max<float>(1, hurdle_race_score[2]) * std::max<float>(0.95, archery_score[2]) * std::max<float>(0.93, roller_skating_score[2]) * std::max<float>(1, diving_score[2]);
-
-        // float sum = score0 + score1 + score2;
-
-        // r0 = (float) (score0 - score1 - score2) / sum;
-        // r1 = (float) (score1 - score0 - score2) / sum;
-        // r2 = (float) (score2 - score0 - score1) / sum;
+        rewards[0] = (scores[0] - scores[1] - scores[2]) / sum;
+        rewards[1] = (scores[1] - scores[0] - scores[2]) / sum;
+        rewards[2] = (scores[2] - scores[0] - scores[1]) / sum;
     }
 
     void init(const std::vector<std::string>& gpu,
@@ -355,13 +198,15 @@ struct State {
 
             hurdle_race.build_dp();
 
+            hurdle_race.find_current_track();
+
             if (hurdle_race.expected_end() <= 5) {
                 hurdle_race_left = 1;
                 std::cerr << "Hurdle once more\n";
             }
             else
             if (!hurdle_race.playable(0) &&
-                !hurdle_race.playable(1) &&
+                !hurdle_race.playable(1) && // maybe those are not the best choices?
                 !hurdle_race.playable(2)) {    
                 hurdle_race.end = true;
             }

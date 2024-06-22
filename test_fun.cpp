@@ -1,8 +1,10 @@
 #include "utils.hpp"
 #include "minigames/archery.hpp"
+#include "minigames/diving.hpp"
 
 #include <algorithm>
 #include <iostream>
+#include <iomanip>
 #include <cassert>
 #include <cmath>
 #include <random>
@@ -42,41 +44,34 @@ std::string random_track() {
 }
 
 void test_diving() {
-    int length = 15;
+    
+    int fst = 0;
+    int snd = 0;
+    for (int rep = 0; rep <= 20'000'000; rep++) {
+        Diving diving;
 
-    std::vector<std::pair<int, int>> all;
+        diving.randomize();
 
-    all.emplace_back(0, 0);
-
-    for (int i = 0; i < length; i++) {
-        std::vector<std::pair<int, int>> nxt = all;
-        
-        for (auto [a, b] : all) {
-            nxt.emplace_back(a, 0);
-
-            b++;
-            nxt.emplace_back(a + b, b);
+        while (!diving.end) {
+            int8_t moves[3] = {fast_rand() & 3, fast_rand() & 3, fast_rand() & 3};
+            diving.play(moves);
         }
 
-        all = nxt;
+        float places[3];
 
-        std::sort(all.begin(), all.end());
-        all.erase(std::unique(all.begin(), all.end()), all.end());
+        diving.generate_places(places);
 
+        if (places[0] >= places[1]) {
+            fst++;
+        }
+        else {
+            snd++;
+        }
     }
 
-    int max_score = 0;
-    int max_combo = 0;
-    for (auto [a, b] : all) {
-        std::cerr << a << ' ' << b << '\n';
-        max_score = std::max(max_score, a);
-        max_combo = std::max(max_combo, b);
-    }
-
-    std::cerr << "max score: " << max_score << '\n';
-    std::cerr << "max combo: " << max_combo << '\n';
-
-    std::cerr << all.size() << '\n';
+    std::cerr << std::fixed << std::setprecision(9);
+    std::cerr << "fst: " << double(fst) / (fst + snd) << '\n';
+    std::cerr << "snd: " << double(snd) / (fst + snd) << '\n';
 }
 
 void test_archery() {
@@ -148,10 +143,10 @@ void test_archery() {
 int main() {
 
     // test_archery();
-    // test_diving();
+    test_diving();
     // test_archery();
 
-    // return 0;
+    return 0;
 
     std::map<std::string, int> cnt;
 
