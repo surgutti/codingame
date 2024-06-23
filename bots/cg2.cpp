@@ -2270,7 +2270,7 @@ int main() {
         brain.run(current_state, 20);
         // brain.debug();
 #else
-        brain.run(current_state, (TURN == 0 ? 600 : 44));
+        brain.run(current_state, (TURN == 0 ? 600 : 45));
         // brain.debug();
 #endif // PSYLEAGUE
 

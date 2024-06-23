@@ -25,19 +25,64 @@ inline int fast_rand(int a, int b) {
 inline int8_t random_move() {
 	uint16_t p = fast_rand() & 65535;
 
-	if (p < 16989) {
-		return 3;
-	}
-	else
-	if (p < 38701) {
+	if (p < 20936) {
 		return 0;
 	}
 	else
-	if (p < 53631) {
+	if (p < 33291) {
+		return 1;
+	}
+	else
+	if (p < 48808) {
 		return 2;
 	}
-
-	return 1;
+	
+	return 3;
 }
+
+constexpr uint8_t all_permutations[24] = {
+    27,
+    30,
+    39,
+    45,
+    54,
+    57,
+    75,
+    78,
+    99,
+    108,
+    114,
+    120,
+    135,
+    141,
+    147,
+    156,
+    177,
+    180,
+    198,
+    201,
+    210,
+    216,
+    225,
+    228,
+};
+
+// inline int8_t random_set_bit(uint8_t move_bitmask) {
+// 	uint8_t order = all_permutations[fast_rand() % 24];
+
+// 	if ((move_bitmask >> (order & 3)) & 1)
+// 		return order & 3;
+// 	order >>= 2;
+	
+// 	if ((move_bitmask >> (order & 3)) & 1)
+// 		return order & 3;
+// 	order >>= 2;
+
+// 	if ((move_bitmask >> (order & 3)) & 1)
+// 		return order & 3;
+// 	order >>= 2;
+
+// 	return order;
+// }
 
 #endif

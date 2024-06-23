@@ -26,4 +26,8 @@ inline float fastlogf(const float& x) { union { float f; uint32_t i; } vx = { x 
 inline float fastsqrtf(const float& x) { union { int i; float x; } u; u.x = x; u.i = (1 << 29) + (u.i >> 1) - (1 << 22); return(u.x); }
 inline float rsqrt_fast(float x) { return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(x))); }
 
+inline int pop_count(uint8_t mask) {
+    return __builtin_popcount(mask);
+}
+
 #endif // UTILS_HPP

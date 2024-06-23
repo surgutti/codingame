@@ -30,15 +30,15 @@ def analyze_games(games):
 
     for player_id, game_id in games:
 
-        time.sleep(0.05)
 
         replay = requests.post(
             'https://www.codingame.com/services/gameResult/findByGameId',
             json = [str(game_id), None]
         ).json()
 
+        time.sleep(0.05)
+        
         print("game_id: ", game_id)        
-        # print(replay)
 
         # print(replay)
 
@@ -54,10 +54,10 @@ def analyze_games(games):
         
         print("timeouts: ", timeouts)
         
-        continue
+        #continue
         
-        if replay['ranks'][2] != player_agent_id:
-            continue
+        # if replay['ranks'][2] != player_agent_id:
+        #     continue
             
         won_games += 1
             
@@ -148,10 +148,10 @@ def get_top_players(cnt):
 
     return top_players
 
-# top_players = get_top_players(7)
+top_players = get_top_players(4)
 # print(top_players)
 
-top_players = [5479291]
+# top_players = [5481256]
 # print(786967972, 3844625)
 # exit(-1)
 

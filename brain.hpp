@@ -21,11 +21,14 @@ struct BrainNode {
 
     uint8_t last_move;
 
+    uint8_t todo;
+
     inline void init(const uint8_t _last_move) {
         sons = 0;
         avg = 0;
         vis = 0;
         last_move = _last_move;
+        todo = 0;
     }
 
     inline void expand() {
@@ -35,16 +38,14 @@ struct BrainNode {
             pool[last++].init(move);
         }
         
-        std::swap(pool[last - 1], pool[last - 1 - (fast_rand() & 3)]);
-        std::swap(pool[last - 2], pool[last - 2 - (fast_rand() % 3)]);
-        std::swap(pool[last - 3], pool[last - 3 - (fast_rand() & 1)]);
+        // std::swap(pool[last - 1], pool[last - 1 - (fast_rand() & 3)]);
+        // std::swap(pool[last - 2], pool[last - 2 - (fast_rand() % 3)]);
+        // std::swap(pool[last - 3], pool[last - 3 - (fast_rand() & 1)]);
     }
 
     inline BrainNode* select() {
-        for (int8_t move = 0; move < 4; move++) {
-            if ((sons + move)->vis == 0) {
-                return sons + move;
-            }
+        if (todo < 4) {
+            return sons + (todo++);
         }
 
         const float sqrt_log_node_vis = C * fastsqrtf(fastlogf(vis));
@@ -120,9 +121,6 @@ struct BrainNode {
 BrainNode BrainNode::pool[BRAIN_POOL];
 uint32_t  BrainNode::last = 0;
 
-int DEPTH[100];
-int BRAIN_PLAY;
-
 struct Brain {
     BrainNode* roots[3];
 
@@ -137,7 +135,7 @@ struct Brain {
         }
     }
 
-    inline void optimize(BrainNode** heads, State &state, float* reward, int depth = 0) {
+    inline void optimize(BrainNode** heads, State &state, float* reward) {
 
         if (state.is_terminal()) {
             state.get_stats(reward);
@@ -151,7 +149,10 @@ struct Brain {
         }
 
         if (heads[0] == 0 && heads[1] == 0 && heads[2] == 0) {
-            state.rollout();
+            while (!state.is_rollout_terminal()) {
+                state.play_greedy();
+            }
+
             state.get_stats(reward);
             return;
         }
@@ -162,7 +163,7 @@ struct Brain {
         for (int i = 0; i < 3; i++) {
             if (heads[i] == 0 || heads[i]->vis == 0) {
                 childs[i] = 0;
-                moves[i] = random_move();
+                moves[i] = state.greedy_move(i);
             }
             else {
                 if (heads[i]->sons == 0) {
@@ -174,10 +175,9 @@ struct Brain {
             }
         }
 
-        BRAIN_PLAY++;
         state.play(moves[0], moves[1], moves[2]);
     
-        optimize(childs, state, reward, depth + 1);
+        optimize(childs, state, reward);
 
         for (int i = 0; i < 3; i++) if (heads[i]) {
             heads[i]->apply(reward[i]);
@@ -197,7 +197,10 @@ struct Brain {
         }
 
         if (heads[0] == 0 && heads[1] == 0 && heads[2] == 0) {
-            state.rollout();
+            while (!state.is_rollout_terminal()) {
+                state.play_random();
+            }
+
             state.get_stats(reward);
             return;
         }
@@ -208,7 +211,7 @@ struct Brain {
         for (int i = 0; i < 3; i++) {
             if (heads[i] == 0 || heads[i]->vis == 0) {
                 childs[i] = 0;
-                moves[i] = random_move();
+                moves[i] = state.greedy_move(i);
             }
             else {
                 if (heads[i]->sons == 0) {
@@ -249,7 +252,7 @@ struct Brain {
         do {
             state = root_state;
             random_walk(heads, state, reward);
-        } while (timer.get_elapsed() < timeout * 0.12 &&
+        } while (timer.get_elapsed() < timeout * COEFFICIENT1 &&
                  BrainNode::last + 40 < BRAIN_POOL);
         
         do {

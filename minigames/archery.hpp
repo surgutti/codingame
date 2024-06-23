@@ -7,13 +7,10 @@
 #include <vector>
 #include <iostream>
 
-int ROLLOUT_PLAY = 0;
-
 struct Archery {
 
-    static int dp[ARCHERY_LENGTH][41][41];
-    static int pd[ARCHERY_LENGTH][41][41];
-    static uint8_t dp_opt[ARCHERY_LENGTH][41][41];
+    static int dp[ARCHERY_LENGTH + 1][41][41];
+    static uint8_t dp_opt[ARCHERY_LENGTH + 1][41][41];
 
     int8_t wind[ARCHERY_LENGTH];
     int8_t wind_index;
@@ -22,6 +19,67 @@ struct Archery {
     int8_t y[3];
 
     bool end;
+
+    void build_dp() const {
+        for (int xx = -20; xx <= +20; xx++) {
+            for (int yy = -20; yy <= +20; yy++) {
+                dp[0][xx + 20][yy + 20] = xx * xx + yy * yy;
+            }
+        }
+
+        for (int i = 1; i <= ARCHERY_LENGTH; i++) {
+            for (int xx = -20; xx <= +20; xx++) {
+                for (int yy = -20; yy <= +20; yy++) {
+                    int& val = dp[i][xx + 20][yy + 20];
+                    uint8_t& opt = dp_opt[i][xx + 20][yy + 20];
+
+                    val = 100000;
+                    opt = 0;
+
+                    static constexpr int8_t dx[4] = {0, -1, 0, +1};
+                    static constexpr int8_t dy[4] = {-1, 0, +1, 0};
+                    
+                    const int8_t wind_strength = wind[i - 1];
+
+                    for (int move = 0; move < 4; move++) {
+                        int xxx = xx + wind_strength * dx[move];
+                        int yyy = yy + wind_strength * dy[move];
+
+                        if (xxx > +20)  xxx = +20;
+                        else
+                        if (xxx < -20)  xxx = -20;
+                    
+                        if (yyy > +20)  yyy = +20;
+                        else
+                        if (yyy < -20)  yyy = -20;
+
+                        int new_val = dp[i - 1][xxx + 20][yyy + 20];
+
+                        if (val > new_val) {
+                            val = new_val;
+                            opt = uint8_t(1) << move;
+                        }
+                        else
+                        if (val == new_val) {
+                            opt |= uint8_t(1) << move;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    bool is_useless(int8_t player_idx) const {
+        return false;
+    }
+
+    uint8_t greedy_moves(int8_t player_idx) const {
+        if (wind_index > 7) {
+            return 0b1111;
+        }
+
+        return dp_opt[wind_index + 1][x[player_idx] + 20][y[player_idx] + 20];
+    }
 
     bool operator== (const Archery &other) const {
         if (end != other.end)
@@ -101,17 +159,7 @@ struct Archery {
         end = false;
     }
 
-    inline void rollout() {
-        while (!end) {
-            ROLLOUT_PLAY++;
-            const int8_t moves[3] = {random_move(), random_move(), random_move()};
-            // const int8_t moves[3] = {fast_rand() & 3, fast_rand() & 3, fast_rand() & 3};
-            play(moves);
-        }
-    }
-
     inline void generate_places(float* places) const {
-        assert(end);
 
         int16_t score[3];
         for (int i = 0; i < 3; i++) {
@@ -182,151 +230,9 @@ struct Archery {
             wind_index--;
         }
     }
-
-    void build_dp() {
-        for (int xxx = -20; xxx <= +20; xxx++) {
-            for (int yyy = -20; yyy <= +20; yyy++) {
-                static constexpr int8_t dx[4] = {0, -1, 0, +1};
-                static constexpr int8_t dy[4] = {-1, 0, +1, 0};
-
-                int wind_strength = wind[0];
-
-                int& value = dp[0][20 + xxx][20 + yyy];
-                int& worst = pd[0][20 + xxx][20 + yyy];
-                uint8_t& opt = dp_opt[0][20 + xxx][20 + yyy];
-
-                opt = 0;
-                value = 10000;
-                worst = 0;
-                for (int8_t move = 0; move < 4; move++) {
-                    int xx = xxx + wind_strength * dx[move];
-                    int yy = yyy + wind_strength * dy[move];
-
-                    if (xx < -20)   xx = -20;
-                    if (xx > +20)   xx = +20;
-                    if (yy < -20)   yy = -20;
-                    if (yy > +20)   yy = +20;
-
-                    int now = xx * xx + yy * yy;
-
-                    if (value > now) {
-                        value = now;
-                        opt = 1 << move;
-                    }
-                    else
-                    if (value == now) {
-                        opt |= 1 << move;
-                    }
-
-                    if (worst < now) {
-                        worst = now;
-                    }
-                }
-
-            }
-        }
-
-        for (int i = 1; i <= wind_index; i++) {
-            for (int xxx = -20; xxx <= +20; xxx++) {
-                for (int yyy = -20; yyy <= +20; yyy++) {
-
-                    static constexpr int8_t dx[4] = {0, -1, 0, +1};
-                    static constexpr int8_t dy[4] = {-1, 0, +1, 0};
-
-                    int wind_strength = wind[i];
-
-                    int& value = dp[i][20 + xxx][20 + yyy];
-                    int& worst = pd[i][20 + xxx][20 + yyy];
-
-                    uint8_t& opt = dp_opt[i][20 + xxx][20 + yyy];
-                    
-                    opt = 0;
-                    value = 10000;
-                    worst = 0;
-                    for (int8_t move = 0; move < 4; move++) {
-                        int xx = xxx + wind_strength * dx[move];
-                        int yy = yyy + wind_strength * dy[move];
-
-                        if (xx < -20)   xx = -20;
-                        if (xx > +20)   xx = +20;
-                        if (yy < -20)   yy = -20;
-                        if (yy > +20)   yy = +20;
-
-                        int now = dp[i - 1][xx + 20][yy + 20];
-
-                        if (value > now) {
-                            value = now;
-                            opt = 1 << move;
-                        }
-                        else
-                        if (value == now) {
-                            opt |= 1 << move;
-                        }
-
-                        if (worst < pd[i - 1][xx + 20][yy + 20]) {
-                            worst = pd[i - 1][xx + 20][yy + 20];
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    bool in_waiting(const int8_t player_idx) const {
-        return false;
-    }
-
-    inline bool playable(const int8_t player_idx) const {
-        // too little enchancement to hope for early win
-
-        const int8_t enemy1_idx = (player_idx + 1) % 3;
-        const int8_t enemy2_idx = (player_idx + 2) % 3;
-
-        if (pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
-            dp[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20] &&
-
-            pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
-            dp[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20]) {
-            return false; // inevitable 1st place
-        }
-
-        if (dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
-            pd[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20] &&
-            
-            dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
-            pd[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20]) {
-            return false; // inevitable 3rd place
-        }
-
-        if (pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
-            dp[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20] &&
-
-            dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
-            pd[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20]) {
-            return false; // inevitable 2nd place
-        }
-
-        if (pd[wind_index][x[player_idx] + 20][y[player_idx] + 20] <=
-            dp[wind_index][x[enemy2_idx] + 20][y[enemy2_idx] + 20] &&
-            
-            dp[wind_index][x[player_idx] + 20][y[player_idx] + 20] >
-            pd[wind_index][x[enemy1_idx] + 20][y[enemy1_idx] + 20]) {
-            return false; // inevitable 2nd place
-        }
-
-        return true;
-    }
-
-    inline uint8_t greedy_moves(const int8_t player_idx) const {
-        if (end)
-            return 0;
-        
-        return dp_opt[wind_index][x[player_idx] + 20][y[player_idx] + 20];
-    }
 };
 
-int Archery::dp[ARCHERY_LENGTH][41][41];
-int Archery::pd[ARCHERY_LENGTH][41][41];
-uint8_t Archery::dp_opt[ARCHERY_LENGTH][41][41];
+int Archery::dp[ARCHERY_LENGTH + 1][41][41];
+uint8_t Archery::dp_opt[ARCHERY_LENGTH + 1][41][41];
 
 #endif // ARCHERY_HPP

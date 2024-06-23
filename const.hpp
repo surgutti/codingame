@@ -11,7 +11,7 @@ const int MCTSNODE_POOL = 6'000'000;
 const int BRAIN_POOL = 10'000'000;
 
 // TODO: run psyleague with different C values
-const float C = 0.45f; // 0.4f;
+const float C = COEFFICIENT2; // 0.4f;
 
 int PLAYER_IDX;
 

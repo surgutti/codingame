@@ -22,7 +22,7 @@
  const int BRAIN_POOL = 10'000'000;
  
  // TODO: run psyleague with different C values
- const float C = 0.4f;
+ const float C = 0.5; // 0.4f;
  
  int PLAYER_IDX;
  
@@ -92,23 +92,23 @@
        return a + fast_rand() % (b - a + 1);
    }
    
-   inline int8_t random_move() {
-   	uint16_t p = fast_rand() & 65535;
-   
-   	if (p < 16989) {
-   		return 3;
-   	}
-   	else
-   	if (p < 38701) {
-   		return 0;
-   	}
-   	else
-   	if (p < 53631) {
-   		return 2;
-   	}
-   
-   	return 1;
-   }
+inline int8_t random_move() {
+	uint16_t p = fast_rand() & 65535;
+
+	if (p < 20936) {
+		return 0;
+	}
+	else
+	if (p < 33291) {
+		return 1;
+	}
+	else
+	if (p < 48808) {
+		return 2;
+	}
+	
+	return 3;
+}
    
    #endif
    
@@ -1387,21 +1387,21 @@
              int max_enemy = std::max<int>(scores[1], scores[2]);
              int min_enemy = std::min<int>(scores[1], scores[2]);
  
-             rewards[0] = float(scores[0] - 0.6 * max_enemy - 1.0 * min_enemy) / (scores[0] + 0.6 * max_enemy + 1.0 * min_enemy);
+             rewards[0] = float(scores[0] - 0.5 * max_enemy - 1.0 * min_enemy) / (scores[0] + 0.5 * max_enemy + 1.0 * min_enemy);
          }
  
          {
              int max_enemy = std::max<int>(scores[0], scores[2]);
              int min_enemy = std::min<int>(scores[0], scores[2]);
  
-             rewards[1] = float(scores[1] - 0.6 * max_enemy - 1.0 * min_enemy) / (scores[1] + 0.6 * max_enemy + 1.0 * min_enemy);
+             rewards[1] = float(scores[1] - 0.5 * max_enemy - 1.0 * min_enemy) / (scores[1] + 0.5 * max_enemy + 1.0 * min_enemy);
          }
  
          {
              int max_enemy = std::max<int>(scores[0], scores[1]);
              int min_enemy = std::min<int>(scores[0], scores[1]);
  
-             rewards[2] = float(scores[2] - 0.6 * max_enemy - 1.0 * min_enemy) / (scores[2] + 0.6 * max_enemy + 1.0 * min_enemy);
+             rewards[2] = float(scores[2] - 0.5 * max_enemy - 1.0 * min_enemy) / (scores[2] + 0.5 * max_enemy + 1.0 * min_enemy);
          }
  
          // rewards[0] = float(scores[0] - scores[1] - scores[2]) / sum;
@@ -1455,17 +1455,17 @@
  
          // const float turn_log = fastlogf(turn + 1);
  
-         // r0 = (float) 0.6 * (score0_log - score1_log - score2_log) / (score0_log + score1_log + score2_log);
-         // r1 = (float) 0.6 * (score1_log - score0_log - score2_log) / (score1_log + score0_log + score2_log);
-         // r2 = (float) 0.6 * (score2_log - score0_log - score1_log) / (score2_log + score0_log + score1_log);
+         // r0 = (float) 0.5 * (score0_log - score1_log - score2_log) / (score0_log + score1_log + score2_log);
+         // r1 = (float) 0.5 * (score1_log - score0_log - score2_log) / (score1_log + score0_log + score2_log);
+         // r2 = (float) 0.5 * (score2_log - score0_log - score1_log) / (score2_log + score0_log + score1_log);
  
          // r0 = (float) (score0 - score1 - score2) / (score0 + score1 + score2);
          // r1 = (float) (score1 - score0 - score2) / (score1 + score0 + score2);
          // r2 = (float) (score2 - score0 - score1) / (score2 + score0 + score1);
          
-         // r0 += COEFFICIENT3 * turn_log * ((score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2));
-         // r1 += COEFFICIENT3 * turn_log * ((score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2));
-         // r2 += COEFFICIENT3 * turn_log * ((score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1));
+         // r0 += 0.5 * turn_log * ((score0 > score1 && score0 > score2) - (score0 < score1 && score0 < score2));
+         // r1 += 0.5 * turn_log * ((score1 > score0 && score1 > score2) - (score1 < score0 && score1 < score2));
+         // r2 += 0.5 * turn_log * ((score2 > score0 && score2 > score1) - (score2 < score0 && score2 < score1));
  
          // r0 += COEFFICIENT4 * (float) (hurdle_race_score[0] - hurdle_race_score[1] - hurdle_race_score[2]) / (1 + hurdle_race_score[0] + hurdle_race_score[1] + hurdle_race_score[2]);
          // r1 += COEFFICIENT4 * (float) (hurdle_race_score[1] - hurdle_race_score[0] - hurdle_race_score[2]) / (1 + hurdle_race_score[0] + hurdle_race_score[1] + hurdle_race_score[2]);
@@ -2270,7 +2270,7 @@ int main() {
         brain.run(current_state, 20);
         // brain.debug();
 #else
-        brain.run(current_state, (TURN == 0 ? 600 : 44));
+        brain.run(current_state, (TURN == 0 ? 600 : 45));
         // brain.debug();
 #endif // PSYLEAGUE
 
