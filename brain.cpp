@@ -9,7 +9,7 @@
 
 #include "const.hpp"
 #include "state.hpp"
-#include "search/brain.hpp"
+#include "brain.hpp"
 
 #include <iostream>
 #include <string>
@@ -62,10 +62,9 @@ int main() {
     std::cin.ignore();
 
 
-    // timer.start();
+    timer.start();
 
     Brain brain;
-
     for (TURN = 0; ; TURN++) {
         State current_state;
         
@@ -125,10 +124,14 @@ int main() {
         current_state.turn = TURN;
 
 #ifdef PSYLEAGUE
+        if (TURN == 0) { // to cancel init computations
+            timer.start();
+        }
         brain.run(current_state, 20);
         // brain.debug();
 #else
         brain.run(current_state, (TURN == 0 ? 600 : 45));
+        // brain.run(current_state, 60000);
         // brain.debug();
 #endif // PSYLEAGUE
 
@@ -150,6 +153,13 @@ int main() {
         std::cerr << "pool: " << (float) BrainNode::last / BRAIN_POOL << '\n';
         std::cerr << "last: " << BrainNode::last << '\n';
 
+        std::cerr << "DEPTH: ";
+        for (int i = 0; i < 100; i++) {
+            if (DEPTH[i])
+                std::cerr << DEPTH[i] << ' ';
+        }
+        std::cerr << '\n';
+
         // int8_t greedy_moves[3];
         // current_state.greedy_moves(greedy_moves);
         // int move = greedy_moves[PLAYER_IDX];
@@ -169,6 +179,13 @@ int main() {
         std::cerr << "0: " << move_list[brain.best_move(0)] << '\n';
         std::cerr << "1: " << move_list[brain.best_move(1)] << '\n';
         std::cerr << "2: " << move_list[brain.best_move(2)] << '\n';
+
+        std::cerr << "BRAIN_PLAY: " << BRAIN_PLAY << '\n';
+        std::cerr << "ROLLOUT_PLAY: " << ROLLOUT_PLAY << '\n';
+        
+        BRAIN_PLAY = 0;
+        ROLLOUT_PLAY = 0;
+
 
         std::cout << move_list[move] << std::endl;
 

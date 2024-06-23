@@ -1,10 +1,10 @@
 #ifndef BRAIN_HPP
 #define BRAIN_HPP
 
-#include "../state.hpp"
-#include "../const.hpp"
-#include "../utils.hpp"
-#include "../timer.hpp"
+#include "state.hpp"
+#include "const.hpp"
+#include "utils.hpp"
+#include "timer.hpp"
 
 #include <cstdint>
 #include <cmath>
@@ -17,7 +17,6 @@ struct BrainNode {
     BrainNode* sons;
 
     float    avg;
-    // float    var;
     unsigned vis;
 
     uint8_t last_move;
@@ -25,7 +24,6 @@ struct BrainNode {
     inline void init(const uint8_t _last_move) {
         sons = 0;
         avg = 0;
-        // var = 0;
         vis = 0;
         last_move = _last_move;
     }
@@ -36,8 +34,7 @@ struct BrainNode {
         for (uint8_t move = 0; move < 4; move++) {
             pool[last++].init(move);
         }
-
-        // // random shuffle sons
+        
         std::swap(pool[last - 1], pool[last - 1 - (fast_rand() & 3)]);
         std::swap(pool[last - 2], pool[last - 2 - (fast_rand() % 3)]);
         std::swap(pool[last - 3], pool[last - 3 - (fast_rand() & 1)]);
@@ -52,17 +49,11 @@ struct BrainNode {
 
         const float sqrt_log_node_vis = C * fastsqrtf(fastlogf(vis));
 
-        BrainNode* node = sons;
+        float best_score = -INF;
+        BrainNode* best_node = 0;
 
-        float best_score = node->avg + sqrt_log_node_vis * rsqrt_fast(node->vis);
-        BrainNode* best_node = node;
-
-        for (int8_t move = 1; move < 4; move++) {
-            node++;
-
-            // float reward_variance = node->var / node->vis;
-            // float variance_term = reward_variance + fastsqrtf(2 * fastlogf(vis) / node->vis);
-            // float ucb_score = node->avg + sqrt_log_node_vis * rsqrt_fast(node->vis) * std::min(0.25f, variance_term);
+        for (int8_t move = 0; move < 4; move++) {
+            BrainNode* node = (sons + move);
 
             const float ucb_score = node->avg + sqrt_log_node_vis * rsqrt_fast(node->vis);
 
@@ -96,20 +87,15 @@ struct BrainNode {
     }
 
     inline void apply(float reward) {
-        // const float delta = reward - avg;
-
         avg *= vis;
         avg += reward;
         vis += 1;
         avg /= vis;
-
-        // var += delta * (reward - avg);
     }
 
     void debug() const {
         std::cerr << "VIS: " << vis << '\n';
         std::cerr << "AVG: " << avg << '\n';
-        // std::cerr << "VAR: " << var << '\n';
         std::cerr << "last_move: " << int(last_move) << '\n';
 
         std::cerr << "sons:\n";
@@ -121,11 +107,6 @@ struct BrainNode {
             std::cerr << " mov > " << int(node->last_move) << '\n';
             std::cerr << " vis > " << node->vis << '\n';
             std::cerr << " avg > " << node->avg << '\n';
-            // std::cerr << " var > " << node->var << '\n';
-
-            // float reward_variance = node->var / node->vis;
-            // float variance_term = reward_variance + fastsqrtf(2 * fastlogf(vis) / node->vis);
-            // float ucb_score = node->avg + sqrt_log_node_vis * rsqrt_fast(node->vis) * std::min(0.25f, variance_term);
 
             float ucb_score = node->avg + sqrt_log_node_vis * rsqrt_fast(node->vis);
 
@@ -138,6 +119,9 @@ struct BrainNode {
 
 BrainNode BrainNode::pool[BRAIN_POOL];
 uint32_t  BrainNode::last = 0;
+
+int DEPTH[100];
+int BRAIN_PLAY;
 
 struct Brain {
     BrainNode* roots[3];
@@ -153,7 +137,8 @@ struct Brain {
         }
     }
 
-    inline void optimize(BrainNode** heads, State &state, float* reward) {
+    inline void optimize(BrainNode** heads, State &state, float* reward, int depth = 0) {
+
         if (state.is_terminal()) {
             state.get_stats(reward);
             
@@ -166,11 +151,7 @@ struct Brain {
         }
 
         if (heads[0] == 0 && heads[1] == 0 && heads[2] == 0) {
-            do {
-                state.play_random();
-                // state.play(random_move(), random_move(), random_move());
-            } while (!state.is_rollout_terminal());
-
+            state.rollout();
             state.get_stats(reward);
             return;
         }
@@ -193,9 +174,10 @@ struct Brain {
             }
         }
 
+        BRAIN_PLAY++;
         state.play(moves[0], moves[1], moves[2]);
     
-        optimize(childs, state, reward);
+        optimize(childs, state, reward, depth + 1);
 
         for (int i = 0; i < 3; i++) if (heads[i]) {
             heads[i]->apply(reward[i]);
@@ -215,11 +197,7 @@ struct Brain {
         }
 
         if (heads[0] == 0 && heads[1] == 0 && heads[2] == 0) {
-            do {
-                state.play_random();
-                // state.play(random_move(), random_move(), random_move());
-            } while (!state.is_rollout_terminal());
-
+            state.rollout();
             state.get_stats(reward);
             return;
         }

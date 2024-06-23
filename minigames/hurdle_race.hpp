@@ -152,7 +152,8 @@ struct HurdleRace {
 
     inline void randomize() {
 
-        track = all_tracks[fast_rand() % tracks_count];
+        track = unique_tracks[0];
+        // track = all_tracks[fast_rand() % tracks_count];
 
         for (int i = 0; i < 3; i++) {
             pos[i] = 0;

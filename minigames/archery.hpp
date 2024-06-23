@@ -7,6 +7,8 @@
 #include <vector>
 #include <iostream>
 
+int ROLLOUT_PLAY = 0;
+
 struct Archery {
 
     static int dp[ARCHERY_LENGTH][41][41];
@@ -97,6 +99,15 @@ struct Archery {
         }
 
         end = false;
+    }
+
+    inline void rollout() {
+        while (!end) {
+            ROLLOUT_PLAY++;
+            const int8_t moves[3] = {random_move(), random_move(), random_move()};
+            // const int8_t moves[3] = {fast_rand() & 3, fast_rand() & 3, fast_rand() & 3};
+            play(moves);
+        }
     }
 
     inline void generate_places(float* places) const {

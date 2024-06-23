@@ -1,42 +1,43 @@
 #ifndef MCTS_HPP
 #define MCTS_HPP
 
-#include "const.hpp"
-#include "state.hpp"
-#include "random.hpp"
-#include "timer.hpp"
+#include "../const.hpp"
+#include "../state.hpp"
+#include "../random.hpp"
+#include "../timer.hpp"
 
 #include <cstdint>
 #include <cmath>
 #include <iostream>
 
-// get some mask of 2 * 3 bits to randomly shuffle the moves by xor with it?
-
 struct MCTSNode {
     static MCTSNode pool[MCTSNODE_POOL];
     static int last_node;
+
+    State state;
 
     int first_son;
 
     uint8_t last_moves;
 
     float avg[3][4];
-    // float var[3][4];
     unsigned vis[3][4];
 
     unsigned node_vis;
 
     uint8_t todo[3];
 
-    inline void init(const uint8_t& _last_moves) {
+    inline void init(const State& parent_state, const uint8_t& _last_moves) {
         last_moves = _last_moves;
         first_son = -1;
+
+        state = parent_state;
+        state.play(_last_moves);
 
         for (int i = 0; i < 3; i++) {
             todo[i] = 0;
             for (int j = 0; j < 4; j++) {
                 avg[i][j] = 0;
-                // var[i][j] = 0;
                 vis[i][j] = 0;
             }
         }
@@ -54,7 +55,7 @@ struct MCTSNode {
         int best_move = -1;
 
         for (int move = 0; move < 4; move++) {
-            float node_score = vis[player_idx][move]; // avg[player_idx][move];
+            float node_score = vis[player_idx][move];
 
             if (best_score < node_score) {
                 best_score = node_score;
@@ -74,29 +75,11 @@ struct MCTSNode {
             return todo[player_idx]++;
         }
 
-        // for (int8_t move = 0; move < 4; move++) {
-        //     if (vis[player_idx][move] == 0) {
-        //         return move;
-        //     }
-        // }
-
         float best_score = -INF;
         int8_t best_move = -1;
         
         const float sqrt_log_node_vis = fastsqrtf(fastlogf(node_vis));
         for (int8_t move = 0; move < 4; move++) {
-            // float reward_variance = var[player_idx][move] / vis[player_idx][move];
-            // float rsqrt_log_node_vis_vis = sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]);
-            // float variance_term = reward_variance + rsqrt_log_node_vis_vis;
-            // float ucb_score = avg[player_idx][move];
-
-            // if (variance_term < 0.25) {
-            //     ucb_score += rsqrt_log_node_vis_vis * variance_term;
-            // }
-            // else {
-            //     ucb_score += rsqrt_log_node_vis_vis * 0.25;
-            // }
-
             float ucb_score = avg[player_idx][move] + sqrt_log_node_vis * rsqrt_fast(vis[player_idx][move]);
 
             if (best_score < ucb_score) {
@@ -116,31 +99,27 @@ struct MCTSNode {
         MCTSNode* node = &pool[first_son + moves];
 
         if (node->node_vis == 0) {
-            node->init(moves);
+            node->init(state, moves);
         }
 
         return node;
     }
 
     inline void apply_per_player(int player_idx, uint8_t move, float reward) {
-        // float delta = reward - avg[player_idx][move];
-
         avg[player_idx][move] *= vis[player_idx][move];
         avg[player_idx][move] += reward;
         vis[player_idx][move] += 1;
         avg[player_idx][move] /= vis[player_idx][move];
-
-        // var[player_idx][move] += delta * (reward - avg[player_idx][move]);
     }
 
-    inline void apply(uint8_t moves, float r0, float r1, float r2) {
+    inline void apply(uint8_t moves, const float* rewards) {
         uint8_t m0 = (moves >> 0) & 3;
         uint8_t m1 = (moves >> 2) & 3;
         uint8_t m2 = (moves >> 4) & 3;
 
-        apply_per_player(0, m0, r0);
-        apply_per_player(1, m1, r1);
-        apply_per_player(2, m2, r2);
+        apply_per_player(0, m0, rewards[0]);
+        apply_per_player(1, m1, rewards[1]);
+        apply_per_player(2, m2, rewards[2]);
 
         node_vis += 1;
     }
@@ -163,28 +142,33 @@ int      MCTSNode::last_node = 0;
 struct MCTS {
     MCTSNode* root;
 
-    void mcts(MCTSNode* node, State& state, float& r0, float& r1, float& r2) {
+    void mcts(MCTSNode* node, float* rewards) {
         
-        if (state.is_terminal()) {
-            state.get_stats(r0, r1, r2);
+        if (node->state.is_terminal()) {
+            State state = node->state;
+            state.get_stats(rewards);
+            node->node_vis++;
             return;
         }
 
         if (node->node_vis == 0) {
-            do {
-                // maybe only once play greedy move? then just random (for sake of optimization)
-                // if (state.still_playing()) {
-                //     state.play_greedy();
-                // }
-                // else {
-                    // uint8_t moves = fast_rand();
-                    // state.play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
-                    
-                    state.play(random_move(), random_move(), random_move()); 
-                // }
-            } while (!state.is_terminal());
+            State state = node->state;
 
-            state.get_stats(r0, r1, r2);
+            state.rollout();
+            // do {
+            //     // maybe only once play greedy move? then just random (for sake of optimization)
+            //     // if (state.still_playing()) {
+            //     //     state.play_greedy();
+            //     // }
+            //     // else {
+            //         // uint8_t moves = fast_rand();
+            //         // state.play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
+                    
+            //         state.play(random_move(), random_move(), random_move()); 
+            //     // }
+            // } while (!state.is_rollout_terminal());
+
+            state.get_stats(rewards);
             node->node_vis++;
             return;
         }
@@ -195,20 +179,16 @@ struct MCTS {
 
         MCTSNode* child = node->select();
 
-        state.play((child->last_moves >> 0) & 3,
-                   (child->last_moves >> 2) & 3,
-                   (child->last_moves >> 4) & 3);
-        
-        mcts(child, state, r0, r1, r2);
+        mcts(child, rewards);
 
-        node->apply(child->last_moves, r0, r1, r2);
+        node->apply(child->last_moves, rewards);
     }
 
-    inline void reset() {
+    inline void reset(const State &starting_state) {
         MCTSNode::last_node = 0;
         root = &MCTSNode::pool[MCTSNode::last_node];
         root->node_vis = 0;
-        root->init(0);
+        root->init(state, 0);
 
         MCTSNode::last_node++;
     }
@@ -226,12 +206,11 @@ struct MCTS {
     }
 
     void run(const State& root_state, int timeout) {
-        // reset();
+        reset(root_state);
 
+        float rewards[3];
         do {
-            State state = root_state;
-            float r0, r1, r2;
-            mcts(root, state, r0, r1, r2);
+            mcts(root, rewards);
         } while (timer.get_elapsed() < timeout &&
                  MCTSNode::last_node + 64 < MCTSNODE_POOL);
     }

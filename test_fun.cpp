@@ -1,6 +1,8 @@
 #include "utils.hpp"
 #include "minigames/archery.hpp"
 #include "minigames/diving.hpp"
+#include "minigames/hurdle_race.hpp"
+#include "minigames/roller_skating.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -43,23 +45,33 @@ std::string random_track() {
     return track.substr(0, 29) + ".";
 }
 
-void test_diving() {
-    
+void test_hurdle() {
+
+    std::cerr << std::fixed << std::setprecision(9);
+
+    const int track_id = 0;
+
+    HurdleRace::build_fst_snd_dp();
+
+    std::cerr << "fst_dp: " << HurdleRace::fst_dp[track_id][0][0][0][0] << '\n';
+    std::cerr << "snd_dp: " << HurdleRace::snd_dp[track_id][0][0][0][0] << '\n';
+
     int fst = 0;
     int snd = 0;
-    for (int rep = 0; rep <= 20'000'000; rep++) {
-        Diving diving;
 
-        diving.randomize();
+    for (int rep = 0; rep <= 200'000'000; rep++) {
+        HurdleRace hurdle_race;
 
-        while (!diving.end) {
-            int8_t moves[3] = {fast_rand() & 3, fast_rand() & 3, fast_rand() & 3};
-            diving.play(moves);
+        hurdle_race.randomize();
+
+        while (!hurdle_race.end) {
+            int8_t moves[3] = {randint(0, 3), randint(0, 3), randint(0, 3)};
+            hurdle_race.play(moves);
         }
 
         float places[3];
 
-        diving.generate_places(places);
+        hurdle_race.generate_places(places);
 
         if (places[0] >= places[1]) {
             fst++;
@@ -69,9 +81,76 @@ void test_diving() {
         }
     }
 
-    std::cerr << std::fixed << std::setprecision(9);
     std::cerr << "fst: " << double(fst) / (fst + snd) << '\n';
     std::cerr << "snd: " << double(snd) / (fst + snd) << '\n';
+}
+
+void test_diving() {
+    
+    std::cerr << std::fixed << std::setprecision(9);
+
+    Diving::build_dp();
+
+    std::cerr << "fst_dp: " << Diving::fst_dp[15][Diving::id[0][0]][Diving::id[0][0]] << '\n';
+    std::cerr << "snd_dp: " << Diving::snd_dp[15][Diving::id[0][0]][Diving::id[0][0]] << '\n';
+
+    int fst = 0;
+    int snd = 0;
+
+    float sum = 0;
+
+    const int REP = 20'000'000;
+
+    std::map<int, int> cnt;
+
+    for (int rep = 0; rep < REP; rep++) {
+        Diving diving;
+
+        diving.randomize();
+
+        while (!diving.end) {
+            int8_t moves[3] = {randint(0, 3), randint(0, 3), randint(0, 3)};
+            diving.play(moves);
+        }
+
+        float places[3];
+
+        diving.generate_places(places);
+
+        // for (int i = 0; i < 3; i++) {
+        //     std::cerr << i << "> " << places[i] << '\n';
+        // }
+
+        assert(places[0] == 3 || places[0] == 1 || places[0] == 0);
+
+        if (places[0] >= places[1]) {
+            fst++;
+        }
+        else {
+            snd++;
+        }
+
+        cnt[places[0]]++;
+        sum += places[0];
+    }
+
+    std::cerr << "fst: " << double(fst) / (fst + snd) << '\n';
+    std::cerr << "snd: " << double(snd) / (fst + snd) << '\n';
+
+    std::cerr << "cnt: ";
+    for (auto [a, b] : cnt) {
+        std::cerr << a << " => " << b << '\n';
+    }
+
+    std::cerr << "avg: " << sum / REP << '\n';
+
+    Diving diving;
+    diving.randomize();
+
+    float places[3];
+    diving.generate_places(places);
+
+    std::cerr << "avg table: " << places[0] << '\n';
 }
 
 void test_archery() {
@@ -140,11 +219,56 @@ void test_archery() {
     // }
 }
 
-int main() {
+void test_skating() {
+    // here the results may differ
+    // lets check by how much
+    std::cerr << std::fixed << std::setprecision(9);
 
+    const int track_id = 0;
+
+    RollerSkating::build_dp();
+
+    std::cerr << "fst_dp: " << RollerSkating::fst_dp[15][0][2][0][2] << '\n';
+    std::cerr << "snd_dp: " << RollerSkating::snd_dp[15][0][2][0][2] << '\n';
+
+    float sum = 0;
+    
+    const int REP = 20'000'000;
+
+    for (int rep = 0; rep < REP; rep++) {
+        RollerSkating roller_skating;
+
+        roller_skating.randomize();
+
+        while (!roller_skating.end) {
+            int8_t moves[3] = {randint(0, 3), randint(0, 3), randint(0, 3)};
+            roller_skating.play(moves);
+        }
+
+        float places[3];
+
+        roller_skating.generate_places(places);
+
+        sum += places[0];
+    }
+
+    std::cerr << "avg: " << float(sum) / REP << '\n';
+
+    RollerSkating skating;
+    skating.randomize();
+
+    float places[3];
+    skating.generate_places(places);
+    
+    std::cerr << "avg table: " << places[0] << '\n';
+}
+
+int main() {
+    
+    // test_hurdle();
     // test_archery();
     test_diving();
-    // test_archery();
+    // test_skating();
 
     return 0;
 

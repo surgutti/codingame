@@ -271,7 +271,8 @@
   
       inline void randomize() {
   
-          track = all_tracks[fast_rand() % tracks_count];
+          track = unique_tracks[0];
+          // track = all_tracks[fast_rand() % tracks_count];
   
           for (int i = 0; i < 3; i++) {
               pos[i] = 0;
@@ -500,8 +501,8 @@
       }
   
   
-      static long double fst_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
-      static long double snd_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
+      static float fst_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
+      static float snd_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
       static int current_track_id;
   
       inline static void make_move(int track_id, int p, int s, int &pp, int &ss, int m) {
@@ -607,8 +608,8 @@
   int HurdleRace::pd[TRACK_LENGTH + 2];
   uint8_t HurdleRace::dp_opt[TRACK_LENGTH];
   
-  long double HurdleRace::fst_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
-  long double HurdleRace::snd_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
+  float HurdleRace::fst_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
+  float HurdleRace::snd_dp[unique_tracks_count][TRACK_LENGTH - 1][3][TRACK_LENGTH - 1][3];
   
   int HurdleRace::current_track_id = -1;
   
@@ -712,6 +713,14 @@
           }
   
           end = false;
+      }
+  
+      inline void rollout() {
+          while (!end) {
+              const int8_t moves[3] = {random_move(), random_move(), random_move()};
+              // const int8_t moves[3] = {fast_rand() & 3, fast_rand() & 3, fast_rand() & 3};
+              play(moves);
+          }
       }
   
       inline void generate_places(float* places) const {
@@ -1129,11 +1138,12 @@
                              fst_dp[turns_left][dist1][risk[1] + 2][dist2][risk[2] + 2];
   
               float trd_p1 = snd_dp[turns_left][dist1][risk[1] + 2][dist0][risk[0] + 2] *
-                             snd_dp[turns_left][dist1][risk[1] + 2][dist2][risk[2] + 2];;
+                             snd_dp[turns_left][dist1][risk[1] + 2][dist2][risk[2] + 2];
           
               float snd_p1 = 1.0 - fst_p1 - trd_p1;
   
               places[1] = 3 * fst_p1 + 1 * snd_p1;
+  
   
               float fst_p2 = fst_dp[turns_left][dist2][risk[2] + 2][dist0][risk[0] + 2] *
                              fst_dp[turns_left][dist2][risk[2] + 2][dist1][risk[1] + 2];
@@ -1254,13 +1264,13 @@
       //     // return uint8_t(1) << ((order >> (1 * 2)) & 3); // else go 2
       // }
   
-      static long double fst_dp[16][32][7][32][7];
-      static long double snd_dp[16][32][7][32][7];
+      static float fst_dp[16][33][7][33][7];
+      static float snd_dp[16][33][7][33][7];
   
       static void build_dp() {
-          for (int a = 0; a < 32; a++) {
+          for (int a = 0; a < 33; a++) {
               for (int b = 0; b < 7; b++) {
-                  for (int c = 0; c < 32; c++) {
+                  for (int c = 0; c < 33; c++) {
                       for (int d = 0; d < 7; d++) {
                           if (a >= c) {
                               fst_dp[0][a][b][c][d] = 1.0f;
@@ -1312,9 +1322,9 @@
           };
   
           for (int k = 1; k <= 15; k++) {
-              for (int a = 0; a <= 28; a++) {
+              for (int a = 0; a <= 29; a++) {
                   for (int b = 0; b < 7; b++) {
-                      for (int c = 0; c <= 28; c++) {
+                      for (int c = 0; c <= 29; c++) {
                           for (int d = 0; d < 7; d++) {
                               fst_dp[k][a][b][c][d] = 0;
                               snd_dp[k][a][b][c][d] = 0;
@@ -1358,8 +1368,8 @@
   
   };
   
-  long double RollerSkating::fst_dp[16][32][7][32][7];
-  long double RollerSkating::snd_dp[16][32][7][32][7];
+  float RollerSkating::fst_dp[16][33][7][33][7];
+  float RollerSkating::snd_dp[16][33][7][33][7];
   
   #endif // ROLLER_SPEED_SKATING
   // *** End of: /home/olaf/codingame/minigames/roller_skating.hpp *** 
@@ -1371,6 +1381,10 @@
   #include <algorithm>
   #include <vector>
   #include <utility>
+  
+  #include <random>
+  
+  std::mt19937 rng_diving(2137);
   
   struct Diving {
   
@@ -1452,6 +1466,17 @@
               }
           }
           else {
+              // if (score[0] != 0 || combo[0] != 0) {
+              //     assert(id[score[0]][combo[0]] != 0);
+              // }
+              // if (score[1] != 0 || combo[1] != 0) {
+              //     assert(id[score[1]][combo[1]] != 0);
+              // }
+              // if (score[2] != 0 || combo[2] != 0) {
+              //     assert(id[score[2]][combo[2]] != 0);
+              // }
+  
+  
               float fst_p0 = fst_dp[goals_left][id[score[0]][combo[0]]][id[score[1]][combo[1]]] *
                              fst_dp[goals_left][id[score[0]][combo[0]]][id[score[2]][combo[2]]];
   
@@ -1487,6 +1512,7 @@
   
       void randomize() {
           goals_left = 12 + fast_rand() % 4;
+          // goal = std::uniform_int_distribution<uint32_t>(0, 1U << (goals_left * 2))(rng_diving);
           goal = fast_rand(); // dont care about the rest? -> just slowing down
   
           for (int i = 0; i < 3; i++) {
@@ -1509,6 +1535,10 @@
               }
               else {
                   combo[i] = 0;
+              }
+  
+              if (score[i] != 0 || combo[i] != 0) {
+                  assert(id[score[i]][combo[i]] != 0);
               }
           }
   
@@ -1582,16 +1612,17 @@
   
       static void build_dp() {
           std::vector<std::pair<int, int>> all;
-          
+          std::vector<std::pair<int, int>> prv;
+  
           all.emplace_back(0, 0);
-          for (int i = 0; i < 15; i++) {
+          for (int i = 1; i <= 15; i++) {
+              prv = all;
+  
               std::vector<std::pair<int, int>> nxt = all;
   
               for (auto [a, b] : all) {
-                  
                   nxt.emplace_back(a, 0);
-                  b++;
-                  nxt.emplace_back(a + b, b);
+                  nxt.emplace_back(a + b + 1, b + 1);
               }
   
               std::sort(nxt.begin(), nxt.end());
@@ -1602,7 +1633,7 @@
   
           const int possible = (int) all.size();
   
-          std::cerr << "possible: " << possible << '\n';
+          // std::cerr << "possible: " << possible << '\n';
           assert(possible == 341);
   
           for (int i = 0; i < possible; i++) {
@@ -1615,34 +1646,47 @@
                   if (all[i].first >= all[j].first) {
                       fst_dp[0][i][j] = 1.0f;
                   }
+                  else {
+                      fst_dp[0][i][j] = 0.0f;
+                  }
   
                   if (all[i].first < all[j].first) {
                       snd_dp[0][i][j] = 1.0f;
+                  }
+                  else {
+                      snd_dp[0][i][j] = 0.0f;
                   }
               }
           }
   
           for (int k = 1; k <= 15; k++) {
-              for (int i = 0; i < possible; i++) {
-                  auto [score_0, combo_0] = all[i];
-                  for (int j = 0; j < possible; j++) {
-                      auto [score_1, combo_1] = all[j];
+              for (int i = 0; i < (int) prv.size(); i++) {
+                  auto [score_0, combo_0] = prv[i];
   
-                      int ii = id[score_0 + combo_0 + 1][combo_0 + 1];
-                      int jj = id[score_1 + combo_1 + 1][combo_1 + 1];
+                  int i0 = id[score_0][0];
+                  int i1 = id[score_0 + combo_0 + 1][combo_0 + 1];
   
-                      if (ii == 0 || jj == 0)
-                          continue;
+                  // assert(score_0 == 0 || i0 != 0);
+                  // assert(i1 != 0);
   
-                      fst_dp[k][i][j] = fst_dp[k - 1][i][j]   * 0.25 +
-                                        fst_dp[k - 1][ii][j]  * 0.25 +
-                                        fst_dp[k - 1][i][jj]  * 0.25 +
-                                        fst_dp[k - 1][ii][jj] * 0.25;
+                  for (int j = 0; j < (int) prv.size(); j++) {
+                      auto [score_1, combo_1] = prv[j];
   
-                      snd_dp[k][i][j] = snd_dp[k - 1][i][j]   * 0.25 +
-                                        snd_dp[k - 1][ii][j]  * 0.25 +
-                                        snd_dp[k - 1][i][jj]  * 0.25 +
-                                        snd_dp[k - 1][ii][jj] * 0.25;
+                      int j0 = id[score_1][0];
+                      int j1 = id[score_1 + combo_1 + 1][combo_1 + 1];
+  
+                      // assert(score_1 == 0 || j0 != 0);
+                      // assert(j1 != 0);
+  
+                      fst_dp[k][i][j] = fst_dp[k - 1][i0][j0] * 0.75 * 0.75 +
+                                        fst_dp[k - 1][i1][j0] * 0.25 * 0.75 +
+                                        fst_dp[k - 1][i0][j1] * 0.75 * 0.25 +
+                                        fst_dp[k - 1][i1][j1] * 0.25 * 0.25;
+  
+                      snd_dp[k][i][j] = snd_dp[k - 1][i0][j0] * 0.75 * 0.75 +
+                                        snd_dp[k - 1][i1][j0] * 0.25 * 0.75 +
+                                        snd_dp[k - 1][i0][j1] * 0.75 * 0.25 +
+                                        snd_dp[k - 1][i1][j1] * 0.25 * 0.25;
                   }
               }
           }
@@ -1683,16 +1727,20 @@
  
      int8_t turn;
  
+     void rollout() {
+         archery.rollout();
+     }
+ 
      inline void apply_places() {
  
          float places[3] = {0, 0, 0};
  
-         if (hurdle_race.end) {
+         // if (hurdle_race.end) {
              hurdle_race.generate_places(places);
              for (int i = 0; i < 3; i++) {
                  hurdle_race_score[i] += places[i];
              }
-         }
+         // }
  
          if (archery.end) {
              archery.generate_places(places);
@@ -1701,19 +1749,19 @@
              }
          }
  
-         if (roller_skating.end) {
+         // if (roller_skating.end) {
              roller_skating.generate_places(places);
              for (int i = 0; i < 3; i++) {
                  roller_skating_score[i] += places[i];
              }
-         }
+         // }
  
-         if (diving.end) {
+         // if (diving.end) {
              diving.generate_places(places);
              for (int i = 0; i < 3; i++) {
                  diving_score[i] += places[i];
              }
-         }
+         // }
      }
  
      bool operator== (const State &other) const {
@@ -2330,6 +2378,8 @@
  BrainNode BrainNode::pool[BRAIN_POOL];
  uint32_t  BrainNode::last = 0;
  
+ int DEPTH[100];
+ 
  struct Brain {
      BrainNode* roots[3];
  
@@ -2344,7 +2394,9 @@
          }
      }
  
-     inline void optimize(BrainNode** heads, State &state, float* reward) {
+     inline void optimize(BrainNode** heads, State &state, float* reward, int depth = 0) {
+         DEPTH[depth]++;
+ 
          if (state.is_terminal()) {
              state.get_stats(reward);
              
@@ -2357,11 +2409,7 @@
          }
  
          if (heads[0] == 0 && heads[1] == 0 && heads[2] == 0) {
-             do {
-                 state.play_random();
-                 // state.play(random_move(), random_move(), random_move());
-             } while (!state.is_rollout_terminal());
- 
+             state.rollout();
              state.get_stats(reward);
              return;
          }
@@ -2386,7 +2434,7 @@
  
          state.play(moves[0], moves[1], moves[2]);
      
-         optimize(childs, state, reward);
+         optimize(childs, state, reward, depth + 1);
  
          for (int i = 0; i < 3; i++) if (heads[i]) {
              heads[i]->apply(reward[i]);
@@ -2406,11 +2454,7 @@
          }
  
          if (heads[0] == 0 && heads[1] == 0 && heads[2] == 0) {
-             do {
-                 state.play_random();
-                 // state.play(random_move(), random_move(), random_move());
-             } while (!state.is_rollout_terminal());
- 
+             state.rollout();
              state.get_stats(reward);
              return;
          }
@@ -2499,28 +2543,28 @@ int main() {
 
     // timer.start();
     HurdleRace::build_fst_snd_dp();
-    // std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
+    std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
 
-    // std::cerr << "Hurdle :\n";
-    // for (int i = 0; i < 29; i++) {
-    //     std::cerr << "i: " << i << ' ';
-    //     std::cerr << HurdleRace::fst_dp[0][i][0][i][0] << ' ';
-    //     std::cerr << HurdleRace::snd_dp[0][i][0][i][0] << '\n';
-    // }
+    std::cerr << "Hurdle :\n";
+    for (int i = 0; i < 29; i++) {
+        std::cerr << "i: " << i << ' ';
+        std::cerr << HurdleRace::fst_dp[0][i][0][i][0] << ' ';
+        std::cerr << HurdleRace::snd_dp[0][i][0][i][0] << '\n';
+    }
 
-    // std::cerr << "Skating:\n";
-    // for (int i = 0; i <= 15; i++) {
-    //     std::cerr << "i: " << i << ' ';
-    //     std::cerr << RollerSkating::fst_dp[i][0][2][0][2] << ' ';
-    //     std::cerr << RollerSkating::snd_dp[i][0][2][0][2] << '\n';
-    // }
+    std::cerr << "Skating:\n";
+    for (int i = 0; i <= 15; i++) {
+        std::cerr << "i: " << i << ' ';
+        std::cerr << RollerSkating::fst_dp[i][0][2][0][2] << ' ';
+        std::cerr << RollerSkating::snd_dp[i][0][2][0][2] << '\n';
+    }
 
-    // std::cerr << "Diving:\n";
-    // for (int i = 0; i <= 15; i++) {
-    //     std::cerr << "i: " << i << ' ';
-    //     std::cerr << Diving::fst_dp[i][0][0] << ' ';
-    //     std::cerr << Diving::snd_dp[i][0][0] << '\n';
-    // }
+    std::cerr << "Diving:\n";
+    for (int i = 0; i <= 15; i++) {
+        std::cerr << "i: " << i << ' ';
+        std::cerr << Diving::fst_dp[i][0][0] << ' ';
+        std::cerr << Diving::snd_dp[i][0][0] << '\n';
+    }
 
     std::cin >> PLAYER_IDX;
     std::cin.ignore();
@@ -2528,10 +2572,9 @@ int main() {
     std::cin.ignore();
 
 
-    // timer.start();
+    timer.start();
 
     Brain brain;
-
     for (TURN = 0; ; TURN++) {
         State current_state;
         
@@ -2591,10 +2634,14 @@ int main() {
         current_state.turn = TURN;
 
 #ifdef PSYLEAGUE
+        if (TURN == 0) { // to cancel init computations
+            timer.start();
+        }
         brain.run(current_state, 20);
         // brain.debug();
 #else
         brain.run(current_state, (TURN == 0 ? 600 : 45));
+        // brain.run(current_state, 60000);
         // brain.debug();
 #endif // PSYLEAGUE
 
@@ -2615,6 +2662,13 @@ int main() {
         std::cerr << "timer: " << timer.get_elapsed() << '\n';
         std::cerr << "pool: " << (float) BrainNode::last / BRAIN_POOL << '\n';
         std::cerr << "last: " << BrainNode::last << '\n';
+
+        std::cerr << "DEPTH: ";
+        for (int i = 0; i < 100; i++) {
+            if (DEPTH[i])
+                std::cerr << DEPTH[i] << ' ';
+        }
+        std::cerr << '\n';
 
         // int8_t greedy_moves[3];
         // current_state.greedy_moves(greedy_moves);

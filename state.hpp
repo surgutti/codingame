@@ -34,16 +34,20 @@ struct State {
 
     int8_t turn;
 
+    void rollout() {
+        archery.rollout();
+    }
+
     inline void apply_places() {
 
         float places[3] = {0, 0, 0};
 
-        if (hurdle_race.end) {
+        // if (hurdle_race.end) {
             hurdle_race.generate_places(places);
             for (int i = 0; i < 3; i++) {
                 hurdle_race_score[i] += places[i];
             }
-        }
+        // }
 
         if (archery.end) {
             archery.generate_places(places);
@@ -52,19 +56,19 @@ struct State {
             }
         }
 
-        if (roller_skating.end) {
+        // if (roller_skating.end) {
             roller_skating.generate_places(places);
             for (int i = 0; i < 3; i++) {
                 roller_skating_score[i] += places[i];
             }
-        }
+        // }
 
-        if (diving.end) {
+        // if (diving.end) {
             diving.generate_places(places);
             for (int i = 0; i < 3; i++) {
                 diving_score[i] += places[i];
             }
-        }
+        // }
     }
 
     bool operator== (const State &other) const {
@@ -137,8 +141,7 @@ struct State {
     }
 
     inline bool is_rollout_terminal() const {
-        return archery.end || turn >= 0;
-        
+        return archery.end || turn >= 100;
         // return (hurdle_race.end &&
         //         archery.end &&
         //         roller_skating.end &&
@@ -152,17 +155,17 @@ struct State {
 
         float scores[3] = {1, 1, 1};
 
-        for (int i = 0; i < 3; i++) {
-            if (hurdle_race_score[i] > 0)
+        for (int i = 0; i < 3; i++) { 
+            if (hurdle_race_score[i] > 1)
                 scores[i] *= hurdle_race_score[i];
 
-            if (archery_score[i] > 0)
+            if (archery_score[i] > 1)
                 scores[i] *= archery_score[i];
             
-            if (roller_skating_score[i] > 0)
+            if (roller_skating_score[i] > 1)
                 scores[i] *= roller_skating_score[i];
             
-            if (diving_score[i] > 0)
+            if (diving_score[i] > 1)
                 scores[i] *= diving_score[i];
         }
 
@@ -332,109 +335,6 @@ struct State {
                !diving.end;
     }
 
-    // inline void greedy_moves(int8_t* move) const {
-    //     for (int i = 0; i < 3; i++) {
-
-    //         uint8_t moves = hurdle_race.greedy_moves(i) |
-    //                         archery.greedy_moves(i) |
-    //                         roller_skating.greedy_moves(i) |
-    //                         diving.greedy_moves(i) | 
-    //                         (uint8_t(1) << (fast_rand() & 3));
-            
-    //         uint8_t order = all_permutations[fast_rand() % 24];
-
-    //         move[i] = -1;
-    //         for (int j = 0; j < 4; j++) {
-    //             if ((moves >> (order & 3)) & 1) {
-    //                 move[i] = j;
-    //                 break;
-    //             }
-
-    //             order >>= 2;
-    //         }
-
-    //         // assert(0 <= move[i] && move[i] <= 3);
-
-    //         // // std::cerr << "player: " << i << '\n';
-
-    //         // int eval[4] = {0, 0, 0, 0};
-
-    //         // if (hurdle_race.playable(i)) {
-    //         //     uint8_t good_moves = hurdle_race.greedy_moves(i);
-    //         //     for (int j = 0; j < 4; j++) {
-    //         //         if (good_moves & (1 << j)) {
-    //         //             eval[j] += int(archery_score[i]) * roller_skating_score[i] * diving_score[i] + 1;
-    //         //         }
-    //         //     }
-    //         // }
-    //         // // else {
-    //         // //     std::cerr << "hurdles useless\n";
-    //         // // }
-
-    //         // if (archery.playable(i)) {
-    //         //     uint8_t good_moves = archery.greedy_moves(i);
-    //         //     for (int j = 0; j < 4; j++) {
-    //         //         if (good_moves & (1 << j)) {
-    //         //             eval[j] += int(hurdle_race_score[i]) * roller_skating_score[i] * diving_score[i] + 1;
-    //         //         }
-    //         //     }
-    //         // }
-    //         // // else {
-    //         // //     std::cerr << "archery useless\n";
-    //         // // }
-
-    //         // if (roller_skating.playable(i)) {
-    //         //     uint8_t good_moves = roller_skating.greedy_moves(i);
-    //         //     for (int j = 0; j < 4; j++) {
-    //         //         if (good_moves & (1 << j)) {
-    //         //             eval[j] += int(hurdle_race_score[i]) * archery_score[i] * diving_score[i] + 1;
-    //         //         }
-    //         //     }
-    //         // }
-    //         // // else {
-    //         // //     std::cerr << "skating useless\n";
-    //         // // }
-
-    //         // if (diving.playable(i)) {
-    //         //     uint8_t good_moves = diving.greedy_moves(i);
-    //         //     for (int j = 0; j < 4; j++) {
-    //         //         if (good_moves & (1 << j)) {
-    //         //             eval[j] += int(hurdle_race_score[i]) * archery_score[i] * roller_skating_score[i] + 1;
-    //         //         }
-    //         //     }
-    //         // }
-    //         // // else {
-    //         // //     std::cerr << "diving useless\n";
-    //         // // }
-
-    //         // // std::cerr << "eval: ";
-    //         // // for (int j = 0; j < 4; j++) {
-    //         //     // std::cerr << int(eval[j]) << ' ';
-    //         // // }
-    //         // // std::cerr << '\n';
-
-    //         // int best_score = -1;
-    //         // for (int j = 0; j < 4; j++) {
-    //         //     if (best_score < eval[j]) {
-    //         //         best_score = eval[j];
-    //         //         move[i] = j;
-    //         //     }
-    //         //     else
-    //         //     if (best_score == eval[j] && fast_rand() & 1) {
-    //         //         best_score = eval[j];
-    //         //         move[i] = j;
-    //         //     }
-    //         // }
-    //     }
-    // }
-
-    // void play_greedy() {
-    //     int8_t move[3];
-
-    //     greedy_moves(move);
-    //     play(move[0], move[1], move[2]);
-    // }
-
     void play_random() {
         const int8_t move[3] = {random_move(), random_move(), random_move()};
 
@@ -444,6 +344,11 @@ struct State {
         diving.play(move);
 
         turn++;
+    }
+
+
+    void play(uint8_t moves) {
+        play(moves & 3, (moves >> 2) & 3, (moves >> 4) & 3);
     }
 
     void play(int8_t p0, int8_t p1, int8_t p2) {

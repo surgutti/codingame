@@ -8,6 +8,10 @@
 #include <vector>
 #include <utility>
 
+#include <random>
+
+std::mt19937 rng_diving(2137);
+
 struct Diving {
 
     int32_t goal;
@@ -88,33 +92,46 @@ struct Diving {
             }
         }
         else {
-            float fst_p0 = fst_dp[goals_left][id[score[0]][combo[0]]][id[score[1]][combo[1]]] *
-                           fst_dp[goals_left][id[score[0]][combo[0]]][id[score[2]][combo[2]]];
+            // if (score[0] != 0 || combo[0] != 0) {
+            //     assert(id[score[0]][combo[0]] != 0);
+            // }
+            // if (score[1] != 0 || combo[1] != 0) {
+            //     assert(id[score[1]][combo[1]] != 0);
+            // }
+            // if (score[2] != 0 || combo[2] != 0) {
+            //     assert(id[score[2]][combo[2]] != 0);
+            // }
 
-            float trd_p0 = snd_dp[goals_left][id[score[0]][combo[0]]][id[score[1]][combo[1]]] *
-                           snd_dp[goals_left][id[score[0]][combo[0]]][id[score[2]][combo[2]]];
-        
+            float fst[3][3];
+            float snd[3][3];
+            float tie[3][3];
+
+            for (int i = 0; i < 3; i++) {
+                for (int j = i + 1; j < 3; j++) {
+                    fst[i][j] = fst[j][i] = fst_dp[goals_left][id[score[i]][combo[i]]][id[score[j]][combo[j]]];
+                    snd[i][j] = snd[j][i] = snd_dp[goals_left][id[score[i]][combo[i]]][id[score[j]][combo[j]]];
+                    tie[i][j] = tie[j][i] = tie_dp[goals_left][id[score[i]][combo[i]]][id[score[j]][combo[j]]];
+                }
+            }
+
+            float fst_p0 = fst[0][1] * fst[0][2];
+            float trd_p0 = snd[0][1] * snd[0][2] - tie[1][2];
             float snd_p0 = 1.0 - fst_p0 - trd_p0;
+
+            std::cerr << fst_p0 << ' ' << trd_p0 << ' ' << snd_p0 << '\n';
 
             places[0] = 3 * fst_p0 + 1 * snd_p0;
 
 
-            float fst_p1 = fst_dp[goals_left][id[score[1]][combo[1]]][id[score[0]][combo[0]]] *
-                           fst_dp[goals_left][id[score[1]][combo[1]]][id[score[2]][combo[2]]];
-
-            float trd_p1 = snd_dp[goals_left][id[score[1]][combo[1]]][id[score[0]][combo[0]]] *
-                           snd_dp[goals_left][id[score[1]][combo[1]]][id[score[2]][combo[2]]];
-        
+            float fst_p1 = fst[1][0] * fst[1][2];
+            float trd_p1 = snd[1][0] * snd[1][2] - tie[0][2];
             float snd_p1 = 1.0 - fst_p1 - trd_p1;
 
             places[1] = 3 * fst_p1 + 1 * snd_p1;
 
-            float fst_p2 = fst_dp[goals_left][id[score[2]][combo[2]]][id[score[0]][combo[0]]] *
-                           fst_dp[goals_left][id[score[2]][combo[2]]][id[score[1]][combo[1]]];
 
-            float trd_p2 = snd_dp[goals_left][id[score[2]][combo[2]]][id[score[0]][combo[0]]] *
-                           snd_dp[goals_left][id[score[2]][combo[2]]][id[score[1]][combo[1]]];
-        
+            float fst_p2 = fst[2][0] * fst[2][1];
+            float trd_p2 = snd[2][0] * snd[2][1] - tie[0][1];
             float snd_p2 = 1.0 - fst_p2 - trd_p2;
 
             places[2] = 3 * fst_p2 + 1 * snd_p2;
@@ -123,6 +140,7 @@ struct Diving {
 
     void randomize() {
         goals_left = 15; // 12 + fast_rand() % 4;
+        // goal = std::uniform_int_distribution<uint32_t>(0, 1U << (goals_left * 2))(rng_diving);
         goal = fast_rand(); // dont care about the rest? -> just slowing down
 
         for (int i = 0; i < 3; i++) {
@@ -145,6 +163,10 @@ struct Diving {
             }
             else {
                 combo[i] = 0;
+            }
+
+            if (score[i] != 0 || combo[i] != 0) {
+                assert(id[score[i]][combo[i]] != 0);
             }
         }
 
@@ -214,17 +236,20 @@ struct Diving {
 
     static float fst_dp[16][341][341];
     static float snd_dp[16][341][341];
+    static float tie_dp[16][341][341];
     static int   id[140][20];
 
     static void build_dp() {
         std::vector<std::pair<int, int>> all;
-        
+        std::vector<std::pair<int, int>> prv;
+
         all.emplace_back(0, 0);
         for (int i = 1; i <= 15; i++) {
+            prv = all;
+
             std::vector<std::pair<int, int>> nxt = all;
 
             for (auto [a, b] : all) {
-                
                 nxt.emplace_back(a, 0);
                 nxt.emplace_back(a + b + 1, b + 1);
             }
@@ -250,43 +275,59 @@ struct Diving {
                 if (all[i].first >= all[j].first) {
                     fst_dp[0][i][j] = 1.0f;
                 }
+                else {
+                    fst_dp[0][i][j] = 0.0f;
+                }
 
                 if (all[i].first < all[j].first) {
                     snd_dp[0][i][j] = 1.0f;
+                }
+                else {
+                    snd_dp[0][i][j] = 0.0f;
+                }
+
+                if (all[i].first == all[j].first) {
+                    tie_dp[0][i][j] = 1.0f;
+                }
+                else {
+                    tie_dp[0][i][j] = 0.0f;
                 }
             }
         }
 
         for (int k = 1; k <= 15; k++) {
-            for (int i = 0; i < possible; i++) {
-                auto [score_0, combo_0] = all[i];
+            for (int i = 0; i < (int) prv.size(); i++) {
+                auto [score_0, combo_0] = prv[i];
 
-                int ii = id[score_0 + combo_0 + 1][combo_0 + 1];
+                int i0 = id[score_0][0];
+                int i1 = id[score_0 + combo_0 + 1][combo_0 + 1];
 
-                if (ii == 0) {
-                    std::cerr << "> " << score_0 + combo_0 + 1 << ' ' << combo_0 + 1 << '\n';
-                    std::cerr << "> " << score_0 << ' ' << combo_0 << '\n';
-                    std::cerr << " id: " << id[score_0][combo_0] << '\n';
-                    continue;
-                }
+                // assert(score_0 == 0 || i0 != 0);
+                // assert(i1 != 0);
 
-                for (int j = 0; j < possible; j++) {
-                    auto [score_1, combo_1] = all[j];
+                for (int j = 0; j < (int) prv.size(); j++) {
+                    auto [score_1, combo_1] = prv[j];
 
-                    int jj = id[score_1 + combo_1 + 1][combo_1 + 1];
+                    int j0 = id[score_1][0];
+                    int j1 = id[score_1 + combo_1 + 1][combo_1 + 1];
 
-                    if (jj == 0)
-                        continue;
+                    // assert(score_1 == 0 || j0 != 0);
+                    // assert(j1 != 0);
 
-                    fst_dp[k][i][j] = fst_dp[k - 1][i][j]   * 0.75 * 0.75 +
-                                      fst_dp[k - 1][ii][j]  * 0.25 * 0.75 +
-                                      fst_dp[k - 1][i][jj]  * 0.75 * 0.25 +
-                                      fst_dp[k - 1][ii][jj] * 0.25 * 0.25;
+                    fst_dp[k][i][j] = fst_dp[k - 1][i0][j0] * 0.75 * 0.75 +
+                                      fst_dp[k - 1][i1][j0] * 0.25 * 0.75 +
+                                      fst_dp[k - 1][i0][j1] * 0.75 * 0.25 +
+                                      fst_dp[k - 1][i1][j1] * 0.25 * 0.25;
 
-                    snd_dp[k][i][j] = snd_dp[k - 1][i][j]   * 0.75 * 0.75 +
-                                      snd_dp[k - 1][ii][j]  * 0.25 * 0.75 +
-                                      snd_dp[k - 1][i][jj]  * 0.75 * 0.25 +
-                                      snd_dp[k - 1][ii][jj] * 0.25 * 0.25;
+                    snd_dp[k][i][j] = snd_dp[k - 1][i0][j0] * 0.75 * 0.75 +
+                                      snd_dp[k - 1][i1][j0] * 0.25 * 0.75 +
+                                      snd_dp[k - 1][i0][j1] * 0.75 * 0.25 +
+                                      snd_dp[k - 1][i1][j1] * 0.25 * 0.25;
+                    
+                    tie_dp[k][i][j] = tie_dp[k - 1][i0][j0] * 0.75 * 0.75 +
+                                      tie_dp[k - 1][i1][j0] * 0.25 * 0.75 +
+                                      tie_dp[k - 1][i0][j1] * 0.75 * 0.25 +
+                                      tie_dp[k - 1][i1][j1] * 0.25 * 0.25;
                 }
             }
         }
@@ -295,6 +336,7 @@ struct Diving {
 
 float Diving::fst_dp[16][341][341];
 float Diving::snd_dp[16][341][341];
+float Diving::tie_dp[16][341][341];
 int   Diving::id[140][20];
 
 #endif // DIVING_HPP

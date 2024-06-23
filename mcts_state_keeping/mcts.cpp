@@ -7,8 +7,8 @@
     #pragma GCC target("avx,avx2,f16c,fma,sse3,ssse3,sse4.1,sse4.2")
 #endif // LOCAL
 
-#include "const.hpp"
-#include "state.hpp"
+#include "../const.hpp"
+#include "../state.hpp"
 // #include "search.hpp"
 #include "mcts.hpp"
 
@@ -30,6 +30,17 @@ int main() {
     std::cin.ignore();
 
     timer.start();
+    RollerSkating::build_dp();
+    // std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
+    
+    // timer.start();
+    Diving::build_dp();
+    // std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
+
+    // timer.start();
+    HurdleRace::build_fst_snd_dp();
+    std::cerr << "elapsed: " << timer.get_elapsed() << '\n';
+
 
     MCTS mcts;
 
@@ -104,7 +115,7 @@ int main() {
 
 
         // if (MCTSNode::last_node > MCTSNODE_POOL * 0.5) {
-            mcts.reset();
+            // mcts.reset();
         // }
         /*
         else 
@@ -179,6 +190,9 @@ int main() {
         // mcts.debug();
 
 #ifdef PSYLEAGUE
+        if (TURN == 0) { // to cancel init computations
+            timer.start();
+        }
         mcts.run(current_state, 20);
         mcts.debug();
 #else
@@ -204,6 +218,11 @@ int main() {
         std::cerr << "pool: " << (float) MCTSNode::last_node / MCTSNODE_POOL << '\n';
         std::cerr << "last: " << MCTSNode::last_node << '\n';
 
+        // std::cerr << "MCTS_PLAY: " << MCTS_PLAY << '\n';
+        // std::cerr << "ROLLOUT_PLAY: " << ROLLOUT_PLAY << '\n';
+        
+        // MCTS_PLAY = 0;
+        // ROLLOUT_PLAY = 0;
         // int8_t greedy_moves[3];
         // current_state.greedy_moves(greedy_moves);
         // int move = greedy_moves[PLAYER_IDX];

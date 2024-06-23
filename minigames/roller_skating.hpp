@@ -192,11 +192,12 @@ struct RollerSkating {
                            fst_dp[turns_left][dist1][risk[1] + 2][dist2][risk[2] + 2];
 
             float trd_p1 = snd_dp[turns_left][dist1][risk[1] + 2][dist0][risk[0] + 2] *
-                           snd_dp[turns_left][dist1][risk[1] + 2][dist2][risk[2] + 2];;
+                           snd_dp[turns_left][dist1][risk[1] + 2][dist2][risk[2] + 2];
         
             float snd_p1 = 1.0 - fst_p1 - trd_p1;
 
             places[1] = 3 * fst_p1 + 1 * snd_p1;
+
 
             float fst_p2 = fst_dp[turns_left][dist2][risk[2] + 2][dist0][risk[0] + 2] *
                            fst_dp[turns_left][dist2][risk[2] + 2][dist1][risk[1] + 2];
