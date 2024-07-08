@@ -3,8 +3,8 @@ cnt = 0
 with open("bot.cpp", "r") as file:
     code = "".join(file.readlines())
 
-    for c2 in [30, 40, 50, 60, 70]:
-        for c1 in [8, 10, 12, 15, 18, 20]:
+    for c2 in [30, 40, 45, 50]:
+        for c1 in [10, 12, 15, 18]:
             # for c3 in [30, 35, 40, 45, 50]:
             # for c3 in [3, 5, 7]:
             #     for c4 in [1, 2]:        

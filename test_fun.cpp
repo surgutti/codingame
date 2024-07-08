@@ -1,8 +1,8 @@
 #include "utils.hpp"
 #include "minigames/archery.hpp"
-#include "minigames/diving.hpp"
-#include "minigames/hurdle_race.hpp"
-#include "minigames/roller_skating.hpp"
+#include "minigames/divings.hpp"
+#include "minigames/hurdles.hpp"
+#include "minigames/skating.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -273,50 +273,64 @@ int main() {
     // return 0;
 
     std::map<std::string, int> cnt;
+    const int REP = 20'000'000;
 
-    for (int rep = 0; rep < 100'000'000; rep++) {
+    for (int rep = 0; rep < REP; rep++) {
         cnt[random_track()]++;
     }
 
-    int min = cnt.begin()->second;
-
-    for (auto [x, y] : cnt) {
-        min = std::min(min, y);
+    int mn = 100000000;
+    for (auto [a, b] : cnt) {
+        mn = std::min(mn, b);
     }
 
-    for (auto [x, y] : cnt) {
-        std::cerr << x << " => " << y << '\n';
-    }
-    std::cerr << "min: " << min << '\n';
-    std::cerr << "cnt: " << cnt.size() << '\n';
+    for (int mult = mn; mult >= 1; mult--) {
+        
+        std::vector<uint32_t> tracks;
 
-    std::vector<uint32_t> tracks;
+        float diff = 0;
 
-    for (auto [x, y] : cnt) {
-        int times = lround((double) y / min);
+        for (auto [x, y] : cnt) {
+            int times = lround((double) y / mult);
 
-        uint32_t mask = 0;
-        for (int i = 0; i < 30; i++) {
-            if (x[i] == '#') {
-                mask |= uint32_t(1) << i;
+            uint32_t mask = 0;
+            for (int i = 0; i < 30; i++) {
+                if (x[i] == '#') {
+                    mask |= uint32_t(1) << i;
+                }
+            }
+
+            while (times--) {
+                tracks.push_back(mask);
             }
         }
 
-        while (times--) {
-            tracks.push_back(mask);
+        for (auto [x, y] : cnt) {
+            int times = lround((double) y / mult);
+            
+            diff = std::max(diff, std::abs(float(y) / REP - float(times) / tracks.size()));
         }
-    }
 
-    for (int i = 0; i < (int) tracks.size(); i++) {
-        std::cerr << tracks[i] << ',';
-        // std::cerr << "{" << tracks[i] << "," << i << "},";
-    }
-    // for (auto x : tracks) {
-    //     std::cerr << x << ',';
-    // }
+        std::cerr << mult << " => " << "diff: " << diff << ' ' << tracks.size() << '\n';
 
-    std::cerr << '\n';
-    std::cerr << "> " << tracks.size() << '\n';
+        if (diff < 1e-6) {
+            break;
+        }
+
+        // if (ok) {
+        //     for (int i = 0; i < (int) tracks.size(); i++) {
+        //         std::cerr << tracks[i] << ',';
+        //         // std::cerr << "{" << tracks[i] << "," << i << "},";
+        //     }
+        //     // for (auto x : tracks) {
+        //     //     std::cerr << x << ',';
+        //     // }
+
+        //     std::cerr << '\n';
+        //     std::cerr << "> " << tracks.size() << '\n';
+        //     return 0;
+        // }
+    }
 
     // auto randfloat = [&](double a, double b) {
     //     return std::uniform_real_distribution<double>(a, b)(rng);

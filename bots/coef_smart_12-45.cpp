@@ -22,7 +22,7 @@
  const int BRAIN_POOL = 10'000'000;
  
  // TODO: run psyleague with different C values
- const float C = 0.4f;
+ const float C = 0.45; // 0.4f;
  
  int PLAYER_IDX;
  
@@ -1172,21 +1172,21 @@
              float max_enemy = std::max<float>(scores[1], scores[2]);
              float min_enemy = std::min<float>(scores[1], scores[2]);
  
-             rewards[0] = float(scores[0] - 0.55 * max_enemy - 1.0 * min_enemy) / (scores[0] + 0.55 * max_enemy + 1.0 * min_enemy);
+             rewards[0] = float(scores[0] - 0.5 * max_enemy - 1.0 * min_enemy) / (scores[0] + 0.5 * max_enemy + 1.0 * min_enemy);
          }
  
          {
              float max_enemy = std::max<float>(scores[0], scores[2]);
              float min_enemy = std::min<float>(scores[0], scores[2]);
  
-             rewards[1] = float(scores[1] - 0.55 * max_enemy - 1.0 * min_enemy) / (scores[1] + 0.55 * max_enemy + 1.0 * min_enemy);
+             rewards[1] = float(scores[1] - 0.5 * max_enemy - 1.0 * min_enemy) / (scores[1] + 0.5 * max_enemy + 1.0 * min_enemy);
          }
  
          {
              float max_enemy = std::max<float>(scores[0], scores[1]);
              float min_enemy = std::min<float>(scores[0], scores[1]);
  
-             rewards[2] = float(scores[2] - 0.55 * max_enemy - 1.0 * min_enemy) / (scores[2] + 0.55 * max_enemy + 1.0 * min_enemy);
+             rewards[2] = float(scores[2] - 0.5 * max_enemy - 1.0 * min_enemy) / (scores[2] + 0.5 * max_enemy + 1.0 * min_enemy);
          }
      }
  
@@ -1212,6 +1212,7 @@
  
              hurdles.end = false;
  
+             hurdles.build_dp();
              hurdles.find_track_index();
  
              if (hurdles.expected_end() <= 7) {
@@ -1326,7 +1327,7 @@
              
              const float weight = (archery_score[player_idx] + 1) *
                                   (skating_score[player_idx] + 1) *
-                                  (divings_score[player_idx] + 1) + 1.0f / (1 + pop_count(moves));
+                                  (divings_score[player_idx] + 1);// / (1 + pop_count(moves));
  
              // std::cerr << "Hurdles: " << weight << '\n';
              for (int i = 0; i < 4; i++) {
@@ -1341,7 +1342,7 @@
              uint8_t moves = archery.greedy_moves(player_idx);
              const float weight = (hurdles_score[player_idx] + 1) *
                                   (skating_score[player_idx] + 1) *
-                                  (divings_score[player_idx] + 1) + 1.0f / (1 + pop_count(moves));
+                                  (divings_score[player_idx] + 1);// / (1 + pop_count(moves));
  
              // std::cerr << "Archery: " << weight << '\n';
              for (int i = 0; i < 4; i++) {
@@ -1356,7 +1357,7 @@
          //     uint8_t moves = skating.greedy_moves(player_idx);
          //     const float weight = (hurdles_score[player_idx] + 1) *
          //                          (archery_score[player_idx] + 1) *
-         //                          (divings_score[player_idx] + 1) + 1.0f / (1 + pop_count(moves));
+         //                          (divings_score[player_idx] + 1); // / (1 + pop_count(moves));
  
          //     // std::cerr << "Skating: " << weight << '\n';
          //     for (int i = 0; i < 4; i++) {
@@ -1371,7 +1372,7 @@
              uint8_t moves = divings.greedy_moves(player_idx);
              const float weight = (hurdles_score[player_idx] + 1) *
                                   (archery_score[player_idx] + 1) *
-                                  (skating_score[player_idx] + 1); + 1.0f / (1 + pop_count(moves));
+                                  (skating_score[player_idx] + 1);// / (1 + pop_count(moves));
  
              // std::cerr << "Diving: " << weight << '\n';
              for (int i = 0; i < 4; i++) {
