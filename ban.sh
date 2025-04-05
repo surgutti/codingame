@@ -1,4 +1,0 @@
-for bot in coef_bot_70-25-5-1 coef_bot_75-25-5-1 coef_bot_70-25-7-2 coef_bot_75-30-3-1 coef_bot_70-25-3-2 coef_bot_75-25-7-1 coef_bot_65-30-5-2 coef_bot_70-30-3-1 coef_bot_70-30-5-1 coef_bot_65-30-3-2 coef_bot_70-30-3-2 coef_bot_70-30-7-1 coef_bot_65-30-7-2 coef_bot_70-25-5-2 coef_bot_65-30-5-1 coef_bot_65-30-7-1 coef_bot_65-35-3-2 coef_bot_75-30-7-1 coef_bot_70-30-5-2 coef_bot_75-35-3-1 coef_bot_75-30-3-2 coef_bot_75-30-5-1 coef_bot_75-35-5-2 coef_bot_70-35-7-2 coef_bot_75-35-5-1 coef_bot_75-35-3-2 coef_bot_75-30-7-2 coef_bot_65-35-5-1 coef_bot_70-35-3-2 coef_bot_75-35-7-2 coef_bot_65-35-7-1 coef_bot_70-35-5-1 coef_bot_70-30-7-2 coef_bot_65-35-3-1 coef_bot_65-35-5-2 coef_bot_65-35-7-2 coef_bot_70-35-7-1 coef_bot_70-35-3-1 coef_bot_75-35-7-1 coef_bot_70-35-5-2 early_quit; do
-	echo "removing $bot"
-	psyleague bot remove $bot
-done
