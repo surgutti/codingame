@@ -1,27 +1,13 @@
 #include <iostream>
 #include <unordered_map>
-#include <unordered_set>
 #include <set>
-#include <vector>
-#include <algorithm>
-#include <ext/pb_ds/assoc_container.hpp>
-
-using namespace __gnu_pbds;
-
-// 4183357 unique states
-// 4142098 without the end states
-// stan -> <max depth, sum of hashes> 
-// 8 bytes per entry (uint64_t) [truly 59 bits]
-// 41259 true end states
-// game has depth 60
 
 using namespace std;
 
 typedef uint32_t Board;
 
-#define MAX_DEPTH 11
-
-gp_hash_table<Board, uint32_t> cache[MAX_DEPTH];
+unordered_map<Board, uint32_t> cache[41];
+set<Board> all;
 
 inline uint32_t board_hash(Board board) {
     // cerr << "board> " << board << ' ' << cache.size() << '\n';
@@ -70,28 +56,22 @@ constexpr int32_t neigh_cnt[9] = {
 // depth == 0 -> bad
 // empty == 0 -> good (wektor of prefix sums per depth)??
 
-// 6 -> 6 * 10**i * #cnt
+uint32_t jazda(Board board, uint16_t empty, int depth) {
+    // all.insert(board);
 
-int CNT = 0;
-uint32_t jazda(Board board, uint16_t empty, int whole_sum, int depth) {
-	// cnt_state[board]++;
+    if (depth == 0 || empty == 0) {
+        return board_hash(board);
+    }
 
-	if (depth == 0 || empty == 0) {
-		return board_hash(board);
-	}
-
-	CNT++;
-	
-	auto it = cache[whole_sum].find(board);
-	if (it != cache[whole_sum].end()) {
-		return it->second;
-	}
+    auto it = cache[depth].find(board);
+    if (it != cache[depth].end()) {
+        return it->second;
+    }
     
     #define val(i) ((board >> (3 * i)) & 0b111)
 
     uint32_t result = 0;
-    // uint16_t to_capture = 0;
-	for (uint16_t bb = empty; bb; bb &= bb - 1) {
+    for (uint16_t bb = empty; bb; bb &= bb - 1) {
         int i = __builtin_ctz(bb);
 
         bool capture = false;
@@ -100,10 +80,7 @@ uint32_t jazda(Board board, uint16_t empty, int whole_sum, int depth) {
             Board new_board = board;
             uint16_t new_empty = empty;
             bool ok = true;
-           
-		  	for (uint32_t mm = mask; mm; mm &= mm - 1) {
-				int bit = __builtin_ctz(mm); 
-			// for (int bit = 0; bit < neigh_cnt[i]; bit++) {
+            for (int bit = 0; bit < neigh_cnt[i]; bit++) {
                 if (mask >> bit & 1) {
                     sum += val(neigh[i][bit]);
                     new_empty ^= 1 << neigh[i][bit];
@@ -117,23 +94,17 @@ uint32_t jazda(Board board, uint16_t empty, int whole_sum, int depth) {
             }
 
             if (cnt >= 2 && sum <= 6 && ok) {
-               	result += jazda(new_board | (sum << (3 * i)), new_empty ^ (1 << i), whole_sum + cnt - 2, depth - 1);	
-				capture = true;
+                result += jazda(new_board | (sum << (3 * i)), new_empty ^ (1 << i), depth - 1);
+                capture = true;
             }
         }
 
         if (!capture) {
-			// to_capture |= 1 << i;
-            result += jazda(board | (1U << (3 * i)), empty ^ (1 << i), whole_sum, depth - 1);
-		}
-	}
-	
-	// for (uint16_t bb = to_capture; bb; bb &= bb - 1) {
-		// int i = __builtin_ctz(bb);
-		// result += jazda(board | (1U << (3 * i)), empty ^ (1 << i), depth - 1);
-    // }
-	
-	return cache[whole_sum][board] = result;
+            result += jazda(board | (1U << (3 * i)), empty ^ (1 << i), depth - 1);
+        }
+    }
+
+    return cache[depth][board] = result;
 }
 
 int main() {
@@ -153,13 +124,15 @@ int main() {
             }
         }
     }
-	
-    cout << ((jazda(board, empty, 0, depth) & ((1U << 30) - 1))) << '\n';
-   	
-	for (int i = 0; i <= depth; i++) {
-		cerr << i << ": " << cache[i].size() << '\n';
-	}
-	cerr << "CNT: " << CNT << '\n';
 
-	return 0;
+    // cerr << "depth: " << depth << '\n';
+    // cerr << "start: " << board_hash(board) << '\n';
+    cout << ((jazda(board, empty, depth) & ((1U << 30) - 1))) << '\n';
+	for (int i = 0; i <= depth; i++)
+		cerr << cache[i].size() << '\n';
+
+    cerr << "all: " << all.size() << "\n";
+
+    return 0;
 }
+
