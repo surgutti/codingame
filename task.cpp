@@ -1,3 +1,10 @@
+#ifndef LOCAL
+#undef _GLIBCXX_DEBUG  // disable run-time bound checking, etc
+#pragma GCC optimize("Ofast,inline,unroll-loops,tracer,vpt,split-loops,unswitch-loops")
+// #undef __cplusplus
+// #define __cplusplus 202002L
+#endif
+
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
@@ -6,7 +13,14 @@
 #include <algorithm>
 #include <ext/pb_ds/assoc_container.hpp>
 
+#ifndef LOCAL
+#pragma GCC target( \
+    "aes,align-stringops,avx,avx2,bmi,bmi2,crc32,cx16,f16c,fma,fsgsbase,fxsr,hle,ieee-fp,lzcnt,mmx,movbe,mwait,pclmul,popcnt,rdrnd,sahf,sse,sse2,sse3,sse4,sse4.1,sse4.2,ssse3,xsave,xsaveopt")
+#endif
+
 using namespace __gnu_pbds;
+
+const int MAX_STATES = 3684492;
 
 // 4183357 unique states
 // 4142098 without the end states
@@ -18,24 +32,6 @@ using namespace __gnu_pbds;
 using namespace std;
 
 typedef uint32_t Board;
-
-#define MAX_DEPTH 11
-
-gp_hash_table<Board, uint32_t> cache[MAX_DEPTH];
-
-inline uint32_t board_hash(Board board) {
-    // cerr << "board> " << board << ' ' << cache.size() << '\n';
-    uint32_t result = 0;
-    
-    // unroll 9 times?
-    for (int i = 0; i < 9; i++) {
-        result *= 10;
-        result += board & 7;
-        board >>= 3;
-    }
-    
-    return result;
-}
 
 constexpr uint32_t blank[9] = {
     0b111111111111111111111111000U,
@@ -67,99 +63,145 @@ constexpr int32_t neigh_cnt[9] = {
     2, 3, 2
 };
 
-// depth == 0 -> bad
-// empty == 0 -> good (wektor of prefix sums per depth)??
-
-// 6 -> 6 * 10**i * #cnt
-
-int CNT = 0;
-uint32_t jazda(Board board, uint16_t empty, int whole_sum, int depth) {
-	// cnt_state[board]++;
-
-	if (depth == 0 || empty == 0) {
-		return board_hash(board);
-	}
-
-	CNT++;
-	
-	auto it = cache[whole_sum].find(board);
-	if (it != cache[whole_sum].end()) {
-		return it->second;
-	}
-    
-    #define val(i) ((board >> (3 * i)) & 0b111)
-
+inline uint32_t board_hash(Board board) {
     uint32_t result = 0;
-    // uint16_t to_capture = 0;
-	for (uint16_t bb = empty; bb; bb &= bb - 1) {
-        int i = __builtin_ctz(bb);
-
-        bool capture = false;
-        for (uint32_t mask = 0; mask < (1 << neigh_cnt[i]); mask++) {
-            int cnt = 0, sum = 0;
-            Board new_board = board;
-            uint16_t new_empty = empty;
-            bool ok = true;
-           
-		  	for (uint32_t mm = mask; mm; mm &= mm - 1) {
-				int bit = __builtin_ctz(mm); 
-			// for (int bit = 0; bit < neigh_cnt[i]; bit++) {
-                if (mask >> bit & 1) {
-                    sum += val(neigh[i][bit]);
-                    new_empty ^= 1 << neigh[i][bit];
-                    cnt++;
-                    new_board &= blank[neigh[i][bit]];
-                
-                    if (val(neigh[i][bit]) == 0) {
-                        ok = false;
-                    }
-                }
-            }
-
-            if (cnt >= 2 && sum <= 6 && ok) {
-               	result += jazda(new_board | (sum << (3 * i)), new_empty ^ (1 << i), whole_sum + cnt - 2, depth - 1);	
-				capture = true;
-            }
-        }
-
-        if (!capture) {
-			// to_capture |= 1 << i;
-            result += jazda(board | (1U << (3 * i)), empty ^ (1 << i), whole_sum, depth - 1);
-		}
-	}
-	
-	// for (uint16_t bb = to_capture; bb; bb &= bb - 1) {
-		// int i = __builtin_ctz(bb);
-		// result += jazda(board | (1U << (3 * i)), empty ^ (1 << i), depth - 1);
-    // }
-	
-	return cache[whole_sum][board] = result;
+    
+    for (int i = 0; i < 9; i++) {
+        result *= 10;
+        result += board & 7;
+        board >>= 3;
+    }
+    
+    return result;
 }
+
+inline Board horizontal_symmetry(Board board) {
+	return ((board & 0b000000000000000000111111111U) << (6 * 3)) |
+		   ( board & 0b000000000111111111000000000U) |
+		   ((board & 0b111111111000000000000000000U) >> (6 * 3));
+}
+
+inline Board vertical_symmetry(Board board) {
+	return ((board & 0b000000111000000111000000111U) << (3 * 2)) |
+		   ( board & 0b000111000000111000000111000U) |
+		   ((board & 0b111000000111000000111000000U) >> (3 * 2));
+}
+
+const uint32_t zero_solution[40] = {
+111111111,704035952,840352818,600875666,50441886,680243700,597686656,584450980,55305380,193520836,521847116,1054388152,518795448,366207036,678967952,476916052,1009258340,592651828,1063467872,400415524,233248832,230461008,245411624,899694236,384163740,888060600,347933640,340717612,73295296,851289228,221286388,375032784,723342020,92414440,745533092,331519112,993643868,72093236,422667876,503115192
+};
+
+pair<Board, uint32_t> beam[2][MAX_STATES];
+int len[2];
 
 int main() {
     int depth;
     cin >> depth;
 
-    Board board = 0;
-    uint16_t empty = 0;
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            int die_value;
-            cin >> die_value;
+	{
+		Board board = 0;
+		uint16_t empty = 0;
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				int die_value;
+				cin >> die_value;
 
-            board |= die_value << (3 * (i * 3 + j));
-            if (die_value == 0) {
-                empty |= 1 << (i * 3 + j);
-            }
-        }
-    }
-	
-    cout << ((jazda(board, empty, 0, depth) & ((1U << 30) - 1))) << '\n';
-   	
-	for (int i = 0; i <= depth; i++) {
-		cerr << i << ": " << cache[i].size() << '\n';
+				board |= die_value << (3 * (i * 3 + j));
+				if (die_value == 0) {
+					empty |= 1 << (i * 3 + j);
+				}
+			}
+		}
+
+		if (board == 0) {
+			cout << zero_solution[depth - 1] << '\n';
+			return 0;
+		}
+
+		beam[0][len[0]++] = make_pair(board, 1);
 	}
-	cerr << "CNT: " << CNT << '\n';
 
+	uint32_t ans = 0;
+
+	for (int d = 0; d < depth; d++) {
+		int cur = (d & 1);
+		int nxt = cur ^ 1;
+		len[nxt] = 0;
+		
+		cerr << "depth: " << d << " => " << len[cur] << '\n';
+		sort(beam[cur], beam[cur] + len[cur]);
+		reverse(beam[cur], beam[cur] + len[cur]);
+		
+		for (int j = 0; j < min<int>(20, len[cur]); j++) {
+			if (j == 0 || beam[cur][j].first != beam[cur][j - 1].first) {
+				// cerr << "> " << beam[cur][j].second << ' ' << board_hash(beam[cur][j].first) << '\n';
+			}
+		}
+
+		for (int j = 1; j < len[cur]; j++) {
+			beam[cur][j].second += beam[cur][j - 1].second;
+		}
+
+		uint32_t last = 0;
+		for (int j = 0; j < len[cur]; j++) {
+			if (j + 1 == len[cur] || beam[cur][j].first != beam[cur][j + 1].first) {
+				uint32_t ile = beam[cur][j].second - last;
+				last = beam[cur][j].second;
+			
+    			const Board board = beam[cur][j].first;
+
+				#define val(i) ((board >> (3 * i)) & 0b111)
+
+				bool is_zero = false;
+        		for (int i = 0; i < 9; i++) if (val(i) == 0) { 
+					is_zero = true;
+					
+					bool capture = false;
+					for (uint32_t mask = 0; mask < (1 << neigh_cnt[i]); mask++) {
+						int cnt = 0, sum = 0;
+						Board new_board = board;
+						bool ok = true;
+					   
+						for (uint32_t mm = mask; mm; mm &= mm - 1) {
+							int bit = __builtin_ctz(mm); 
+						// for (int bit = 0; bit < neigh_cnt[i]; bit++) {
+							if (mask >> bit & 1) {
+								sum += val(neigh[i][bit]);
+								cnt++;
+								new_board &= blank[neigh[i][bit]];
+							
+								if (val(neigh[i][bit]) == 0) {
+									ok = false;
+								}
+							}
+						}
+
+						if (cnt >= 2 && sum <= 6 && ok) {
+							beam[nxt][len[nxt]++] = make_pair(new_board | (sum << (3 * i)), ile);
+							capture = true;
+						}
+					}
+
+					if (!capture) {
+						beam[nxt][len[nxt]++] = make_pair(board | (1U << (3 * i)), ile);
+					}
+				}
+
+                #undef val
+
+				if (!is_zero) {
+					ans += ile * board_hash(board);
+				}
+			}
+		}
+	}
+
+	for (int i = 0; i < len[depth & 1]; i++) {
+		auto const& [b, v] = beam[depth & 1][i];
+		ans += v * board_hash(b);
+	}
+	
+    cout << (ans & ((1U << 30) - 1)) << '\n';
+   	
 	return 0;
 }
