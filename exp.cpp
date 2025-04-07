@@ -94,34 +94,14 @@ const uint32_t zero_solution[40] = {
 pair<Board, uint32_t> beam[2][MAX_STATES];
 int len[2];
 
+vector<tuple<Board, int, Board, int>> edges;
+
 int main() {
-    int depth;
-    cin >> depth;
+    int depth = 61;
 
-	{
-		Board board = 0;
-		uint16_t empty = 0;
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
-				int die_value;
-				cin >> die_value;
+	Board board = 0;
 
-				board |= die_value << (3 * (i * 3 + j));
-				if (die_value == 0) {
-					empty |= 1 << (i * 3 + j);
-				}
-			}
-		}
-
-		/*
-		if (board == 0) {
-			cout << zero_solution[depth - 1] << '\n';
-			return 0;
-		}
-		*/
-
-		beam[0][len[0]++] = make_pair(board, 1);
-	}
+	beam[0][len[0]++] = make_pair(board, 1);
 
 	uint32_t ans = 0;
 
@@ -133,26 +113,8 @@ int main() {
 		cerr << "depth: " << d << " => " << len[cur] << '\n';
 		sort(beam[cur], beam[cur] + len[cur]);
 
-		map<Board, int> CNT;
-		for (int j = 0; j < len[cur]; j++) {
-			CNT[beam[cur][j].first] += beam[cur][j].second;
-		}
-
-		vector<pair<int, Board>> cc;
-		for (auto [b, v] : CNT) {
-			cc.emplace_back(v, b);
-		}
-
-		sort(cc.rbegin(), cc.rend());
-		for (int j = 0; j < min<int>(cc.size(), 100); j++) {
-			cerr << cc[j].first << ' ';
-		}
-		cerr << '\n';
-
-
-		for (int j = 1; j < len[cur]; j++) {
+		for (int j = 1; j < len[cur]; j++)
 			beam[cur][j].second += beam[cur][j - 1].second;
-		}
 
 		uint32_t last = 0;
 		for (int j = 0; j < len[cur]; j++) {
@@ -189,12 +151,16 @@ int main() {
 						}
 
 						if (cnt >= 2 && sum <= 6 && ok) {
-							beam[nxt][len[nxt]++] = make_pair(new_board | (sum << (3 * i)), ile);
+							new_board |= sum << (3 * i);
+							edges.emplace_back(board, d, new_board, d + 1);
+
+							beam[nxt][len[nxt]++] = make_pair(new_board, ile);
 							capture = true;
 						}
 					}
 
 					if (!capture) {
+						edges.emplace_back(board, d, board | (1U << (3 * i)), d + 1);
 						beam[nxt][len[nxt]++] = make_pair(board | (1U << (3 * i)), ile);
 					}
 				}
@@ -208,12 +174,10 @@ int main() {
 		}
 	}
 
-	for (int i = 0; i < len[depth & 1]; i++) {
-		auto const& [b, v] = beam[depth & 1][i];
-		ans += v * board_hash(b);
+	cout << edges.size() << '\n';	
+	for (auto [b1, d1, b2, d2] : edges) {
+		cout << b1 << ' ' << d1 << ' ' << b2 << ' ' << d2 << '\n';
 	}
-	
-    cout << (ans & ((1U << 30) - 1)) << '\n';
-   	
+
 	return 0;
 }
