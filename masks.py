@@ -28,9 +28,12 @@ for i in range(3):
 			if cnt >= 2 and ok:
 				#print(i, j, mask)
 				#print_mask(mask)
-				S.append(mask)
+				S.append(3 * (3 * i + j)) #mask)
 
 for j in range(len(S)):
+	print(0b111 << S[j], end=",")
+	continue
+
 	x = S[j]
 	
 	xx = 0
@@ -38,10 +41,10 @@ for j in range(len(S)):
 		if x >> i & 1:
 			xx |= 0b111 << (3 * i)
 
-	print("/*", j)
-	print_mask(x)
-	print("*/");
-	print(xx, ",");	
+	#print("/*", j)
+	#print_mask(x)
+	#print("*/");
+	print(xx, end=",");	
 print()
 
 print(len(S))

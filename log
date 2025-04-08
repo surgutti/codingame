@@ -1,93 +1,586 @@
-010
-000
-010
-
-001
-000
-001
-
-101
-000
-000
-
-000
-100
-010
-
-010
-100
-000
-
-010
-100
-010
-
-000
-010
-001
-
-100
-010
-000
-
-001
-010
-000
-
-101
-010
-000
-
-001
-010
-001
-
-000
-001
-010
-
-010
-001
-000
-
-010
-001
-010
-
-000
-101
-000
-
-000
-101
-010
-
-010
-101
-000
-
-010
-101
-010
-
-000
-000
-101
-
-100
-000
-100
-
-000
-010
-100
-
-100
-010
-100
-
-000
-010
-101
-
-23
+task.cpp: In function ‘__m256i sum_3bit_chunks(__m256i)’:
+task.cpp:99:41: warning: AVX vector return without AVX enabled changes the ABI [-Wpsabi]
+   99 | inline __m256i sum_3bit_chunks(__m256i m) {
+      |                                         ^
+task.cpp:99:16: note: the ABI for passing parameters with 32-byte alignment has changed in GCC 4.6
+   99 | inline __m256i sum_3bit_chunks(__m256i m) {
+      |                ^~~~~~~~~~~~~~~
+In file included from /usr/lib/gcc/x86_64-linux-gnu/12/include/immintrin.h:47,
+                 from task.cpp:15:
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:119:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_add_epi32(__m256i, __m256i)’: target specific option mismatch
+  119 | _mm256_add_epi32 (__m256i __A, __m256i __B)
+      | ^~~~~~~~~~~~~~~~
+task.cpp:133:29: note: called from here
+  133 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  134 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  135 |                         m,
+      |                         ~~   
+  136 |                         _mm256_set1_epi32(0b000111111111111111111111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  137 |                 ),
+      |                 ~~           
+  138 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  139 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b111000000000000000000000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  140 |                         24
+      |                         ~~   
+  141 |                 )
+      |                 ~            
+  142 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:179:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_and_si256(__m256i, __m256i)’: target specific option mismatch
+  179 | _mm256_and_si256 (__m256i __A, __m256i __B)
+      | ^~~~~~~~~~~~~~~~
+task.cpp:133:29: note: called from here
+  133 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  134 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  135 |                         m,
+      |                         ~~   
+  136 |                         _mm256_set1_epi32(0b000111111111111111111111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  137 |                 ),
+      |                 ~~           
+  138 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  139 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b111000000000000000000000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  140 |                         24
+      |                         ~~   
+  141 |                 )
+      |                 ~            
+  142 |         );
+      |         ~                    
+In file included from /usr/lib/gcc/x86_64-linux-gnu/12/include/immintrin.h:43:
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avxintrin.h:1326:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_set1_epi32(int)’: target specific option mismatch
+ 1326 | _mm256_set1_epi32 (int __A)
+      | ^~~~~~~~~~~~~~~~~
+task.cpp:133:29: note: called from here
+  133 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  134 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  135 |                         m,
+      |                         ~~   
+  136 |                         _mm256_set1_epi32(0b000111111111111111111111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  137 |                 ),
+      |                 ~~           
+  138 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  139 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b111000000000000000000000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  140 |                         24
+      |                         ~~   
+  141 |                 )
+      |                 ~            
+  142 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:773:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_srli_epi32(__m256i, int)’: target specific option mismatch
+  773 | _mm256_srli_epi32 (__m256i __A, int __B)
+      | ^~~~~~~~~~~~~~~~~
+task.cpp:133:29: note: called from here
+  133 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  134 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  135 |                         m,
+      |                         ~~   
+  136 |                         _mm256_set1_epi32(0b000111111111111111111111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  137 |                 ),
+      |                 ~~           
+  138 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  139 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b111000000000000000000000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  140 |                         24
+      |                         ~~   
+  141 |                 )
+      |                 ~            
+  142 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:179:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_and_si256(__m256i, __m256i)’: target specific option mismatch
+  179 | _mm256_and_si256 (__m256i __A, __m256i __B)
+      | ^~~~~~~~~~~~~~~~
+task.cpp:133:29: note: called from here
+  133 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  134 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  135 |                         m,
+      |                         ~~   
+  136 |                         _mm256_set1_epi32(0b000111111111111111111111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  137 |                 ),
+      |                 ~~           
+  138 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  139 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b111000000000000000000000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  140 |                         24
+      |                         ~~   
+  141 |                 )
+      |                 ~            
+  142 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avxintrin.h:1326:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_set1_epi32(int)’: target specific option mismatch
+ 1326 | _mm256_set1_epi32 (int __A)
+      | ^~~~~~~~~~~~~~~~~
+task.cpp:133:29: note: called from here
+  133 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  134 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  135 |                         m,
+      |                         ~~   
+  136 |                         _mm256_set1_epi32(0b000111111111111111111111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  137 |                 ),
+      |                 ~~           
+  138 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  139 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b111000000000000000000000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  140 |                         24
+      |                         ~~   
+  141 |                 )
+      |                 ~            
+  142 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:119:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_add_epi32(__m256i, __m256i)’: target specific option mismatch
+  119 | _mm256_add_epi32 (__m256i __A, __m256i __B)
+      | ^~~~~~~~~~~~~~~~
+task.cpp:122:29: note: called from here
+  122 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  123 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  124 |                         m,
+      |                         ~~   
+  125 |                         _mm256_set1_epi32(0b111000000000000111111111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  126 |                 ),
+      |                 ~~           
+  127 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  128 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111111111111000000000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  129 |                         12
+      |                         ~~   
+  130 |                 )
+      |                 ~            
+  131 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:179:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_and_si256(__m256i, __m256i)’: target specific option mismatch
+  179 | _mm256_and_si256 (__m256i __A, __m256i __B)
+      | ^~~~~~~~~~~~~~~~
+task.cpp:122:29: note: called from here
+  122 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  123 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  124 |                         m,
+      |                         ~~   
+  125 |                         _mm256_set1_epi32(0b111000000000000111111111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  126 |                 ),
+      |                 ~~           
+  127 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  128 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111111111111000000000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  129 |                         12
+      |                         ~~   
+  130 |                 )
+      |                 ~            
+  131 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avxintrin.h:1326:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_set1_epi32(int)’: target specific option mismatch
+ 1326 | _mm256_set1_epi32 (int __A)
+      | ^~~~~~~~~~~~~~~~~
+task.cpp:122:29: note: called from here
+  122 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  123 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  124 |                         m,
+      |                         ~~   
+  125 |                         _mm256_set1_epi32(0b111000000000000111111111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  126 |                 ),
+      |                 ~~           
+  127 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  128 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111111111111000000000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  129 |                         12
+      |                         ~~   
+  130 |                 )
+      |                 ~            
+  131 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:773:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_srli_epi32(__m256i, int)’: target specific option mismatch
+  773 | _mm256_srli_epi32 (__m256i __A, int __B)
+      | ^~~~~~~~~~~~~~~~~
+task.cpp:122:29: note: called from here
+  122 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  123 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  124 |                         m,
+      |                         ~~   
+  125 |                         _mm256_set1_epi32(0b111000000000000111111111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  126 |                 ),
+      |                 ~~           
+  127 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  128 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111111111111000000000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  129 |                         12
+      |                         ~~   
+  130 |                 )
+      |                 ~            
+  131 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:179:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_and_si256(__m256i, __m256i)’: target specific option mismatch
+  179 | _mm256_and_si256 (__m256i __A, __m256i __B)
+      | ^~~~~~~~~~~~~~~~
+task.cpp:122:29: note: called from here
+  122 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  123 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  124 |                         m,
+      |                         ~~   
+  125 |                         _mm256_set1_epi32(0b111000000000000111111111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  126 |                 ),
+      |                 ~~           
+  127 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  128 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111111111111000000000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  129 |                         12
+      |                         ~~   
+  130 |                 )
+      |                 ~            
+  131 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avxintrin.h:1326:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_set1_epi32(int)’: target specific option mismatch
+ 1326 | _mm256_set1_epi32 (int __A)
+      | ^~~~~~~~~~~~~~~~~
+task.cpp:122:29: note: called from here
+  122 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  123 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  124 |                         m,
+      |                         ~~   
+  125 |                         _mm256_set1_epi32(0b111000000000000111111111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  126 |                 ),
+      |                 ~~           
+  127 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  128 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111111111111000000000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  129 |                         12
+      |                         ~~   
+  130 |                 )
+      |                 ~            
+  131 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:119:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_add_epi32(__m256i, __m256i)’: target specific option mismatch
+  119 | _mm256_add_epi32 (__m256i __A, __m256i __B)
+      | ^~~~~~~~~~~~~~~~
+task.cpp:111:29: note: called from here
+  111 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  112 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  113 |                         m,
+      |                         ~~   
+  114 |                         _mm256_set1_epi32(0b111000000111111000000111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  115 |                 ),
+      |                 ~~           
+  116 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  117 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111111000000111111000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  118 |                         6
+      |                         ~    
+  119 |                 )
+      |                 ~            
+  120 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:179:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_and_si256(__m256i, __m256i)’: target specific option mismatch
+  179 | _mm256_and_si256 (__m256i __A, __m256i __B)
+      | ^~~~~~~~~~~~~~~~
+task.cpp:111:29: note: called from here
+  111 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  112 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  113 |                         m,
+      |                         ~~   
+  114 |                         _mm256_set1_epi32(0b111000000111111000000111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  115 |                 ),
+      |                 ~~           
+  116 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  117 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111111000000111111000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  118 |                         6
+      |                         ~    
+  119 |                 )
+      |                 ~            
+  120 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avxintrin.h:1326:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_set1_epi32(int)’: target specific option mismatch
+ 1326 | _mm256_set1_epi32 (int __A)
+      | ^~~~~~~~~~~~~~~~~
+task.cpp:111:29: note: called from here
+  111 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  112 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  113 |                         m,
+      |                         ~~   
+  114 |                         _mm256_set1_epi32(0b111000000111111000000111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  115 |                 ),
+      |                 ~~           
+  116 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  117 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111111000000111111000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  118 |                         6
+      |                         ~    
+  119 |                 )
+      |                 ~            
+  120 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:773:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_srli_epi32(__m256i, int)’: target specific option mismatch
+  773 | _mm256_srli_epi32 (__m256i __A, int __B)
+      | ^~~~~~~~~~~~~~~~~
+task.cpp:111:29: note: called from here
+  111 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  112 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  113 |                         m,
+      |                         ~~   
+  114 |                         _mm256_set1_epi32(0b111000000111111000000111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  115 |                 ),
+      |                 ~~           
+  116 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  117 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111111000000111111000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  118 |                         6
+      |                         ~    
+  119 |                 )
+      |                 ~            
+  120 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:179:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_and_si256(__m256i, __m256i)’: target specific option mismatch
+  179 | _mm256_and_si256 (__m256i __A, __m256i __B)
+      | ^~~~~~~~~~~~~~~~
+task.cpp:111:29: note: called from here
+  111 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  112 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  113 |                         m,
+      |                         ~~   
+  114 |                         _mm256_set1_epi32(0b111000000111111000000111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  115 |                 ),
+      |                 ~~           
+  116 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  117 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111111000000111111000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  118 |                         6
+      |                         ~    
+  119 |                 )
+      |                 ~            
+  120 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avxintrin.h:1326:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_set1_epi32(int)’: target specific option mismatch
+ 1326 | _mm256_set1_epi32 (int __A)
+      | ^~~~~~~~~~~~~~~~~
+task.cpp:111:29: note: called from here
+  111 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  112 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  113 |                         m,
+      |                         ~~   
+  114 |                         _mm256_set1_epi32(0b111000000111111000000111111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  115 |                 ),
+      |                 ~~           
+  116 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  117 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111111000000111111000000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  118 |                         6
+      |                         ~    
+  119 |                 )
+      |                 ~            
+  120 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:119:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_add_epi32(__m256i, __m256i)’: target specific option mismatch
+  119 | _mm256_add_epi32 (__m256i __A, __m256i __B)
+      | ^~~~~~~~~~~~~~~~
+task.cpp:100:29: note: called from here
+  100 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  101 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  102 |                         m,
+      |                         ~~   
+  103 |                         _mm256_set1_epi32(0b111000111000111000111000111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  104 |                 ),
+      |                 ~~           
+  105 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  106 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111000111000111000111000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  107 |                         3
+      |                         ~    
+  108 |                 )
+      |                 ~            
+  109 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:179:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_and_si256(__m256i, __m256i)’: target specific option mismatch
+  179 | _mm256_and_si256 (__m256i __A, __m256i __B)
+      | ^~~~~~~~~~~~~~~~
+task.cpp:100:29: note: called from here
+  100 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  101 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  102 |                         m,
+      |                         ~~   
+  103 |                         _mm256_set1_epi32(0b111000111000111000111000111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  104 |                 ),
+      |                 ~~           
+  105 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  106 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111000111000111000111000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  107 |                         3
+      |                         ~    
+  108 |                 )
+      |                 ~            
+  109 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avxintrin.h:1326:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_set1_epi32(int)’: target specific option mismatch
+ 1326 | _mm256_set1_epi32 (int __A)
+      | ^~~~~~~~~~~~~~~~~
+task.cpp:100:29: note: called from here
+  100 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  101 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  102 |                         m,
+      |                         ~~   
+  103 |                         _mm256_set1_epi32(0b111000111000111000111000111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  104 |                 ),
+      |                 ~~           
+  105 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  106 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111000111000111000111000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  107 |                         3
+      |                         ~    
+  108 |                 )
+      |                 ~            
+  109 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:773:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_srli_epi32(__m256i, int)’: target specific option mismatch
+  773 | _mm256_srli_epi32 (__m256i __A, int __B)
+      | ^~~~~~~~~~~~~~~~~
+task.cpp:100:29: note: called from here
+  100 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  101 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  102 |                         m,
+      |                         ~~   
+  103 |                         _mm256_set1_epi32(0b111000111000111000111000111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  104 |                 ),
+      |                 ~~           
+  105 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  106 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111000111000111000111000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  107 |                         3
+      |                         ~    
+  108 |                 )
+      |                 ~            
+  109 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avx2intrin.h:179:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_and_si256(__m256i, __m256i)’: target specific option mismatch
+  179 | _mm256_and_si256 (__m256i __A, __m256i __B)
+      | ^~~~~~~~~~~~~~~~
+task.cpp:100:29: note: called from here
+  100 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  101 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  102 |                         m,
+      |                         ~~   
+  103 |                         _mm256_set1_epi32(0b111000111000111000111000111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  104 |                 ),
+      |                 ~~           
+  105 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  106 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111000111000111000111000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  107 |                         3
+      |                         ~    
+  108 |                 )
+      |                 ~            
+  109 |         );
+      |         ~                    
+/usr/lib/gcc/x86_64-linux-gnu/12/include/avxintrin.h:1326:1: error: inlining failed in call to ‘always_inline’ ‘__m256i _mm256_set1_epi32(int)’: target specific option mismatch
+ 1326 | _mm256_set1_epi32 (int __A)
+      | ^~~~~~~~~~~~~~~~~
+task.cpp:100:29: note: called from here
+  100 |         m = _mm256_add_epi32(
+      |             ~~~~~~~~~~~~~~~~^
+  101 |                 _mm256_and_si256(
+      |                 ~~~~~~~~~~~~~~~~~
+  102 |                         m,
+      |                         ~~   
+  103 |                         _mm256_set1_epi32(0b111000111000111000111000111)
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  104 |                 ),
+      |                 ~~           
+  105 |                 _mm256_srli_epi32(
+      |                 ~~~~~~~~~~~~~~~~~~
+  106 |                         _mm256_and_si256(m, _mm256_set1_epi32(0b000111000111000111000111000)),
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  107 |                         3
+      |                         ~    
+  108 |                 )
+      |                 ~            
+  109 |         );
+      |         ~                    
