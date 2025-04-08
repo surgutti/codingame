@@ -12,6 +12,7 @@
 #include <vector>
 #include <algorithm>
 #include <ext/pb_ds/assoc_container.hpp>
+#include <immintrin.h>
 
 #ifndef LOCAL
 #pragma GCC target( \
@@ -91,176 +92,238 @@ const uint32_t zero_solution[40] = {
 111111111,704035952,840352818,600875666,50441886,680243700,597686656,584450980,55305380,193520836,521847116,1054388152,518795448,366207036,678967952,476916052,1009258340,592651828,1063467872,400415524,233248832,230461008,245411624,899694236,384163740,888060600,347933640,340717612,73295296,851289228,221286388,375032784,723342020,92414440,745533092,331519112,993643868,72093236,422667876,503115192
 };
 
-constexpr uint32_t masks[] = {
+alignas(32) constexpr uint32_t shifts[32] = {
+	0, 0,
+	3, 3, 3,
+	6, 6,
+	9, 9, 9,
+	12, 12, 12, 12,
+	18, 18, 18,
+	21, 21,
+	24, 24, 24,
+	27, 27
+};
+
+alignas(32) constexpr uint32_t masks[32] = {
 /* 0
-010
-000
-010
-*/
-14680120 ,
-/* 1
-001
-000
-001
-*/
-117440960 ,
-/* 2
-101
-000
-000
-*/
-455 ,
-/* 3
-000
-100
-010
-*/
-14683648 ,
-/* 4
 010
 100
 000
 */
 3640 ,
-/* 5
-010
-100
-010
-*/
-14683704 ,
-/* 6
+/* 1
+101
 000
-010
-001
+000
 */
-117469184 ,
-/* 7
+455 ,
+/* 2
 100
 010
 000
 */
 28679 ,
-/* 8
+/* 3
 001
 010
 000
 */
 29120 ,
-/* 9
+/* 4
 101
 010
 000
 */
 29127 ,
-/* 10
-001
-010
-001
-*/
-117469632 ,
-/* 11
-000
-001
-010
-*/
-14909440 ,
-/* 12
+/* 5
 010
 001
 000
 */
 229432 ,
-/* 13
+/* 6
+100
 010
-001
-010
-*/
-14909496 ,
-/* 14
-000
-101
 000
 */
-232960 ,
-/* 15
-000
-101
-010
-*/
-14913024 ,
-/* 16
-010
-101
-000
-*/
-233016 ,
-/* 17
-010
-101
-010
-*/
-14913080 ,
-/* 18
-000
-000
-101
-*/
-119275520 ,
-/* 19
+28679 ,
+/* 7
 100
 000
 100
 */
 1835015 ,
-/* 20
+/* 8
 000
 010
 100
 */
 1863680 ,
-/* 21
+/* 9
 100
 010
 100
 */
 1863687 ,
+/* 10
+010
+100
+000
+*/
+3640 ,
+/* 11
+010
+001
+000
+*/
+229432 ,
+/* 12
+000
+101
+000
+*/
+232960 ,
+/* 13
+010
+101
+000
+*/
+233016 ,
+/* 14
+010
+000
+010
+*/
+14680120 ,
+/* 15
+000
+100
+010
+*/
+14683648 ,
+/* 16
+010
+100
+010
+*/
+14683704 ,
+/* 17
+000
+001
+010
+*/
+14909440 ,
+/* 18
+010
+001
+010
+*/
+14909496 ,
+/* 19
+000
+101
+010
+*/
+14913024 ,
+/* 20
+010
+101
+010
+*/
+14913080 ,
+/* 21
+001
+010
+000
+*/
+29120 ,
 /* 22
+001
+000
+001
+*/
+117440960 ,
+/* 23
+000
+010
+001
+*/
+117469184 ,
+/* 24
+001
+010
+001
+*/
+117469632 ,
+/* 25
+000
+100
+010
+*/
+14683648 ,
+/* 26
+000
+010
+100
+*/
+1863680 ,
+/* 27
+000
+010
+001
+*/
+117469184 ,
+/* 28
+000
+000
+101
+*/
+119275520 ,
+/* 29
 000
 010
 101
 */
-119304192
+119304192 ,
+/* 30
+000
+001
+010
+*/
+14909440 ,
+
+0
 };
 
-inline __m256 sum_3bit_chunks(__m256i m) {
+inline __m256i sum_3bit_chunks(__m256i m) {
 	m = _mm256_add_epi32(
-		_mm256_and_epi32(m, _mm256_set_epi32(0b111000111000111000111000111)),
-		_mm256_srl_epi32(
-			_m256_and_epi32(m, _mm256_set_epi32(0b000111000111000111000111000)),
+		_mm256_and_si256(m, _mm256_set1_epi32(0b111000111000111000111000111)),
+		_mm256_srli_epi32(
+			_mm256_and_si256(m, _mm256_set1_epi32(0b000111000111000111000111000)),
 			3
 		)
 	);
 	
 	m = _mm256_add_epi32(
-		_mm256_and_epi32(m, _mm256_set_epi32(0b111000000111111000000111111)),
-		_mm256_srl_epi32(
-			_mm256_and_epi32(m, _mm256_set_epi32(0b000111111000000111111000000)),
+		_mm256_and_si256(m, _mm256_set1_epi32(0b111000000111111000000111111)),
+		_mm256_srli_epi32(
+			_mm256_and_si256(m, _mm256_set1_epi32(0b000111111000000111111000000)),
 			6
 		)
 	);
 	
 	m = _mm256_add_epi32(
-		_mm256_and_epi32(m, _mm256_set_epi32(0b111000000000000111111111111)),
-		_mm256_srl_epi32(
-			_mm256_and_epi32(m, _mm256_set_epi32(0b000111111111111000000000000)),
+		_mm256_and_si256(m, _mm256_set1_epi32(0b111000000000000111111111111)),
+		_mm256_srli_epi32(
+			_mm256_and_si256(m, _mm256_set1_epi32(0b000111111111111000000000000)),
 			12
 		)
 	);
 	
 	m = _mm256_add_epi32(
-		_mm256_and_epi32(m, _mm256_set_epi32(0b000111111111111111111111111)),
-		_mm256_srl_epi32(
-			_mm256_and_epi32(m, _mm256_set_epi32(0b111000000000000000000000000)),
+		_mm256_and_si256(m, _mm256_set1_epi32(0b000111111111111111111111111)),
+		_mm256_srli_epi32(
+			_mm256_and_si256(m, _mm256_set1_epi32(0b111000000000000000000000000)),
 			24
 		)
 	);
@@ -269,40 +332,76 @@ inline __m256 sum_3bit_chunks(__m256i m) {
 }
 
 // and with the empty values
-void generate_moves(Board &const board) {
+void generate_moves(Board const& board) {
 	uint32_t empty = 0;
+	uint32_t filled_board = board;
 	for (int i = 0; i < 9; i++) {
 		if (((board >> (3 * i)) & 1) == 0) {
-			board |= 0b111 << (3 * i);
+			filled_board |= 0b111 << (3 * i);
 			empty |= i;
 		}
 	}
 
-	// 3 x 256? -> get sum of every submasks
+	if (empty == 0) {
+		// end state
+		return;
+	}
+	// 4 x 256? -> get sum of every submasks
 	
-	__m256i b = _m256_set_epi32(board);
-	
-	__m256i m1 = _m256_set_epi32( /* first 8 masks */ );
-	m1 = _m256_and_si256(m1, b);
-	
-	m1 = sum_3bit_chunks(m1);
-	m1 = _mm256_cmpgt_epi32(_mm256_set1_epi32(7), m1);
-	
-	__m256i m2 = _m256_set_epi32( /* second 8 masks */ );
+	__m256i const b = _mm256_set1_epi32(filled_board);
+	for (int i = 0; i < 4; i++) {
+		__m256i const n1 = _mm256_loadu_si256(((__m256i*)masks) + i);
+		__m256i m1 = _mm256_and_si256(n1, b);
+		
+		m1 = sum_3bit_chunks(m1);
+		
+		__m256i c1 = _mm256_cmpgt_epi32(_mm256_set1_epi32(7), m1);
+		m1 = _mm256_and_si256(m1, c1);
+		m1 = _mm256_sllv_epi32(m1, _mm256_loadu_si256(((__m256i*)shifts) + i));
+		m1 = _mm256_or_si256(m1, _mm256_andnot_si256(b, n1));
+		
+		// c1 -> gives which moves are good
+		// m1 -> gives resulting boards
+		int g1 = _mm256_movemask_ps((__m256) c1);
+		
+		while (g1) {
+			int p = __builtin_ctz(g1);
+
+			Board board = ((Board*) &m1)[p];
+			// new board
+
+			g1 &= g1 - 1;
+		}
+	}
+
+	/*
+
+	__m256i m2 = _m256_loadu_si256(((__m256i*)masks) + 1);
 	m2 = _m256_and_si256(m2, b);
 	
 	m2 = sum_3bit_chunks(m2);
 	m2 = _mm256_cmpgt_epi32(_mm256_set1_epi32(7), m2);
 	
-	__m256i m3 = _m256_set_epi32( /* last 8 masks */ );
+	__m256i m3 = _m256_loadu_si256(((__m256*)masks) + 2);
 	m3 = _m256_and_si256(m3, b);
 	
 	m3 = sum_3bit_chunks(m3);
 	m3 = _mm256_cmpgt_epi32(_mm256_set1_epi32(7), m3);
+	
+	__m256i m4 = _m256_loadu_si256(((__m256*)masks) + 2);
+	m4 = _m256_and_si256(m4, b);
+	
+	m4 = sum_3bit_chunks(m4);
+	m4 = _mm256_cmpgt_epi32(_mm256_set1_epi32(7), m4);
 
 	if (empty & 1) {
-		
+				
 	}
+
+	if (empty == 0) {
+
+	}
+	*/
 
 	/*
 	m = ((board | empty) & mask[i]);
@@ -310,7 +409,6 @@ void generate_moves(Board &const board) {
 	m = (m & 0b111000000111111000000111111) + (m & 0b000111111000000111111000000) / (2 ** 6);
 	m = (m & 0b111000000000000111111111111) + (m & 0b000111111111111000000000000) / (2 ** 12);
 	m = (m & 0b000111111111111111111111111) + (m & 0b111000000000000000000000000) / (2 ** 24);
-	*/
 
 	000 000 
 	000 000 
@@ -326,6 +424,7 @@ void generate_moves(Board &const board) {
 	// mask out the nonempty values?
 	__m256 v_empty = _mm256_set_epi16(empty);
 
+	*/
 }
 
 pair<Board, uint32_t> beam[2][MAX_STATES];
@@ -403,26 +502,6 @@ int main() {
 		for (int j = len[cur] - 1; j >= 0; j--) {
 			beam[cur][--radix[(tmp[j].first >> 14) & (X - 1)]] = tmp[j];
 		}
-
-		// sort(beam[cur], beam[cur] + len[cur]);
-	
-		/*
-		map<Board, int> CNT;
-		for (int j = 0; j < len[cur]; j++) {
-			CNT[beam[cur][j].first] += beam[cur][j].second;
-		}
-
-		vector<pair<int, Board>> cc;
-		for (auto [b, v] : CNT) {
-			cc.emplace_back(v, b);
-		}
-
-		sort(cc.rbegin(), cc.rend());
-		for (int j = 0; j < min<int>(cc.size(), 100); j++) {
-			cerr << cc[j].first << ' ';
-		}
-		cerr << '\n';
-		*/
 
 		for (int j = 1; j < len[cur]; j++) {
 			beam[cur][j].second += beam[cur][j - 1].second;

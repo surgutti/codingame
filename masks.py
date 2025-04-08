@@ -8,7 +8,7 @@ def print_mask(mask):
 		print()
 	# print()
 
-S = set()
+S = list()
 for i in range(3):
 	for j in range(3):
 		for mask in range(1 << 9):
@@ -28,15 +28,17 @@ for i in range(3):
 			if cnt >= 2 and ok:
 				#print(i, j, mask)
 				#print_mask(mask)
-				S.add(mask)
+				S.append(mask)
 
-for x in S:
+for j in range(len(S)):
+	x = S[j]
+	
 	xx = 0
 	for i in range(9):
 		if x >> i & 1:
 			xx |= 0b111 << (3 * i)
 
-	print("/*")
+	print("/*", j)
 	print_mask(x)
 	print("*/");
 	print(xx, ",");	
