@@ -91,250 +91,8 @@ const uint32_t zero_solution[40] = {
 111111111,704035952,840352818,600875666,50441886,680243700,597686656,584450980,55305380,193520836,521847116,1054388152,518795448,366207036,678967952,476916052,1009258340,592651828,1063467872,400415524,233248832,230461008,245411624,899694236,384163740,888060600,347933640,340717612,73295296,851289228,221286388,375032784,723342020,92414440,745533092,331519112,993643868,72093236,422667876,503115192
 };
 
-constexpr uint32_t masks[] = {
-/* 0
-010
-000
-010
-*/
-14680120 ,
-/* 1
-001
-000
-001
-*/
-117440960 ,
-/* 2
-101
-000
-000
-*/
-455 ,
-/* 3
-000
-100
-010
-*/
-14683648 ,
-/* 4
-010
-100
-000
-*/
-3640 ,
-/* 5
-010
-100
-010
-*/
-14683704 ,
-/* 6
-000
-010
-001
-*/
-117469184 ,
-/* 7
-100
-010
-000
-*/
-28679 ,
-/* 8
-001
-010
-000
-*/
-29120 ,
-/* 9
-101
-010
-000
-*/
-29127 ,
-/* 10
-001
-010
-001
-*/
-117469632 ,
-/* 11
-000
-001
-010
-*/
-14909440 ,
-/* 12
-010
-001
-000
-*/
-229432 ,
-/* 13
-010
-001
-010
-*/
-14909496 ,
-/* 14
-000
-101
-000
-*/
-232960 ,
-/* 15
-000
-101
-010
-*/
-14913024 ,
-/* 16
-010
-101
-000
-*/
-233016 ,
-/* 17
-010
-101
-010
-*/
-14913080 ,
-/* 18
-000
-000
-101
-*/
-119275520 ,
-/* 19
-100
-000
-100
-*/
-1835015 ,
-/* 20
-000
-010
-100
-*/
-1863680 ,
-/* 21
-100
-010
-100
-*/
-1863687 ,
-/* 22
-000
-010
-101
-*/
-119304192
-};
-
-inline __m256 sum_3bit_chunks(__m256i m) {
-	m = _mm256_add_epi32(
-		_mm256_and_epi32(m, _mm256_set_epi32(0b111000111000111000111000111)),
-		_mm256_srl_epi32(
-			_m256_and_epi32(m, _mm256_set_epi32(0b000111000111000111000111000)),
-			3
-		)
-	);
-	
-	m = _mm256_add_epi32(
-		_mm256_and_epi32(m, _mm256_set_epi32(0b111000000111111000000111111)),
-		_mm256_srl_epi32(
-			_mm256_and_epi32(m, _mm256_set_epi32(0b000111111000000111111000000)),
-			6
-		)
-	);
-	
-	m = _mm256_add_epi32(
-		_mm256_and_epi32(m, _mm256_set_epi32(0b111000000000000111111111111)),
-		_mm256_srl_epi32(
-			_mm256_and_epi32(m, _mm256_set_epi32(0b000111111111111000000000000)),
-			12
-		)
-	);
-	
-	m = _mm256_add_epi32(
-		_mm256_and_epi32(m, _mm256_set_epi32(0b000111111111111111111111111)),
-		_mm256_srl_epi32(
-			_mm256_and_epi32(m, _mm256_set_epi32(0b111000000000000000000000000)),
-			24
-		)
-	);
-
-	return m;
-}
-
-// and with the empty values
-void generate_moves(Board &const board) {
-	uint32_t empty = 0;
-	for (int i = 0; i < 9; i++) {
-		if (((board >> (3 * i)) & 1) == 0) {
-			board |= 0b111 << (3 * i);
-			empty |= i;
-		}
-	}
-
-	// 3 x 256? -> get sum of every submasks
-	
-	__m256i b = _m256_set_epi32(board);
-	
-	__m256i m1 = _m256_set_epi32( /* first 8 masks */ );
-	m1 = _m256_and_si256(m1, b);
-	
-	m1 = sum_3bit_chunks(m1);
-	m1 = _mm256_cmpgt_epi32(_mm256_set1_epi32(7), m1);
-	
-	__m256i m2 = _m256_set_epi32( /* second 8 masks */ );
-	m2 = _m256_and_si256(m2, b);
-	
-	m2 = sum_3bit_chunks(m2);
-	m2 = _mm256_cmpgt_epi32(_mm256_set1_epi32(7), m2);
-	
-	__m256i m3 = _m256_set_epi32( /* last 8 masks */ );
-	m3 = _m256_and_si256(m3, b);
-	
-	m3 = sum_3bit_chunks(m3);
-	m3 = _mm256_cmpgt_epi32(_mm256_set1_epi32(7), m3);
-
-	if (empty & 1) {
-		
-	}
-
-	/*
-	m = ((board | empty) & mask[i]);
-	m = (m & 0b111000111000111000111000111) + (m & 0b000111000111000111000111000) / (2 ** 3);
-	m = (m & 0b111000000111111000000111111) + (m & 0b000111111000000111111000000) / (2 ** 6);
-	m = (m & 0b111000000000000111111111111) + (m & 0b000111111111111000000000000) / (2 ** 12);
-	m = (m & 0b000111111111111111111111111) + (m & 0b111000000000000000000000000) / (2 ** 24);
-	*/
-
-	000 000 
-	000 000 
-	000 000 
-	000 000 
-	000 xxx
-	
-	_m256_add_epi32
-	// set 6 where there is 0?
-
-
-	24 masks / 8 ->
-	// mask out the nonempty values?
-	__m256 v_empty = _mm256_set_epi16(empty);
-
-}
-
 pair<Board, uint32_t> beam[2][MAX_STATES];
 int len[2];
-
-constexpr int X = 1 << 14;
-
-int radix[X];
-pair<Board, uint32_t> tmp[MAX_STATES];
 
 int main() {
     int depth;
@@ -355,12 +113,12 @@ int main() {
 			}
 		}
 
-		// /*
+		/*
 		if (board == 0) {
 			cout << zero_solution[depth - 1] << '\n';
 			return 0;
 		}
-		// */
+		*/
 
 		beam[0][len[0]++] = make_pair(board, 1);
 	}
@@ -371,42 +129,10 @@ int main() {
 		int cur = (d & 1);
 		int nxt = cur ^ 1;
 		len[nxt] = 0;
-	
-		for (int j = 0; j < X; j++)
-			radix[j] = 0;
-
-		cerr << "depth: " << d << " => " << len[cur] << '\n';
-		for (int j = 0; j < len[cur]; j++) {
-			radix[beam[cur][j].first & (X - 1)]++;
-		}
-
-		for (int j = 1; j < X; j++) {
-			radix[j] += radix[j - 1];
-		}
-		assert(radix[X - 1] == len[cur]);
-
-		for (int j = len[cur] - 1; j >= 0; j--) {
-			tmp[--radix[beam[cur][j].first & (X - 1)]] = beam[cur][j];
-		}
-
-		for (int j = 0; j < X; j++)
-			radix[j] = 0;
 		
-		for (int j = 0; j < len[cur]; j++) {
-			radix[(tmp[j].first >> 14) & (X - 1)]++;
-		}
+		cerr << "depth: " << d << " => " << len[cur] << '\n';
+		sort(beam[cur], beam[cur] + len[cur]);
 
-		for (int j = 1; j < X; j++) {
-			radix[j] += radix[j - 1];
-		}
-
-		for (int j = len[cur] - 1; j >= 0; j--) {
-			beam[cur][--radix[(tmp[j].first >> 14) & (X - 1)]] = tmp[j];
-		}
-
-		// sort(beam[cur], beam[cur] + len[cur]);
-	
-		/*
 		map<Board, int> CNT;
 		for (int j = 0; j < len[cur]; j++) {
 			CNT[beam[cur][j].first] += beam[cur][j].second;
@@ -422,7 +148,7 @@ int main() {
 			cerr << cc[j].first << ' ';
 		}
 		cerr << '\n';
-		*/
+
 
 		for (int j = 1; j < len[cur]; j++) {
 			beam[cur][j].second += beam[cur][j - 1].second;
@@ -431,24 +157,9 @@ int main() {
 		uint32_t last = 0;
 		for (int j = 0; j < len[cur]; j++) {
 			if (j + 1 == len[cur] || beam[cur][j].first != beam[cur][j + 1].first) {
-				uint32_t ile = beam[cur][j].second - last;
+				uint32_t ile = 1; // beam[cur][j].second - last;
 				last = beam[cur][j].second;
 			
-				{
-					Board board = beam[cur][j].first;
-
-					int16_t vals[9];
-					int16_t empty = 0;
-					for (int i = 0; i < 9; i++) {
-						vals[i] = board & 0b111;
-						board >>= 2; 
-					
-						if (vals[i] == 0)
-							empty |= 1 << i;
-					}
-
-				}
-
     			const Board board = beam[cur][j].first;
 
 				#define val(i) ((board >> (3 * i)) & 0b111)
@@ -458,7 +169,7 @@ int main() {
 					is_zero = true;
 					
 					bool capture = false;
-					for (uint32_t mask = 0; mask < (1U << neigh_cnt[i]); mask++) {
+					for (uint32_t mask = 0; mask < (1 << neigh_cnt[i]); mask++) {
 						int cnt = 0, sum = 0;
 						Board new_board = board;
 						bool ok = true;
