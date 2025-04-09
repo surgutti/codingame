@@ -34,7 +34,7 @@ for i in range(len(z)):
 for i in range(len(z)):
 	print("{", end='')
 	for j in range(len(z)):
-		pp = apply(z[i], z[j])
+		pp = apply(z[j], z[i])
 		k = -1
 		for kk in range(len(z)):
 			if pp == z[kk]:
