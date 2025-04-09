@@ -68,6 +68,7 @@ constexpr int32_t neigh_cnt[9] = {
 
 INLINE uint32_t board_hash(Board board) {
 	// /*
+	
 	Board b1 = (board & 0b000000111000000111000000111) >> 0;
 	Board b2 = (board & 0b000111000000111000000111000) >> 3;
 	Board b3 = (board & 0b111000000111000000111000000) >> 6;
@@ -117,7 +118,7 @@ alignas(32) constexpr uint32_t masks[32] = {3640,455,28679,29120,29127,229432,28
 
 alignas(32) constexpr uint32_t index[32] = {7,56,56,56,56,448,3584,3584,3584,3584,28672,28672,28672,28672,28672,28672,28672,28672,28672,28672,28672,229376,229376,229376,229376,1835008,14680064,14680064,14680064,14680064,117440512,0};
 
-constexpr uint32_t holes[4] = {
+alignas(32) constexpr uint32_t holes[4] = {
 	(1 << 0) | (1 << 3) | (1 << 6) | (1 << 9),
 	(1 << 9) | (1 << 12),
 	(1 << 12) | (1 << 15),
@@ -279,6 +280,7 @@ INLINE void generate_moves(int nxt, Board const& board, uint32_t ile) {
 }
 
 constexpr int X = 1 << 14;
+constexpr int Y = 1 << 13;
 
 int radix[X];
 State tmp[MAX_STATES];
@@ -302,7 +304,7 @@ int main() {
 			}
 		}
 
-		// /*
+		/*
 		if (board == 0) {
 			cout << zero_solution[depth - 1] << '\n';
 			return 0;
@@ -318,26 +320,27 @@ int main() {
 		len[nxt] = 0;
 	
 		const int length = len[cur];
+		
+		#ifdef LOCAL
+			cerr << "depth: " << d << " => " << length << '\n';
+		#endif
 
 		for (int j = 0; j < X; j++)
 			radix[j] = 0;
-
-		cerr << "depth: " << d << " => " << length << '\n';
-
 		for (int j = 0; j < length; j++)
 			radix[beam[cur][j].board & (X - 1)]++;
 		for (int j = 1; j < X; j++)
 			radix[j] += radix[j - 1];
 		for (int j = length - 1; j >= 0; j--)
 			tmp[--radix[beam[cur][j].board & (X - 1)]] = beam[cur][j];
-		for (int j = 0; j < X; j++)
+		for (int j = 0; j < Y; j++)
 			radix[j] = 0;
 		for (int j = 0; j < length; j++)
-			radix[(tmp[j].board >> 14) & (X - 1)]++;
-		for (int j = 1; j < X; j++)
+			radix[(tmp[j].board >> 14) & (Y - 1)]++;
+		for (int j = 1; j < Y; j++)
 			radix[j] += radix[j - 1];
 		for (int j = length - 1; j >= 0; j--)
-			beam[cur][--radix[(tmp[j].board >> 14) & (X - 1)]] = tmp[j];
+			beam[cur][--radix[(tmp[j].board >> 14) & (Y - 1)]] = tmp[j];
 
 		for (int j = 1; j < length; j++)
 			beam[cur][j].dp += beam[cur][j - 1].dp;
