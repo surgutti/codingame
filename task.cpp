@@ -173,9 +173,9 @@ int len[2];
 
 constexpr uint16_t permute[8][8] = {
 	{0,1,2,3,4,5,6,7,},
-	{1,2,3,0,7,4,5,6,},
-	{2,3,0,1,6,7,4,5,},
 	{3,0,1,2,5,6,7,4,},
+	{2,3,0,1,6,7,4,5,},
+	{1,2,3,0,7,4,5,6,},
 	{4,5,6,7,0,1,2,3,},
 	{5,6,7,4,3,0,1,2,},
 	{6,7,4,5,2,3,0,1,},
@@ -345,14 +345,14 @@ int main() {
 			}
 		}
 
-		/*
+		// /*
 		if (board == 0) {
 			cout << zero_solution[depth - 1] << '\n';
 			return 0;
 		}
 		// */
 
-		cerr << "start: " << board_hash(board) << '\n';
+		// cerr << "start: " << board_hash(board) << '\n';
 		beam[0][len[0]++] = {board, {1, 0, 0, 0, 0, 0, 0, 0}};
 	}
 
@@ -369,8 +369,8 @@ int main() {
 			Board best = board;
 			int best_i = 0;
 
-			assert(rot(rot(rot(rot(board)))) == board);
-			assert(sym(sym(board)) == board);
+			// assert(rot(rot(rot(rot(board)))) == board);
+			// assert(sym(sym(board)) == board);
 
 			#define UPD(k) if (best > board) { best = board, best_i = k; }
 
@@ -403,9 +403,9 @@ int main() {
 
 		// return 0;
 
-		// #ifdef LOCAL
+		#ifdef LOCAL
 			cerr << "depth: " << d << " => " << length << '\n';
-		// #endif
+		#endif
 
 		for (int j = 0; j < X; j++)
 			radix[j] = 0;

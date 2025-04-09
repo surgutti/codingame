@@ -4,6 +4,12 @@ from random import *
 def apply(p, v):
 	return [v[i] for i in p]
 
+def inv(v):
+	w = [0 for i in range(len(v))]
+	for i in range(len(v)):
+		w[v[i]] = i
+	return w
+
 def rot(v):
 	return apply([1, 2, 3, 0], v)
 
@@ -34,7 +40,8 @@ for i in range(len(z)):
 for i in range(len(z)):
 	print("{", end='')
 	for j in range(len(z)):
-		pp = apply(z[j], z[i])
+		pp = apply(z[j], inv(z[i]))
+		#pp = apply(z[j], z[i])
 		k = -1
 		for kk in range(len(z)):
 			if pp == z[kk]:
