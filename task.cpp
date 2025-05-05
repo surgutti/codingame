@@ -226,6 +226,8 @@ INLINE Board sym(Board const& board) {
 		  & 0b111111111111111111111111111;
 }
 
+INLINE Board min_di
+
 INLINE void update_ans(Board board, uint32_t const* dp) {
 	ans += dp[0] * board_hash(board);
 	board = rot(board);
@@ -325,6 +327,8 @@ constexpr int Y = 1 << 13;
 int radix[X];
 alignas(64) State tmp[MAX_STATES];
 
+unordered_set<Board> uniq;
+
 int main() {
     int depth;
     cin >> depth;
@@ -383,6 +387,10 @@ int main() {
 					beam[cur][j].dp[permute[best_i][k]] = tmp_p[k];
 				}
 			}
+
+			if (d <= 10) {
+				uniq.insert(best);
+			}
 		}
 
 		for (int j = 0; j < X; j++)
@@ -426,5 +434,7 @@ int main() {
 	
     cout << (ans & ((1U << 30) - 1)) << '\n';
    	
+	cerr << "uniq: " << uniq.size() << '\n';
+
 	return 0;
 }
