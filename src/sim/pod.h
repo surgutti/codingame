@@ -19,10 +19,24 @@ struct Pod : Unit {
     vy += cs * thrust;
   }
 
-  f64 diffAngle(Unit const& u) const {
-    f64 a = getAngle(u);
+  f64 diffAngle(Vector const& v) const {
+    f64 a = getAngle(v);
     f64 da = fmod(a - angle, 2 * PI);
     return fmod(2 * da, 2 * PI) - da;
+  }
+
+  void applyRotate(Vector const& p) {
+    f64 a = getAngle(p);
+    f64 d = diffAngle(p);
+
+    if (d < -MAX_ROTATION) {
+      a = angle - MAX_ROTATION;
+    }
+    else if (d > +MAX_ROTATION) {
+      a = angle + MAX_ROTATION;
+    }
+
+    angle = a;
   }
 };
 

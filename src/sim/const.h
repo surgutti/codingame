@@ -23,4 +23,6 @@ constexpr f64 POD_RADIUS = 400;
 
 constexpr u32 SHIELD_START = 4;
 
+constexpr i32 POD_NB = 4;
+
 #endif // CONST_H
