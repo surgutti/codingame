@@ -1,5 +1,9 @@
 #include "engine.h"
 
+void applyMove(int podId, Move const& move) {
+
+}
+
 void Engine::nextTurn() {
   f64 left = 1.0;
 
@@ -18,34 +22,38 @@ void Engine::nextTurn() {
         }
       }
     }
-
-    for (int i = 0; i < POD_NB; i++) {
-      pods[i].move(t);
-    }
     left -= t;
 
     if (pod_a != pod_b) {
       bounce(&pods[pod_a], &pods[pod_b]);
     }
 
+    for (int i = 0; i < POD_NB; i++) {
+      pods[i].move(t);
+    }
+
     if (left > 0) {
       for (int i = 0; i < POD_NB; i++) {
         Pod& pod = pods[i];
         if (checkpointCollide(prev_pods[i], pod, cps[pod.next])) {
-          if (pod.next == static_cast<int>(cps.size())) {
-            winner |= (i >> 1);
-          }
-          else {
-            pod.next++;
-          }
+          checkpointCompleted(i);
         }
+
+        prev_pods[i] = pod;
       }
     }
   }
 
-  for (Pod& pod : pods) {
+  for (int i = 0; i < POD_NB; i++) {
+    Pod& pod = pods[i];
     pod.adjust();
 
-    if (checkpointCollide())
+    if (checkpointCollide(prev_pods[i], pod, cps[pod.next])) {
+      checkpointCompleted(i);
+    }
+  }
+
+  for (int p = 0; p < PLAYER_NB; p++) {
+    timeouts[p]--;
   }
 }

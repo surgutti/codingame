@@ -9,7 +9,6 @@ void bounce(Pod* a, Pod* b) {
   Vector r {a->vx-b->vx, a->vy-b->vy};
   f64 m1 = (a->shield == SHIELD_START ? 0.1 : 1);
   f64 m2 = (b->shield == SHIELD_START ? 0.1 : 1);
-  f64 mcoef = (m1+m2)/(m1*m2);
 
   f64 force = (n.x*r.x+n.y*r.y)/(m1+m2);
   if (force < 120) {
