@@ -1,12 +1,32 @@
 import sys, subprocess, random, json, tempfile, os
 
+
+def pick_java_bin():
+    env_java = os.environ.get("JAVA_BIN")
+    if env_java:
+        return env_java
+    j17 = "/usr/lib/jvm/java-17-openjdk/bin/java"
+    if os.path.exists(j17):
+        return j17
+    return "java"
+
 if __name__ == '__main__':
     f, log_file = tempfile.mkstemp(prefix='log_')
     os.close(f)
     seed = random.randrange(0, 2**31)
     n_players = len(sys.argv) - 1
-    cmd = 'java -jar referee.jar' + ''.join([f' -p{i} "{sys.argv[i]}"' for i in range(1, n_players+1)]) + f' -d seed={seed} -l "{log_file}"'
+    java_bin = pick_java_bin()
+    cmd = f'"{java_bin}" -jar referee.jar' + ''.join([f' -p{i} "{sys.argv[i]}"' for i in range(1, n_players+1)]) + f' -d seed={seed} -l "{log_file}"'
     task = subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if task.returncode != 0:
+        print(json.dumps({
+            "ranks": [0 for _ in range(n_players)],
+            "errors": [1 for _ in range(n_players)],
+            "test_data": {"seed": seed, "referee_failed": 1},
+            "player_data": [{} for _ in range(n_players)],
+        }))
+        os.remove(log_file)
+        sys.exit(0)
     with open(log_file, 'r') as f:
         json_log = json.load(f)
     os.remove(log_file)

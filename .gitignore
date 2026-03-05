@@ -1,0 +1,6 @@
+build/
+arena/build/
+arena/results/
+arena/auto/
+arena/smoke/
+__pycache__/

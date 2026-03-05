@@ -1,0 +1,75 @@
+{
+  "source": "brain.cpp",
+  "cxx": "g++",
+  "cxxflags": [
+    "-std=c++20",
+    "-O2",
+    "-DLOCAL",
+    "-DPSYLEAGUE"
+  ],
+  "referee": "referee.jar",
+  "build_dir": "arena/build",
+  "variants": [
+    {
+      "name": "baseline_100",
+      "defines": {
+        "BOT_TIMEOUT_SCALE_PCT": 100
+      }
+    },
+    {
+      "name": "tl_125",
+      "defines": {
+        "BOT_TIMEOUT_SCALE_PCT": 125
+      }
+    },
+    {
+      "name": "tl_150",
+      "defines": {
+        "BOT_TIMEOUT_SCALE_PCT": 150
+      }
+    },
+    {
+      "name": "tl_200",
+      "defines": {
+        "BOT_TIMEOUT_SCALE_PCT": 200
+      }
+    },
+    {
+      "name": "c_035",
+      "defines": {
+        "BOT_TIMEOUT_SCALE_PCT": 100,
+        "BOT_UCB_C": 0.35
+      }
+    },
+    {
+      "name": "c_045",
+      "defines": {
+        "BOT_TIMEOUT_SCALE_PCT": 100,
+        "BOT_UCB_C": 0.45
+      }
+    },
+    {
+      "name": "no_regen",
+      "defines": {
+        "BOT_TIMEOUT_SCALE_PCT": 100,
+        "BOT_REGENERATE_ENDED_GAMES": 0
+      }
+    },
+    {
+      "name": "inverse_weight",
+      "defines": {
+        "BOT_TIMEOUT_SCALE_PCT": 100,
+        "BOT_WEIGHT_MODE": 1
+      }
+    },
+    {
+      "name": "pm_combo",
+      "defines": {
+        "BOT_TIMEOUT_SCALE_PCT": 125,
+        "BOT_REGENERATE_ENDED_GAMES": 0,
+        "BOT_WEIGHT_MODE": 1,
+        "BOT_RANDOM_PHASE_RATIO": 0.15
+      }
+    }
+  ]
+}

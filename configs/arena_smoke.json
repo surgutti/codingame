@@ -1,0 +1,12 @@
+{
+  "source": "brain.cpp",
+  "cxx": "g++",
+  "cxxflags": ["-std=c++20", "-O2", "-DLOCAL", "-DPSYLEAGUE"],
+  "referee": "referee.jar",
+  "build_dir": "arena/smoke/build",
+  "variants": [
+    {"name": "baseline", "defines": {"BOT_TIMEOUT_SCALE_PCT": 100}},
+    {"name": "no_regen", "defines": {"BOT_TIMEOUT_SCALE_PCT": 100, "BOT_REGENERATE_ENDED_GAMES": 0}},
+    {"name": "inverse_weight", "defines": {"BOT_TIMEOUT_SCALE_PCT": 100, "BOT_WEIGHT_MODE": 1}}
+  ]
+}
