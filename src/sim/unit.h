@@ -20,7 +20,7 @@ struct Unit : Vector {
     return atan2(vy, vx);
   }
 
-  f64 move(f64 t) {
+  void move(f64 t) {
     x += vx * t;
     y += vy * t;
   }

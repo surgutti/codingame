@@ -9,6 +9,7 @@
 struct Move {
   f64 angle;
   i32 thrust;
+  i32 shield;
   bool boost;
 };
 
@@ -18,7 +19,7 @@ public:
 
   void checkpointCompleted(int podId) {
     if (pods[podId].next == static_cast<int>(cps.size())) {
-      winner |= podId;
+      winner |= 1 << podId;
     }
     else {
       pods[podId].next++;

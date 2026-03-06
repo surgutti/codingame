@@ -13,7 +13,7 @@ struct Vector {
   }
   
   f64 getAngle(Vector const& v) const {
-    return atan2(v.x - x, v.y - y);
+    return atan2(v.y - y, v.x - x);
   }
 
   void move(f64 x_, f64 y_) {

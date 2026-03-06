@@ -24,14 +24,14 @@ void Engine::nextTurn() {
     }
     left -= t;
 
-    if (pod_a != pod_b) {
-      bounce(&pods[pod_a], &pods[pod_b]);
-    }
-
     for (int i = 0; i < POD_NB; i++) {
       pods[i].move(t);
     }
 
+    if (pod_a != pod_b) {
+      bounce(&pods[pod_a], &pods[pod_b]);
+    }
+    
     if (left > 0) {
       for (int i = 0; i < POD_NB; i++) {
         Pod& pod = pods[i];

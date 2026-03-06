@@ -3,8 +3,6 @@
 
 #include "unit.h"
 
-using Checkpoint = Vector;
-
 struct Pod : Unit {
   f64 angle;
   
