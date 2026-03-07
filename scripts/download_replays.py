@@ -94,7 +94,7 @@ def saveReplay(replay_id: str, competition_id: str, payload: dict) -> None:
 
 def main():
 
-  top_players = getFilteredPuzzleLeaderboard(CONTEST)[:10]
+  top_players = getFilteredPuzzleLeaderboard(CONTEST)[:150]
   top_agents = [player['agentId'] for player in top_players]
   print("Top agents ids: ", top_agents)
 

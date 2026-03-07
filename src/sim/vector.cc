@@ -1,24 +1,40 @@
 #include "vector.h"
 
+#include "java_math.h"
+
+f64 Vector::getAngle(Vector const& other) const {
+  // return atan2(other.y - y, other.x - x);
+  return java_math::atan2(other.y - y, other.x - x);
+}
+
 bool checkpointCollide(
-  Vector const& p1, 
-  Vector const& p2, 
-  Checkpoint const& cp) {
-  f64 dx = p2.x-p1.x;
-  f64 dy = p2.y-p1.y;
-  f64 dd = dx*dx+dy*dy;
-  
-  Vector pp = p1;
-  if (dd != 0) {
-    f64 u = ((cp.x-p1.x)*dx+(cp.y-p1.y)*dy)/dd;
-    if (u > 1) {
-      pp = p2;
-    }
-    else if (u > 0) {
-      pp.x = p1.x+u*dx;
-      pp.y = p1.y+u*dy;
+  Vector const& start,
+  Vector const& end,
+  Checkpoint const& checkpoint) {
+  f64 x2 = end.x - start.x;
+  f64 y2 = end.y - start.y;
+  f64 px = checkpoint.x - start.x;
+  f64 py = checkpoint.y - start.y;
+
+  f64 dotprod = px * x2 + py * y2;
+  f64 projLenSq = 0.0;
+  if (dotprod > 0.0) {
+    px = x2 - px;
+    py = y2 - py;
+    dotprod = px * x2 + py * y2;
+    if (dotprod > 0.0) {
+      projLenSq = dotprod * dotprod / (x2 * x2 + y2 * y2);
     }
   }
 
-  return pp.distance(cp) < CHECKPOINT_RADIUS;
+  f64 lenSq = px * px + py * py - projLenSq;
+  if (lenSq < 0.0) {
+    lenSq = 0.0;
+  }
+
+  if (lenSq < CHECKPOINT_RADIUS_SQ) {
+    return true;
+  }
+
+  return end.distanceSq(checkpoint) <= CHECKPOINT_RADIUS_SQ;
 }

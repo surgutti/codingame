@@ -6,56 +6,28 @@
 #include <cmath>
 
 struct Vector {
-  f64 x, y;
+  f64 x = 0.0;
+  f64 y = 0.0;
 
-  f64 distance(Vector const& p) const {
-    return sqrt((x-p.x)*(x-p.x)+(y-p.y)*(y-p.y));
-  }
-  
-  f64 getAngle(Vector const& v) const {
-    return atan2(v.y - y, v.x - x);
-  }
-
-  void move(f64 x_, f64 y_) {
-    x = x_;
-    y = y_;
+  f64 distanceSq(Vector const& other) const {
+    f64 dx = x - other.x;
+    f64 dy = y - other.y;
+    return dx * dx + dy * dy;
   }
 
-  void moveTo(Vector const& p, f64 dist) {
-    f64 d = distance(p);
-    if (d < EPSILON) {
-      return;
-    }
-
-    f64 dx = p.x - x;
-    f64 dy = p.y - y;
-    f64 coef = dist / d;
-
-    x += dx * coef;
-    y += dy * coef;
+  f64 distance(Vector const& other) const {
+    return std::sqrt(distanceSq(other));
   }
 
-  Vector getPoint(Vector const& target, f64 dist) const {
-    f64 d = distance(target);
-
-    if (d < EPSILON) {
-      return target;
-    }
-
-    f64 dx = target.x - x;
-    f64 dy = target.y - y;
-    f64 coef = dist / d;
-
-    f64 x_ = x + dx * coef;
-    f64 y_ = y + dy * coef;
-
-    return Vector{x_, y_};
+  f64 dot(Vector const& other) const {
+    return x * other.x + y * other.y;
   }
 
-  bool isInRange(Vector const& p, f64 range) const {
-    return distance(p) <= range;
-  }
+  f64 getAngle(Vector const& other) const;
 
+  bool operator==(Vector const& other) const {
+    return x == other.x && y == other.y;
+  }
 };
 
 using Checkpoint = Vector;

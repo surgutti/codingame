@@ -1,35 +1,40 @@
 #include "pod.h"
 
-void bounce(Pod* a, Pod* b) {
-  Vector n {b->x-a->x, b->y-a->y};
-  f64 dd = sqrt(n.x*n.x+n.y*n.y);
-  n.x /= dd;
-  n.y /= dd;
+#include <cmath>
 
-  Vector r {a->vx-b->vx, a->vy-b->vy};
-  f64 m1 = (a->shield == SHIELD_START ? 0.1 : 1);
-  f64 m2 = (b->shield == SHIELD_START ? 0.1 : 1);
-
-  f64 force = (n.x*r.x+n.y*r.y)/(m1+m2);
-  if (force < 120) {
-    force += 120;
+void bounce(Pod& a, Pod& b) {
+  Vector normal{b.x - a.x, b.y - a.y};
+  f64 distance = std::sqrt(normal.x * normal.x + normal.y * normal.y);
+  if (distance <= EPSILON) {
+    normal = {1.0, 0.0};
+    distance = 1.0;
+  } else {
+    normal.x /= distance;
+    normal.y /= distance;
   }
-  else {
+
+  Vector relativeVel{a.vx - b.vx, a.vy - b.vy};
+  f64 invMassA = (a.shield == SHIELD_START) ? 0.1 : 1.0;
+  f64 invMassB = (b.shield == SHIELD_START) ? 0.1 : 1.0;
+
+  f64 force = normal.dot(relativeVel) / (invMassA + invMassB);
+  if (force < 120.0) {
+    force += 120.0;
+  } else {
     force += force;
   }
 
-  Vector i {n.x*(-force), n.y*(-force)};
+  Vector impulse{normal.x * -force, normal.y * -force};
+  a.vx += impulse.x * invMassA;
+  a.vy += impulse.y * invMassA;
+  b.vx -= impulse.x * invMassB;
+  b.vy -= impulse.y * invMassB;
 
-  a->vx += i.x*m1;
-  a->vy += i.y*m1;
-  b->vx -= i.x*m2;
-  b->vy -= i.y*m2;
-
-  if (dd <= 2 * POD_RADIUS) {
-    dd -= 2 * POD_RADIUS;
-    a->x += (n.x * -(-dd/2 + EPSILON));
-    a->y += (n.y * -(-dd/2 + EPSILON));
-    b->x += (n.x * +(-dd/2 + EPSILON));
-    b->y += (n.y * +(-dd/2 + EPSILON));
+  if (distance <= POD_DIAMETER) {
+    distance -= POD_DIAMETER;
+    a.x += normal.x * -(-distance / 2.0 + EPSILON);
+    a.y += normal.y * -(-distance / 2.0 + EPSILON);
+    b.x += normal.x * (+(-distance / 2.0 + EPSILON));
+    b.y += normal.y * (+(-distance / 2.0 + EPSILON));
   }
 }

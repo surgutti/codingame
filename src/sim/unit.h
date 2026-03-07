@@ -3,21 +3,14 @@
 
 #include "vector.h"
 
-#include <cmath>
-
 struct Unit : Vector {
-  f64 vx, vy;
-  f64 mass = 1.0;
-  f64 friction;
+  f64 vx = 0.0;
+  f64 vy = 0.0;
 
-  Unit(f64 x_, f64 y_) : Vector(x_,y_) { }
-
-  f64 getSpeed() const {
-    return sqrt(vx*vx+vy*vy);
-  }
-
-  f64 getSpeedAngle() const {
-    return atan2(vy, vx);
+  Unit() = default;
+  Unit(f64 x_, f64 y_) {
+    x = x_;
+    y = y_;
   }
 
   void move(f64 t) {
@@ -26,14 +19,13 @@ struct Unit : Vector {
   }
 
   void adjust() {
-    x = floor(x + 0.5);
-    y = floor(y + 0.5);
-
-    vx = trunc(vx * (1.0 - friction));
-    vy = trunc(vy * (1.0 - friction));
+    x = std::floor(x + 0.5);
+    y = std::floor(y + 0.5);
+    vx = std::trunc(vx * FRICTION_FACTOR);
+    vy = std::trunc(vy * FRICTION_FACTOR);
   }
 
-  f64 getCollision(Unit const&, double) const;
+  f64 collisionTime(Unit const&, f64 radiusSq) const;
 };
 
 #endif // UNIT_H
