@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "mapgen.h"
+
 namespace {
 
 struct CollisionEvent {
@@ -44,8 +46,9 @@ Engine::Engine() {
   timeouts_.fill(TIMEOUT);
 }
 
-void Engine::initialize(i32 laps, std::vector<std::pair<i32, i32>> const& checkpoints) {
+void Engine::initialize(i32 laps, std::vector<std::pair<i32, i32>> const& checkpoints, i32 podTimeout) {
   laps_ = laps;
+  podTimeout_ = podTimeout;
   track_.clear();
   track_.reserve(checkpoints.size());
   for (auto const& checkpoint : checkpoints) {
@@ -57,10 +60,16 @@ void Engine::initialize(i32 laps, std::vector<std::pair<i32, i32>> const& checkp
   resetRace();
 }
 
+void Engine::initializeRefereeGenerated(i32 laps, i64 seed, i32 mapIndex, i32 podTimeout) {
+  initialize(laps, generateRefereeMap(seed, mapIndex), podTimeout);
+}
+
 void Engine::resetRace() {
   turn_ = 0;
   winnerTeam_ = -1;
-  timeouts_.fill(TIMEOUT);
+  nextCollisionId_ = 0;
+  collisions_.clear();
+  timeouts_.fill(podTimeout_);
   queuedMoves_.fill(Move{});
   pods_.fill(Pod{});
 
@@ -155,7 +164,7 @@ void Engine::applyCommand(i32 podId, Move const& move) {
 void Engine::checkpointCompleted(i32 podId) {
   Pod& pod = pods_[podId];
   ++pod.next;
-  timeouts_[podId / PODS_PER_PLAYER] = TIMEOUT;
+  timeouts_[podId / PODS_PER_PLAYER] = podTimeout_;
 
   i32 finishIndex = laps_ * static_cast<i32>(track_.size());
   if (!track_.empty() && pod.next >= finishIndex + 1) {
@@ -170,6 +179,7 @@ void Engine::nextTurn() {
     return;
   }
 
+  collisions_.clear();
   std::array<Vector, POD_NB> startPositions{};
   for (i32 podId = 0; podId < POD_NB; ++podId) {
     startPositions[podId] = Vector{pods_[podId].x, pods_[podId].y};
@@ -222,7 +232,26 @@ void Engine::nextTurn() {
         break;
       }
 
-      bounce(pods_[collision.a], pods_[collision.b]);
+      Vector podAPosition{pods_[collision.a].x, pods_[collision.a].y};
+      Vector podBPosition{pods_[collision.b].x, pods_[collision.b].y};
+      Vector averageVelocity{
+        (pods_[collision.a].vx + pods_[collision.b].vx) / 2.0,
+        (pods_[collision.a].vy + pods_[collision.b].vy) / 2.0,
+      };
+      f64 force = bounce(pods_[collision.a], pods_[collision.b]);
+      collisions_.push_back(CollisionDebug{
+        nextCollisionId_++,
+        collisionTime,
+        collision.a,
+        static_cast<i32>(std::llround(podAPosition.x)),
+        static_cast<i32>(std::llround(podAPosition.y)),
+        collision.b,
+        static_cast<i32>(std::llround(podBPosition.x)),
+        static_cast<i32>(std::llround(podBPosition.y)),
+        force,
+        static_cast<i32>(std::llround(averageVelocity.x)),
+        static_cast<i32>(std::llround(averageVelocity.y)),
+      });
       touched[collision.a] = true;
       touched[collision.b] = true;
     }

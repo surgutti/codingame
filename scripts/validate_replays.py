@@ -11,7 +11,11 @@ import re
 import subprocess
 from pathlib import Path
 
-from tqdm import tqdm
+try:
+    from tqdm import tqdm
+except ModuleNotFoundError:
+    def tqdm(iterable, **_: object):
+        return iterable
 
 
 ANGLE_EPS = 1e-9

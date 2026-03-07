@@ -1,0 +1,5 @@
+# Core Python dependencies for the training and evaluation pipeline.
+# Install torch separately to match your CUDA / driver setup.
+numpy>=1.26
+tqdm>=4.66
+tensorboard>=2.16

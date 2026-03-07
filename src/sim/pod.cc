@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-void bounce(Pod& a, Pod& b) {
+f64 bounce(Pod& a, Pod& b) {
   Vector normal{b.x - a.x, b.y - a.y};
   f64 distance = std::sqrt(normal.x * normal.x + normal.y * normal.y);
   if (distance <= EPSILON) {
@@ -37,4 +37,6 @@ void bounce(Pod& a, Pod& b) {
     b.x += normal.x * (+(-distance / 2.0 + EPSILON));
     b.y += normal.y * (+(-distance / 2.0 + EPSILON));
   }
+
+  return force;
 }

@@ -7,11 +7,26 @@
 
 #include "pod.h"
 
+struct CollisionDebug {
+  i32 id = -1;
+  f64 time = 0.0;
+  i32 a = -1;
+  i32 ax = 0;
+  i32 ay = 0;
+  i32 b = -1;
+  i32 bx = 0;
+  i32 by = 0;
+  f64 force = 0.0;
+  i32 vx = 0;
+  i32 vy = 0;
+};
+
 class Engine {
 public:
   Engine();
 
-  void initialize(i32 laps, std::vector<std::pair<i32, i32>> const& checkpoints);
+  void initialize(i32 laps, std::vector<std::pair<i32, i32>> const& checkpoints, i32 podTimeout = TIMEOUT);
+  void initializeRefereeGenerated(i32 laps, i64 seed, i32 mapIndex = -1, i32 podTimeout = TIMEOUT);
   void resetRace();
   void setTurn(i32 turn);
 
@@ -43,6 +58,10 @@ public:
     return timeouts_;
   }
 
+  std::vector<CollisionDebug> const& collisions() const {
+    return collisions_;
+  }
+
   i32 winnerTeam() const {
     return winnerTeam_;
   }
@@ -56,9 +75,12 @@ private:
   void checkpointCompleted(i32 podId);
 
   i32 laps_ = 0;
+  i32 podTimeout_ = TIMEOUT;
   i32 turn_ = 0;
   i32 winnerTeam_ = -1;
+  i32 nextCollisionId_ = 0;
   std::vector<Checkpoint> track_;
+  std::vector<CollisionDebug> collisions_;
   std::array<Pod, POD_NB> pods_{};
   std::array<Move, POD_NB> queuedMoves_{};
   std::array<i32, PLAYER_NB> timeouts_{};

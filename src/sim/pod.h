@@ -53,6 +53,6 @@ struct Pod : Unit {
   }
 };
 
-void bounce(Pod&, Pod&);
+f64 bounce(Pod&, Pod&);
 
 #endif // POD_H

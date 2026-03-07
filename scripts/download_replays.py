@@ -8,9 +8,13 @@ import sqlite3
 import time
 from datetime import datetime
 from pathlib import Path
-
-import requests
-from tqdm import tqdm
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+try:
+    from tqdm import tqdm
+except ModuleNotFoundError:
+    def tqdm(iterable, **_: object):
+        return iterable
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -44,29 +48,38 @@ def open_db() -> sqlite3.Connection:
     return connection
 
 
-def post_json(session: requests.Session, path: str, payload: list) -> dict | list:
-    response = session.post(f"{API_BASE}/{path}", json=payload, timeout=30)
-    response.raise_for_status()
-    return response.json()
+def post_json(path: str, payload: list) -> dict | list:
+    body = json.dumps(payload).encode("utf-8")
+    request = Request(
+        f"{API_BASE}/{path}",
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+        method="POST",
+    )
+    with urlopen(request, timeout=30) as response:
+        return json.load(response)
 
 
-def get_leaderboard(session: requests.Session) -> list[dict]:
+def get_leaderboard() -> list[dict]:
     payload = [
         CONTEST,
         "ea0ce7b64a1fb206d6fcfcd0841eaaab5264483",
         "global",
         {"active": "true", "column": "COUNTRY", "filter": "ALL"},
     ]
-    response = post_json(session, "Leaderboards/getFilteredPuzzleLeaderboard", payload)
+    response = post_json("Leaderboards/getFilteredPuzzleLeaderboard", payload)
     return response["users"][:MAX_PLAYERS]
 
 
-def get_battles(session: requests.Session, agent_id: str) -> list[dict]:
-    return post_json(session, "gamesPlayersRanking/findLastBattlesByAgentId", [str(agent_id), None])
+def get_battles(agent_id: str) -> list[dict]:
+    return post_json("gamesPlayersRanking/findLastBattlesByAgentId", [str(agent_id), None])
 
 
-def get_replay(session: requests.Session, replay_id: str) -> dict:
-    return post_json(session, "gameResult/findByGameId", [replay_id, None])
+def get_replay(replay_id: str) -> dict:
+    return post_json("gameResult/findByGameId", [replay_id, None])
 
 
 def replay_known(connection: sqlite3.Connection, replay_id: str) -> bool:
@@ -118,21 +131,23 @@ def main() -> int:
     DATA_DIR.mkdir(exist_ok=True)
     connection = open_db()
 
-    with requests.Session() as session:
-        top_players = get_leaderboard(session)
+    try:
+        top_players = get_leaderboard()
         top_agents = [player["agentId"] for player in top_players]
         print("Top agent ids:", top_agents)
 
         for agent_id in tqdm(top_agents, desc="Agents"):
-            battles = get_battles(session, agent_id)
+            battles = get_battles(agent_id)
             for battle in tqdm(battles, desc=f"Battles {agent_id}", leave=False):
                 replay_id = str(battle["gameId"])
                 if replay_known(connection, replay_id):
                     continue
 
-                payload = get_replay(session, replay_id)
+                payload = get_replay(replay_id)
                 save_replay(connection, replay_id, payload)
                 time.sleep(REQUEST_DELAY)
+    except (HTTPError, URLError) as exc:
+        raise SystemExit(f"download failed: {exc}") from exc
 
     connection.close()
     return 0
