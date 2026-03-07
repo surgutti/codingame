@@ -3,7 +3,6 @@
 #include "java_math.h"
 
 f64 Vector::getAngle(Vector const& other) const {
-  // return atan2(other.y - y, other.x - x);
   return java_math::atan2(other.y - y, other.x - x);
 }
 

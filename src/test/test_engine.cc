@@ -2,7 +2,6 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -27,19 +26,9 @@ Move parseMove(std::string const& line) {
 
 } // namespace
 
-int main(int argc, char** argv) {
+int main() {
   std::ios::sync_with_stdio(false);
   std::cin.tie(nullptr);
-
-  bool continuous = false;
-  bool preserveAngle = false;
-  for (int argi = 1; argi < argc; ++argi) {
-    if (std::string_view(argv[argi]) == "--continuous") {
-      continuous = true;
-    } else if (std::string_view(argv[argi]) == "--preserve-angle") {
-      preserveAngle = true;
-    }
-  }
 
   i32 checkpointCount = 0;
   if (!(std::cin >> checkpointCount)) {
@@ -67,9 +56,7 @@ int main(int argc, char** argv) {
 
   std::cout << std::fixed << std::setprecision(15);
   for (i32 turn = 0; turn < tests; ++turn) {
-    if (!continuous) {
-      engine.setTurn(turn);
-    }
+    engine.setTurn(turn);
 
     for (i32 podId = 0; podId < POD_NB; ++podId) {
       std::getline(std::cin, line);
@@ -91,12 +78,7 @@ int main(int argc, char** argv) {
       i32 boosted = 0;
       i32 progress = -1;
       stream >> x >> y >> vx >> vy >> angleRad >> next >> shield >> boosted >> progress;
-      if (!continuous) {
-        if (preserveAngle && turn > 0) {
-          angleRad = engine.pod(podId).angle;
-        }
-        engine.setPodState(podId, x, y, vx, vy, angleRad, next, shield, boosted, progress);
-      }
+      engine.setPodState(podId, x, y, vx, vy, angleRad, next, shield, boosted, progress);
     }
 
     std::array<Move, POD_NB> moves{};

@@ -11,25 +11,15 @@ import re
 import subprocess
 from pathlib import Path
 
+from tqdm import tqdm
+
 
 ANGLE_EPS = 1e-9
 MOVE_RE = re.compile(r"^\s*(-?\d+)\s+(-?\d+)\s+(\S+)")
-KNOWN_REPLAY_ANOMALIES = {
-    "859958644": "collision export disagrees with its own debug force line",
-}
 
 
 class ReplaySkip(Exception):
     pass
-
-
-def replay_id(path: Path) -> str:
-    name = path.name
-    if name.endswith(".json.gz"):
-        return name[:-8]
-    if name.endswith(".json"):
-        return name[:-5]
-    return path.stem
 
 
 def load_replay(path: Path) -> dict:
@@ -298,10 +288,7 @@ def parse_harness_output(output: str) -> list[list[float]]:
     return [[float(value) for value in line.split()] for line in lines]
 
 
-def validate_replay(binary: Path, replay: Path, continuous: bool = False) -> tuple[str, str]:
-    if replay_id(replay) in KNOWN_REPLAY_ANOMALIES:
-        return "skip", KNOWN_REPLAY_ANOMALIES[replay_id(replay)]
-
+def validate_replay(binary: Path, replay: Path) -> tuple[str, str]:
     try:
         payload = load_replay(replay)
         frames = extract_frames(payload)
@@ -317,8 +304,6 @@ def validate_replay(binary: Path, replay: Path, continuous: bool = False) -> tup
 
     harness_input = build_harness_input(checkpoints, turns)
     command = [str(binary)]
-    if continuous:
-        command.append("--continuous")
 
     result = subprocess.run(
         command,
@@ -382,7 +367,6 @@ def expand_replays(paths: list[str]) -> list[Path]:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate replay files against the simulator harness.")
     parser.add_argument("--binary", required=True, type=Path, help="Compiled simulator harness binary.")
-    parser.add_argument("--continuous", action="store_true", help="Run the harness in continuous referee-style mode.")
     parser.add_argument("--replays", nargs="+", required=True, help="Replay files or directories.")
     args = parser.parse_args()
 
@@ -393,8 +377,8 @@ def main() -> int:
     passed = 0
     skipped = 0
     failed = 0
-    for replay in replays:
-        status, message = validate_replay(args.binary, replay, continuous=args.continuous)
+    for replay in tqdm(replays, desc="Replays"):
+        status, message = validate_replay(args.binary, replay)
         if status == "pass":
             passed += 1
         elif status == "skip":

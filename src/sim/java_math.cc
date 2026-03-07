@@ -3,7 +3,6 @@
 #include <array>
 #include <bit>
 #include <cmath>
-#include <limits>
 
 namespace java_math {
 namespace {

@@ -11,11 +11,6 @@ struct CollisionEvent {
   i32 b = -1;
 };
 
-struct TimedWaypoint {
-  f64 time = 0.0;
-  Vector position{};
-};
-
 constexpr std::array<Vector, POD_NB> START_OFFSETS = {
   Vector{500.0, -500.0},
   Vector{-500.0, 500.0},
@@ -27,27 +22,17 @@ f64 roundHalfUp(f64 value) {
   return std::floor(value + 0.5);
 }
 
-void recordWaypoint(std::vector<TimedWaypoint>& waypoints, f64 time, Pod const& pod) {
-  Vector position{pod.x, pod.y};
-  if (!waypoints.empty() && waypoints.back().time == time) {
-    waypoints.back().position = position;
-    return;
-  }
-
-  waypoints.push_back(TimedWaypoint{time, position});
-}
-
 bool pathHitsCheckpoint(
   Vector const& start,
-  std::vector<TimedWaypoint> const& waypoints,
+  std::vector<Vector> const& waypoints,
   Vector const& end,
   Checkpoint const& checkpoint) {
   Vector previous = start;
-  for (TimedWaypoint const& waypoint : waypoints) {
-    if (checkpointCollide(previous, waypoint.position, checkpoint)) {
+  for (Vector const& waypoint : waypoints) {
+    if (checkpointCollide(previous, waypoint, checkpoint)) {
       return true;
     }
-    previous = waypoint.position;
+    previous = waypoint;
   }
 
   return checkpointCollide(previous, end, checkpoint);
@@ -188,17 +173,14 @@ void Engine::nextTurn() {
   std::array<Vector, POD_NB> startPositions{};
   for (i32 podId = 0; podId < POD_NB; ++podId) {
     startPositions[podId] = Vector{pods_[podId].x, pods_[podId].y};
-  }
-
-  for (i32 podId = 0; podId < POD_NB; ++podId) {
     applyCommand(podId, queuedMoves_[podId]);
   }
 
-  std::array<std::vector<TimedWaypoint>, POD_NB> waypoints{};
+  std::array<std::vector<Vector>, POD_NB> waypoints{};
   f64 time = 0.0;
   while (time < 1.0) {
     std::vector<CollisionEvent> collisions;
-    f64 min = 1.0 - time;
+    f64 minTime = 1.0 - time;
 
     for (i32 i = POD_NB - 1; i > 0; --i) {
       for (i32 j = i - 1; j >= 0; --j) {
@@ -208,18 +190,16 @@ void Engine::nextTurn() {
         }
 
         f64 collisionTime = pods_[i].collisionTime(pods_[j], POD_DIAMETER_SQ);
-        if (collisionTime <= min && collisionTime > 0.0) {
+        if (collisionTime <= minTime && collisionTime > 0.0) {
           collisions.push_back(CollisionEvent{time + collisionTime, i, j});
         }
       }
     }
 
     if (collisions.empty()) {
-      f64 step = 1.0 - time;
       for (Pod& pod : pods_) {
-        pod.move(step);
+        pod.move(1.0 - time);
       }
-      time = 1.0;
       break;
     }
 
@@ -231,9 +211,8 @@ void Engine::nextTurn() {
       });
 
     f64 collisionTime = collisions.front().time;
-    f64 step = collisionTime - time;
     for (Pod& pod : pods_) {
-      pod.move(step);
+      pod.move(collisionTime - time);
     }
     time = collisionTime;
 
@@ -250,15 +229,16 @@ void Engine::nextTurn() {
 
     for (i32 podId = 0; podId < POD_NB; ++podId) {
       if (touched[podId]) {
-        recordWaypoint(waypoints[podId], collisionTime, pods_[podId]);
+        waypoints[podId].push_back(Vector{pods_[podId].x, pods_[podId].y});
       }
     }
   }
 
-  for (i32 podId = 0; podId < POD_NB; ++podId) {
-    pods_[podId].endTurn();
+  for (Pod& pod : pods_) {
+    pod.endTurn();
   }
 
+  i32 trackSize = static_cast<i32>(track_.size());
   for (i32 podId = 0; podId < POD_NB; ++podId) {
     Vector finalPosition{pods_[podId].x, pods_[podId].y};
     while (!pods_[podId].won &&
@@ -266,7 +246,7 @@ void Engine::nextTurn() {
              startPositions[podId],
              waypoints[podId],
              finalPosition,
-             track_[pods_[podId].next % static_cast<i32>(track_.size())])) {
+             track_[pods_[podId].next % trackSize])) {
       checkpointCompleted(podId);
     }
   }
