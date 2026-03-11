@@ -1,3 +1,4 @@
-# codingame repository
+# Winter Challenge 2026: SNAKEBYTE
 
-Storing here passed contest codes
+[Contest Link](https://www.codingame.com/contests/winter-challenge-2026-exotec)
+
