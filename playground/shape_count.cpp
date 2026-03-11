@@ -39,7 +39,7 @@ const int dy[] = {0, -1, 0, +1};
 using u64=unsigned long long;
 
 int max_length;
-map<u64, vector<pii>> cache;
+vector<vector<pii>> cache;
 vector<pii> path;
 
 u64 hh(vector<pii> p) {
@@ -65,7 +65,7 @@ void gen(int x, int y) {
   path.eb(x,y);
   
   if (sz(path) == max_length) {
-    cache[hh(path)] = path;
+    cache.emplace_back(path);
     path.pop_back();
     return; 
   }
@@ -91,7 +91,7 @@ signed main() {
   for (max_length=3;max_length<=20;max_length++) {
     cache.clear();
     gen(0,0);
-    cerr<<"length:"<<max_length<<": "<<sz(cache)<<'\n';
+    cerr<<"length:"<<max_length<<": "<<sz(cache)<<' '<<sz(cache)*45*30*4*4<<'\n';
   }
   return 0;
 }
