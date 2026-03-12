@@ -45,6 +45,19 @@ From the repo root (assuming 2 bots exist):
 java -jar referee.jar -league 1 -p1 "python3 bot1.py" -p2 "python3 bot2.py"
 ```
 
+### Run with local visual mode
+
+If you use `-s`, this contest's bundled viewer assets are regenerated with an extra `assets/` prefix in one file set (`assets.js` and sprites metadata), which can break texture loading in some environments.
+
+Use this wrapper instead to normalize those paths before the local server starts:
+
+```bash
+cd WinterChallenge2026-Exotec
+./scripts/run_referee_visual.sh -p1 ../arena/dummy -p2 ../arena/dummy -seed 2137 -s
+```
+
+You should still open the printed `http://localhost:8888/test.html` URL after running the command.
+
 You can use `-league 1/2/3/4` for wood/silver/gold/legend difficulty.
 
 ### Brutaltester usage
@@ -58,3 +71,11 @@ java -jar cg-brutaltester.jar \
 ```
 
 If your command line for `-r` includes `-s`, it enables server mode in this CLI.
+
+For direct `java -jar` use, this issue can be avoided by running:
+
+```bash
+python3 scripts/normalize_codingame_assets.py
+```
+
+right after any `-s` run to patch `/tmp/codingame` before opening the viewer page.

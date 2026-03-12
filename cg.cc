@@ -1,3 +1,4 @@
+#pragma GCC optimize ("Ofast,inline")
 // surgutti, winter-challenge-2026, 10-03-2026
 #include "bits/stdc++.h"
 using namespace std;
@@ -5,6 +6,8 @@ using namespace std;
 // #define int long long
 // #define ll long long
 // #define ld long double
+
+#define LOCAL
 
 #define endl '\n'
 #define st first
@@ -64,8 +67,8 @@ i32 powerCnt;
 vector<pii> powers;
 mt19937 rng(2137);
 
-const i32 MAX_GEN_LEN = 7;
-const i32 MAX_SHAPES = 6000;
+const i32 MAX_GEN_LEN = 5;
+const i32 MAX_SHAPES = 600;
 
 struct Snake {
   i32 sId;
@@ -156,7 +159,8 @@ struct GenerateShapes {
     FOR(len,1,MAX_GEN_LEN){
       go[len].resize(sz(shapes[len]), {-1, -1, -1, -1});
       go_prev[len] = go[len];
-
+      
+      cerr << "len: " << len << '\n';
       rep(i,0,sz(shapes[len])) {
         assert(sz(shapes[len]) <= MAX_SHAPES);
         vector<pii> ss = shapes[len][i];
@@ -190,9 +194,12 @@ struct GenerateShapes {
         }
       }
     }
+
+    cerr << "done\n";
   }
 
   i32 get_shapeId(vector<pii> body) {
+    debug(body);
     assert(sz(body) >= 3);
     pii head = body[0];
 
@@ -247,6 +254,28 @@ struct ShortDistances {
         }
 
         i32 nxt = go.next_shape(len,ss,d);
+        if (nxt == -1) {
+          continue;
+        }
+
+        vector<pii> const& body = go.shapes[len][nxt];
+        // debug(xx, yy, nxt, body);
+        i32 drop = HEIGHT;
+        for (auto [_x, _y] : body) {
+          _x += xx;
+          _y += yy;
+          _y++;
+          i32 cur = 0;
+          while (g[_x][_y]!='#') {
+            _y++;
+            cur++;
+          }
+          drop=min(drop,cur);
+        }
+        // debug(drop);
+        assert(drop != HEIGHT);
+        yy += drop;
+
         if (nxt != -1 && vis[xx][yy][nxt] != tim) {
           vis[xx][yy][nxt] = tim;
           dp[xx][yy][nxt] = dp[x][y][s]+1;
@@ -262,6 +291,23 @@ struct ShortDistances {
         }
       }
     }
+
+    debug("head:",h);
+    rep(y,0,height){
+      rep(x,0,width){
+        if (g[x][y]=='#')
+          cerr << '#';
+        else if (x == sx && y == sy) {
+          cerr << 's';
+        } else if(query_dist(x,y)!=-1){
+          cerr<<'x';
+        } else {
+          cerr<<'.';
+        }
+      }
+      cerr<<'\n';
+    }
+    cerr<<'\n';
   }
 
   i32 query_dist(i32 x, i32 y) {
@@ -290,13 +336,27 @@ struct ShortDistances {
   }
 } dist[SNAKES];
 
+vector<pii> parse_pairs(const string& s) {
+  vector<pii>v;
+  stringstream ss(s);
+  string t;
+  while (getline(ss, t, ':')) {
+    int a, b;
+    sscanf(t.c_str(), "%d,%d", &a, &b);
+    v.emplace_back(a, b);
+  }
+  return v;
+}
+
 signed main() {
 
   cin >> myId;
   cin >> width >> height;
 
-  rep(i,0,height) {
-    cin >> g[i];
+  rep(y,0,height){
+    rep(x,0,width){
+      cin >> g[x][y];
+    }
   }
 
   cin >> snakesPerPlayer;
@@ -309,6 +369,8 @@ signed main() {
     cin >> opIds[i];
     snakes[opIds[i]].isAlive=true;
   }
+
+  cerr << "hello there\n";
 
   for (;;) {
     cin >> powerCnt;
@@ -332,13 +394,10 @@ signed main() {
 
       string bodyS;
       cin >> bodyS;
-      stringstream bodyss(bodyS);
+
+      vector<pii>body = parse_pairs(bodyS);
       
-      vector<pii>body;
-      i32 x, y;
-      while(bodyss>>x>>y){
-        body.eb(x,y);
-      }
+      debug("input body", body);
       
       snakes[sId].body = body;
       snakes[sId].isAlive=true;
@@ -350,6 +409,9 @@ signed main() {
 
     rep(i,0,SNAKES){
       if (snakes[i].isAlive == false || snakes[i].isMy == false) {
+        continue;
+      }
+      if (sz(snakes[i].body) > MAX_GEN_LEN) {
         continue;
       }
 
@@ -367,13 +429,20 @@ signed main() {
       if (sz(possible)) {
         sort(all(possible));
         
-        auto [_, tx, ty] = possible.back();
-        marks.eb(tx, ty);
-        snakes[i].action = dist[i].query_moves(tx, ty)[0];
+        auto [_, tx, ty] = possible[0];
+        
+        i32 act = dist[i].query_moves(tx, ty)[0];
+        snakes[i].action = act;
 
         cerr << "snake(" << i << ") => " << tx << ' ' << ty << ' ' << _ << '\n';
+
+        moves.eb(i, act);
+        marks.eb(tx, ty);
       }
     }
+
+    debug(moves);
+    debug(marks);
 
     if (sz(moves)) {
       rep(i,0,sz(moves)){
