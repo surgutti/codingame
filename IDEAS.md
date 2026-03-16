@@ -53,3 +53,8 @@ dp[x][y][shape] -> 3 directions
 
 -> find only few turn distances?
 -> many of them are unattainable.
+
+
+
+MCTS dla każdego węża.
+Zrób osobne drzewo decyzji dla każdego wężą.
