@@ -1,8 +1,9 @@
 CXX := g++
-CXXFLAGS := -std=c++20 -O2 -Wall -Wextra -pedantic
+CXXFLAGS := -std=c++20 -Ofast -mtune=native -march=native
 
 BUILD_DIR := build
 TEST_BIN := $(BUILD_DIR)/test_engine
+PERF_BIN := $(BUILD_DIR)/perf_engine
 DUMMY_BOT_BIN := $(BUILD_DIR)/dummy_bot
 
 SIM_SRCS := \
@@ -20,6 +21,10 @@ TEST_SRCS := \
 DUMMY_BOT_SRCS := \
 	src/test/dummy_bot.cpp
 
+PERF_SRCS := \
+	src/test/perf_engine.cc \
+	$(SIM_SRCS)
+
 .PHONY: all dummy_bot validate clean
 
 $(BUILD_DIR):
@@ -28,10 +33,15 @@ $(BUILD_DIR):
 $(TEST_BIN): $(TEST_SRCS) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(TEST_SRCS) -o $(TEST_BIN)
 
+$(PERF_BIN): $(PERF_SRCS) | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(PERF_SRCS) -o $(PERF_BIN)
+
 $(DUMMY_BOT_BIN): $(DUMMY_BOT_SRCS) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(DUMMY_BOT_SRCS) -o $(DUMMY_BOT_BIN)
 
 dummy_bot: $(DUMMY_BOT_BIN)
+
+perf: $(PERF_BIN)
 
 $(ARENA_BIN): $(ARENA_SRCS) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) $(ARENA_SRCS) -lz -o $(ARENA_BIN)
