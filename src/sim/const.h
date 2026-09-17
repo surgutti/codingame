@@ -16,6 +16,7 @@ constexpr i32 HEIGHT = 9000;
 constexpr i32 PLAYER_NB = 2;
 constexpr i32 PODS_PER_PLAYER = 2;
 constexpr i32 POD_NB = PLAYER_NB * PODS_PER_PLAYER;
+constexpr i32 LAPS = 4;
 
 constexpr i32 MAX_THRUST = 200;
 constexpr i32 BOOST_THRUST = 650;

@@ -1,18 +1,46 @@
-CXX := g++
-CXXFLAGS := -std=c++20 -Ofast -mtune=native -march=native
+CXX      := g++
+CXXFLAGS := -std=c++20 -O3 -mtune=native -march=native \
+            -fno-strict-aliasing -shared -fPIC -fopenmp
 
 BUILD_DIR := build
-TEST_BIN := $(BUILD_DIR)/test_engine
-PERF_BIN := $(BUILD_DIR)/perf_engine
+TEST_BIN  := $(BUILD_DIR)/test_engine
+PERF_BIN  := $(BUILD_DIR)/perf_engine
 DUMMY_BOT_BIN := $(BUILD_DIR)/dummy_bot
 
+MODULE_NAME := engine
+
 SIM_SRCS := \
+	src/env.cc \
 	src/sim/engine.cc \
 	src/sim/java_math.cc \
 	src/sim/mapgen.cc \
 	src/sim/pod.cc \
 	src/sim/unit.cc \
 	src/sim/vector.cc
+
+PYTHON_INC := -I/usr/include/python3.14
+PYTHON_EXT := .cpython-314-x86_64-linux-gnu.so
+
+TORCH_INCS := $(shell python3 -c "import torch.utils.cpp_extension as t; print(' '.join(['-I' + p for p in t.include_paths()]))")
+TORCH_LIBS := $(shell python3 -c "import torch.utils.cpp_extension as t; print(' '.join(['-L' + p for p in t.library_paths()]) + ' -ltorch -ltorch_cpu -ltorch_cuda -lc10 -lc10_cuda')")
+TORCH_FLAGS := $(shell python3 -c "import torch; print('-D_GLIBCXX_USE_CXX11_ABI=' + str(int(torch._C._GLIBCXX_USE_CXX11_ABI)))")
+
+NB_INCS    := -I./nanobind/include -I./nanobind/ext/robin_map/include
+NB_SRC     := ./nanobind/src/nb_combined.cpp
+
+INCLUDES   := $(PYTHON_INC) $(NB_INCS) $(TORCH_INCS) -I./src
+ALL_FLAGS  := $(CXXFLAGS) $(TORCH_FLAGS)
+
+TARGET     := $(BUILD_DIR)/$(MODULE_NAME)$(PYTHON_EXT)
+NB_OBJ     := $(BUILD_DIR)/nb_combined.o
+
+$(NB_OBJ): $(NB_SRC) | $(BUILD_DIR)
+	$(CXX) -O3 -std=c++17 -fPIC -fno-strict-aliasing $(PYTHON_INC) $(NB_INCS) -c $< -o $@
+
+$(TARGET): $(SIM_SRCS) $(NB_OBJ) | $(BUILD_DIR)
+	$(CXX) $(ALL_FLAGS) $(INCLUDES) $(SIM_SRCS) $(NB_OBJ) -o $(TARGET) $(TORCH_LIBS) -lgomp
+
+all: $(TARGET)
 
 TEST_SRCS := \
 	src/test/test_engine.cc \

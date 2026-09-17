@@ -23,6 +23,10 @@ struct Vector {
     return x * other.x + y * other.y;
   }
 
+  f64 cross(Vector const& other) const {
+    return x * other.y - y * other.x;
+  }
+
   f64 getAngle(Vector const& other) const;
 
   bool operator==(Vector const& other) const {
