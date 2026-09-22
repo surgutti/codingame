@@ -180,8 +180,10 @@ f32 Engine::nextTurn() {
   }
 
   collisions_.clear();
+  std::array<i32, POD_NB> oldNext;
   std::array<Vector, POD_NB> startPositions{};
   for (i32 podId = 0; podId < POD_NB; ++podId) {
+    oldNext[podId] = pods_[podId].next;
     startPositions[podId] = Vector{pods_[podId].x, pods_[podId].y};
     applyCommand(podId, queuedMoves_[podId]);
   }
@@ -282,21 +284,35 @@ f32 Engine::nextTurn() {
 
   for (i32 player = 0; player < PLAYER_NB; ++player) {
     --timeouts_[player];
+    if (timeouts_[player] < 0) {
+      winnerTeam_ = 1 - player;
+    }
   }
 
   queuedMoves_.fill(Move{});
   ++turn_;
+
+  // check if pod is far away
+  for (i32 podId = 0; podId < POD_NB; podId++) {
+    Pod const& pod = pods_[podId];
+    
+    f64 dx = pod.x - WIDTH/2;
+    f64 dy = pod.y - HEIGHT/2;
+
+    if (dx * dx + dy * dy > WIDTH * WIDTH + HEIGHT * HEIGHT) {
+      winnerTeam_ = 1 - podId / PODS_PER_PLAYER;
+    }
+  }
 
   float reward = 0;
 
   i32 bestA = std::max(pods_[0].next, pods_[1].next);
   i32 bestB = std::max(pods_[2].next, pods_[3].next);
 
-  if (bestA > bestB) {
-    reward = +0.1;
-  } else if (bestA < bestB) {
-    reward = -0.1;
-  }
+  if (pods_[0].next != oldNext[0]) reward += 0.1;
+  if (pods_[1].next != oldNext[1]) reward += 0.1;
+  if (pods_[2].next != oldNext[2]) reward -= 0.1;
+  if (pods_[3].next != oldNext[3]) reward -= 0.1;
 
   if (winnerTeam_ == 0) {
     reward = +1;
