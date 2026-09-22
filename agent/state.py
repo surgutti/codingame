@@ -56,3 +56,11 @@ class State:
     flipped[:, 46] = self.raw[:, 47]
     flipped[:, 47] = self.raw[:, 46]
     return State(flipped)
+
+def get_checkpoint_xy(state: State, cp_idx: torch.Tensor) -> torch.Tensor:
+  B = state.raw.shape[0]
+  batch_idx = torch.arange(B, device=state.raw.device).view(
+    B, *([1] * (cp_idx.dim() - 1))
+  )
+  mod_idx = cp_idx % state.num_cps.view(B, *([1] * (cp_idx.dim() - 1)))
+  return state.checkpoints[batch_idx, mod_idx]

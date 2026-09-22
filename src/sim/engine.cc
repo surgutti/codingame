@@ -284,8 +284,15 @@ f32 Engine::nextTurn() {
 
   for (i32 player = 0; player < PLAYER_NB; ++player) {
     --timeouts_[player];
-    if (timeouts_[player] < 0) {
-      winnerTeam_ = 1 - player;
+  }
+
+  if (winnerTeam_ == -1) {
+    if (timeouts_[0] < 0 && timeouts_[1] < 0) {
+      winnerTeam_ = 2;
+    } else if (timeouts_[0] < 0) {
+      winnerTeam_ = 1;
+    } else if (timeouts_[1] < 0) {
+      winnerTeam_ = 0;
     }
   }
 

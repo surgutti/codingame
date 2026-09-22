@@ -47,7 +47,10 @@ public:
           Pod const& pod = envs_[i].pod(podId);
 
           Move move{};
-          f64 target_angle = pod.angle + std::clamp(static_cast<f64>(a[0]), -MAX_ROTATION, +MAX_ROTATION);
+          f64 base_angle = fabs(pod.angle - START_ANGLE) < 1e-9
+            ? pod.getAngle(envs_[i].checkpoints()[pod.next % envs_[i].checkpoints().size()])
+            : pod.angle;
+          f64 target_angle = base_angle + std::clamp(static_cast<f64>(a[0]), -MAX_ROTATION, +MAX_ROTATION);
 
           move.target.x = std::floor(pod.x + std::cos(target_angle) * 5000 + 0.5);
           move.target.y = std::floor(pod.y + std::sin(target_angle) * 5000 + 0.5);
