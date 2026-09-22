@@ -1,6 +1,5 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
-#include <torch/extension.h>
 #include <omp.h>
 #include <algorithm>
 #include <cmath>
@@ -17,30 +16,26 @@ public:
       base_seed_(seed),
       envs_(num_envs),
       episode_counts_(num_envs, 0) {
-    auto opts = torch::TensorOptions().dtype(torch::kFloat32).pinned_memory(true);
-    raw_state_cpu_ = torch::zeros({num_envs, RAW_STATE_DIM}, opts);
-    rewards_cpu_   = torch::zeros({num_envs}, opts);
-    dones_cpu_     = torch::zeros({num_envs}, opts);
-    reset();
   }
 
-  torch::Tensor reset() {
-    f32* state_ptr = raw_state_cpu_.data_ptr<f32>();
+  void reset(nb::ndarray<f32, nb::c_contig, nb::device::cpu> state_out) {
+    f32* state_ptr = state_out.data();
     #pragma omp parallel for schedule(static)
     for (i32 i = 0; i < num_envs_; i++) {
       i64 env_seed = base_seed_ + static_cast<i64>(i) * 1000000LL + (episode_counts_[i]++);
       envs_[i].initializeRefereeGenerated(LAPS, env_seed);
       writeRawState(envs_[i], state_ptr + i * RAW_STATE_DIM);
     }
-    return raw_state_cpu_.to(torch::kCUDA, /*non_blocking=*/true);
   }
 
-  nb::tuple step(torch::Tensor actions) {
-    auto actions_cpu = actions.to(torch::kCPU).contiguous();
-    const f32* act_ptr = actions_cpu.data_ptr<f32>();
-    f32* state_ptr = raw_state_cpu_.data_ptr<f32>();
-    f32* rew_ptr = rewards_cpu_.data_ptr<f32>();
-    f32* done_ptr = dones_cpu_.data_ptr<f32>();
+  void step(nb::ndarray<const f32, nb::c_contig, nb::device::cpu> actions_in,
+              nb::ndarray<f32, nb::c_contig, nb::device::cpu> state_out,
+              nb::ndarray<f32, nb::c_contig, nb::device::cpu> rewards_out,
+              nb::ndarray<f32, nb::c_contig, nb::device::cpu> dones_out) {
+    const f32* act_ptr = actions_in.data();
+    f32* state_ptr = state_out.data();
+    f32* rew_ptr = rewards_out.data();
+    f32* done_ptr = dones_out.data();
 
     {
       nb::gil_scoped_release reelase;
@@ -74,12 +69,6 @@ public:
         writeRawState(envs_[i], state_ptr + i * RAW_STATE_DIM);
       }
     }
-
-    return nb::make_tuple(
-      raw_state_cpu_.to(torch::kCUDA, /*non_blocking=*/true),
-      rewards_cpu_.to(torch::kCUDA, /*non_blocking=*/true),
-      dones_cpu_.to(torch::kCUDA, /*non_blocking=*/true)
-    );
   }
 
 private:
@@ -113,9 +102,6 @@ private:
   i64 base_seed_;
   std::vector<Engine> envs_;
   std::vector<i64> episode_counts_;
-  torch::Tensor raw_state_cpu_;
-  torch::Tensor rewards_cpu_;
-  torch::Tensor dones_cpu_;
 };
 
 NB_MODULE(engine, m) {
