@@ -66,8 +66,6 @@ public:
     return winnerTeam_;
   }
 
-  void getState(i32 podId, float* state) const;
-
   void applyMove(i32 podId, Move const& move);
   void applyMoves(std::array<Move, POD_NB> const& moves);
   f32 nextTurn();
