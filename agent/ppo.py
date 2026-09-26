@@ -128,8 +128,7 @@ class PPOAgent(nn.Module):
         ratio = torch.exp(logprobs - mb_old_logprobs)
 
         surr1 = ratio * mb_advantages
-        surr2 = torch.clamp(
-                  ratio, 
+        surr2 = ratio.clamp(
                   1.0 - self.config.clip_eps, 
                   1.0 + self.config.clip_eps
                 ) * mb_advantages

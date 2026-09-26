@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 import torch
 
+MAX_ROT = 0.3141592653589793
+
 @dataclass
 class State:
   raw: torch.Tensor # [B, 48]

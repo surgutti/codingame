@@ -105,7 +105,7 @@ if __name__ == "__main__":
   writer = SummaryWriter(log_dir=f"runs/ppo_{config.name}")
   envs = VecEnv(config.num_envs, config.seed)
   
-  state_dim = extract_features(torch.zeros((RAW_STATE_DIM, dtype=torch.float32))).shape[0]
+  state_dim = extract_features(torch.zeros((RAW_STATE_DIM), dtype=torch.float32)).shape[0]
 
   print(f"State Dim: {state_dim}")
   print(f"Action Dim: {action_dim}")
