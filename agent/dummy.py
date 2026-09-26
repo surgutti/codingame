@@ -1,7 +1,7 @@
 import torch
 import math
 
-from state import state
+from state import State
 
 class DummyAgent:
 
@@ -20,3 +20,9 @@ class DummyAgent:
       moves[:, p, 0] = diff.clamp(-MAX_ROTATION, +MAX_ROTATION)
       moves[:, p, 1] = 100.0
     return moves
+
+  def decode_action(self, action: torch.Tensor):
+    return action
+
+  def encode_state(self, state: State):
+    return state

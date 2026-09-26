@@ -12,10 +12,6 @@ from dummy import DummyAgent
 
 type Agent = PPOAgent | DummyAgent
 
-ACTION_DIM = 9
-
-def decode_action(torch: torch.Tensor) -> torch.Tensor:
-
 def combine_actions(action0: torch.Tensor, action1: torch.Tensor) -> torch.Tensor:
   raise NotImplemented()
 
@@ -46,12 +42,16 @@ def train(
       torch.cuda.synchronize()
       start = time.perf_counter()
 
-      action0, value, logprob = agent.act_with_value_and_logprob(state)
-      action1 = agent.act(state)
-      env_action0 = agent0.decode_action(action0)
-      env_action1 = agent1.decode_action(action1)      
+      state0 = agent0.encode_state(state)
+      state1 = agent1.encode_state(state.flip_teams())
 
-      env_action = combine_actions(env_action0, env_action1)
+      action0, value, logprob = agent.act_with_value_and_logprob(state0)
+      action1 = agent.act(state1)
+
+      env_action0 = agent0.decode_action(action0)
+      env_action1 = agent1.decode_action(action1)
+
+      env_action = torch.cat([env_action0, env_action1], -1)
 
       torch.cuda.synchronize()
       inference_time += (time.perf_counter() - start)
@@ -106,12 +106,11 @@ if __name__ == "__main__":
   envs = VecEnv(config.num_envs, config.seed)
   
   state_dim = extract_features(torch.zeros((RAW_STATE_DIM, dtype=torch.float32))).shape[0]
-  action_dim = ACTION_DIM
 
   print(f"State Dim: {state_dim}")
   print(f"Action Dim: {action_dim}")
 
-  agent0 = PPOAgent(config, state_dim, action_dim)
+  agent0 = PPOAgent(config)
   agent1 = DummyAgent()
 
   train(agent0, agent1)

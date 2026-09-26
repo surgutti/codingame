@@ -10,18 +10,19 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
   torch.nn.init.constant_(layer.bias, bias_const)
   return layer
 
+STATE_DIM = ?
+ACTION_DIM = 9
+
 class PPOAgent(nn.Module):
   def __init__(
     self, 
     config: PPOConfig,
-    action_dim: int,
-    state_dim: int,
   ):
     super().__init__()
     self.config = config
 
     self.critic = nn.Sequential(
-      layer_init(nn.Linear(state_dim, 256)),
+      layer_init(nn.Linear(STATE_DIM, 256)),
       nn.LayerNorm(256),
       nn.SiLU(),
       layer_init(nn.Linear(256, 256)),
@@ -31,13 +32,13 @@ class PPOAgent(nn.Module):
     )
 
     self.actor = nn.Sequential(
-      layer_init(nn.Linear(state_dim, 128)),
+      layer_init(nn.Linear(STATE_DIM, 128)),
       nn.LayerNorm(128),
       nn.SiLU(),
       layer_init(nn.Linear(128, 128)),
       nn.LayerNorm(128),
       nn.SiLU(),
-      layer_init(nn.Linear(128, action_dim), std=0.01)
+      layer_init(nn.Linear(128, ACTION_DIM), std=0.01)
     )
 
   def get_value(self, state: torch.Tensor) -> torch.Tensor
@@ -47,19 +48,33 @@ class PPOAgent(nn.Module):
     return Categorical(logits=self.actor(state))
 
   def act(self, state: torch.Tensor) -> torch.Tensor:
-    return self.act_dist(state).sample()
+    return self.act_dist(state).sample().squeeze(-1)
 
-  def act_with_value_and_logprob(
-    self,
-    state: torch.Tensor,
-  ):
+  def act_with_value_and_logprob(self, state: torch.Tensor):
     dist = self.act_dist(state)
    
-    action = dist.sample() 
-    value = self.get_value(state)
+    action = dist.sample().squeeze(-1)
+    value = self.get_value(state).squeeze(-1)
     logprob = dist.log_prob(action)
     
     return action, value, logprob
+
+  def encode_state(self, state: State) -> torch.Tensor:
+    return extract_features(state)
+
+  def decode_action(
+    self, 
+    action: torch.Tensor # [B, E, 1]
+  ) -> torch.Tensor:
+    MAX_ROT = 0.3141592653589793
+    ACTIONS = torch.tensor([
+      [-MAX_ROT,   0.0, 0.0, 0.0], [0.0,   0.0, 0.0, 0.0], [+MAX_ROT,   0.0, 0.0, 0.0],
+      [-MAX_ROT, 200.0, 0.0, 0.0], [0.0, 200.0, 0.0, 0.0], [+MAX_ROT, 200.0, 0.0, 0.0],
+      [-MAX_ROT,   0.0, 1.0, 0.0], [0.0,   0.0, 1.0, 0.0], [+MAX_ROT,   0.0, 1.0, 0.0],
+    ], dtype=torch.float32)
+
+    d_action = ACTIONS[action].squeeze(-2)
+    return d_action
 
   def update(
     self,
@@ -123,7 +138,7 @@ class PPOAgent(nn.Module):
         L_vf = nn.functional.mse_loss(values, mb_targets)
         S_pi = dist.entropy().mean()
 
-        loss = L_clip + self.config.vf_coef * L_vf - self.confi.entropy_coef * S_pi
+        loss = L_clip + self.config.vf_coef * L_vf - self.config.ent_coef * S_pi
 
         self.optimizer.zero_grad()
         loss.backward()
