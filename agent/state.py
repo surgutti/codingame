@@ -67,7 +67,6 @@ def get_checkpoint_xy(
   state: State, # [B, E] 
   cp_idx: torch.Tensor # [B, E] or [B, E, 1]
   ) -> torch.Tensor:
-  print(f"> {state.raw.shape} {cp_idx.shape}")
   is_2dim = (cp_idx.dim() == 2)
   if is_2dim:
       cp_idx = cp_idx.unsqueeze(-1)

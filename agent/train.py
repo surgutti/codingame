@@ -37,12 +37,14 @@ def train(
   
   state = envs.reset()
 
-  # for episode in tqdm(range(config.total_episodes)):
-  for episode in range(config.total_episodes):
+  for episode in tqdm(range(config.total_episodes)):
+  # for episode in range(config.total_episodes):
 
     inference_time = 0.0
     simulation_time = 0.0
     updating_time = 0.0
+
+    rewards_acc = 0.0
 
     agent0.eval()
     for step in range(config.episode_steps):
@@ -81,6 +83,8 @@ def train(
         next_values[step - 1] = value
 
       state = next_state
+
+      rewards_acc += reward.mean().item()
   
     with torch.no_grad():
       next_values[-1] = agent0.get_value(agent0.encode_state(next_state))
@@ -112,6 +116,10 @@ def train(
         'Simulation': simulation_time,
         'Updating': updating_time 
       }, episode
+    )
+
+    writer.add_scalar(
+      'Reward', rewards_acc / config.episode_steps, episode
     )
 
     # exit(0)

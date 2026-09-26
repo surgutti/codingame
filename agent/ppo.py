@@ -145,6 +145,8 @@ class PPOAgent(nn.Module):
         
         mb_idx = inds[start:end]
 
+        print(f"{logprobs.shape=} {states.shape=}")
+        print(f"{rewards.shape=}")
         mb_states = states[mb_idx]
         mb_actions = actions[mb_idx]
         mb_rewards = rewards[mb_idx]
@@ -153,10 +155,10 @@ class PPOAgent(nn.Module):
         mb_targets = target_values[mb_idx]
 
         dist = self.act_dist(mb_states)
-        logprobs = dist.log_prob(mb_actions.squeeze(-1)).unsqueeze(-1)
+        mb_logprobs = dist.log_prob(mb_actions.squeeze(-1)).unsqueeze(-1)
         values = self.get_value(mb_states)
       
-        ratio = torch.exp(logprobs - mb_old_logprobs)
+        ratio = torch.exp(mb_logprobs - mb_old_logprobs)
 
         surr1 = ratio * mb_advantages
         surr2 = ratio.clamp(

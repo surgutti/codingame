@@ -7,12 +7,12 @@ class PPOConfig:
   seed: int = 42
 
   total_episodes: int = 1_000_000
-  episode_steps: int = 8
-  num_envs: int = 64
-  minibatch_size: int = 256
+  episode_steps: int = 256
+  num_envs: int = 8
+  minibatch_size: int = 64
 
-  learning_rate: float = 2e-4
-  gamma: float = 0.99
+  learning_rate: float = 1e-4
+  gamma: float = 0.995
   gae_lambda: float = 0.95
   grad_clip: float = 0.5
 
