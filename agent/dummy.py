@@ -16,6 +16,7 @@ class DummyAgent:
       diff = (target_angle - state.angle[..., p] + math.pi) % (
         2.0 * math.pi
       ) - math.pi
+
       moves[..., p, 0] = diff.clamp(-MAX_ROT, +MAX_ROT)
       moves[..., p, 1] = 100.0
       #moves[..., p, 2] = 0.0

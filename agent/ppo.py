@@ -118,6 +118,8 @@ class PPOAgent(nn.Module):
     next_values  # (T, E, 1)
   ):
     T = dones.shape[0]
+    E = dones.shape[1]
+    B = T * E
 
     target_values = rewards + self.config.gamma * next_values * (1.0 - dones)
     delta = target_values - values
@@ -130,7 +132,20 @@ class PPOAgent(nn.Module):
       A = delta[i] + self.config.gamma * self.config.gae_lambda * A
       advantages[i] = A
 
+    raw_advantages = advantages
     advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+   
+    states = states.flatten(0, 1)
+    actions = actions.flatten(0, 1)
+    rewards = rewards.flatten(0, 1)
+    dones = dones.flatten(0, 1)
+    next_states = next_states.flatten(0, 1)
+    logprobs = logprobs.flatten(0, 1)
+    values = values.flatten(0, 1)
+    next_values = next_values.flatten(0, 1)
+
+    target_values = target_values.flatten(0, 1)
+    advantages = advantages.flatten(0, 1)
 
     L_clip_acc = 0
     L_vf_acc = 0
@@ -145,8 +160,8 @@ class PPOAgent(nn.Module):
         
         mb_idx = inds[start:end]
 
-        print(f"{logprobs.shape=} {states.shape=}")
-        print(f"{rewards.shape=}")
+        #print(f"{logprobs.shape=} {states.shape=}")
+        #print(f"{rewards.shape=}")
         mb_states = states[mb_idx]
         mb_actions = actions[mb_idx]
         mb_rewards = rewards[mb_idx]
@@ -184,7 +199,7 @@ class PPOAgent(nn.Module):
 
         total_batches += 1
       
-      return L_clip_acc / total_batches, \
-             L_vf_acc / total_batches, \
-             S_pi_acc / total_batches
-      
+    return L_clip_acc / total_batches, \
+           L_vf_acc / total_batches, \
+           S_pi_acc / total_batches
+    

@@ -18,10 +18,10 @@ def extract_features(state: State) -> torch.Tensor:
 
   progress = compute_progress(state) # [B, 4]
   timeout_0 = state.timeouts[..., 0] / 100.0
-  timeout_1 = state.timeouts[..., 0] / 100.0
+  timeout_1 = state.timeouts[..., 1] / 100.0
 
   pod_feature_list = []
-  for p in (0, 1):
+  for p in (0, 1, 2, 3):
     f_x, f_y = fx[..., p], fy[..., p]
     vx_c = (f_x * pvx[..., p] + f_y * pvy[..., p]) / 600.0
     vy_c = (f_x * pvy[..., p] - f_y * pvx[..., p]) / 600.0

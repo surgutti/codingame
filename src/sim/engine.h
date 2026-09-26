@@ -70,6 +70,8 @@ public:
   void applyMoves(std::array<Move, POD_NB> const& moves);
   f32 nextTurn();
 
+  f32 statePotential();
+
 private:
   void applyCommand(i32 podId, Move const& move);
   void checkpointCompleted(i32 podId);

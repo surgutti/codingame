@@ -22,7 +22,7 @@ PYTHON_INC := -I/usr/include/python3.13
 PYTHON_EXT := .cpython-313-x86_64-linux-gnu.so
 
 NB_INCS    := -I./nanobind/include -I./nanobind/ext/robin_map/include
-NB_SRC     := ./nanobind/src/nb_combined.cpp
+NB_SRC     := ./nanobind/src/nb_combined.ccc
 
 INCLUDES   := $(PYTHON_INC) $(NB_INCS) -I./src
 ALL_FLAGS  := $(CXXFLAGS) 
@@ -43,7 +43,7 @@ TEST_SRCS := \
 	$(SIM_SRCS)
 
 DUMMY_BOT_SRCS := \
-	src/test/dummy_bot.cpp
+	src/test/dummy_bot.cc
 
 PERF_SRCS := \
 	src/test/perf_engine.cc \

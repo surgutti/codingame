@@ -90,7 +90,7 @@ void Engine::resetRace() {
 
   for (i32 podId = 0; podId < POD_NB; ++podId) {
     Pod& pod = pods_[podId];
-    pod.angle = START_ANGLE;
+    pod.angle = pod.getAngle(track_[1]); // START_ANGLE;
     pod.next = 1;
     pod.x = roundHalfUp(track_[0].x + direction.y * START_OFFSETS[podId].x);
     pod.y = roundHalfUp(track_[0].y + direction.x * START_OFFSETS[podId].y);
@@ -174,10 +174,28 @@ void Engine::checkpointCompleted(i32 podId) {
   }
 }
 
+f32 Engine::statePotential() {
+  i32 finishIndex = laps_ * static_cast<i32>(track_.size());
+  std::array<f32, POD_NB> potential{};
+
+  for (i32 podId = 0; podId < POD_NB; podId++) {
+    Pod const& pod = pods_[podId];
+    Checkpoint const& cp = track_[pod.next % static_cast<i32>(track_.size())];
+    
+    potential[podId] += (1.0 - std::min(1.0, pod.distance(cp) / 1000.0)) / finishIndex;
+    potential[podId] += (f32) pod.next / finishIndex;
+  }
+
+  return +std::max(potential[0], potential[1])
+         -std::max(potential[2], potential[3]); 
+}
+
 f32 Engine::nextTurn() {
   if (track_.empty()) {
     return 0.0;
   }
+  
+  f32 curr_potential = statePotential();
 
   collisions_.clear();
   std::array<i32, POD_NB> oldNext;
@@ -298,6 +316,8 @@ f32 Engine::nextTurn() {
 
   queuedMoves_.fill(Move{});
   ++turn_;
+  
+  f32 next_potential = statePotential();
 
   // check if pod is far away
   for (i32 podId = 0; podId < POD_NB; podId++) {
@@ -311,15 +331,8 @@ f32 Engine::nextTurn() {
     }
   }
 
-  float reward = 0;
-
-  i32 bestA = std::max(pods_[0].next, pods_[1].next);
-  i32 bestB = std::max(pods_[2].next, pods_[3].next);
-
-  if (pods_[0].next != oldNext[0]) reward += 0.1;
-  if (pods_[1].next != oldNext[1]) reward += 0.1;
-  if (pods_[2].next != oldNext[2]) reward -= 0.1;
-  if (pods_[3].next != oldNext[3]) reward -= 0.1;
+  
+  f32 reward = 0;
 
   if (winnerTeam_ == 0) {
     reward = +1;
@@ -327,5 +340,7 @@ f32 Engine::nextTurn() {
     reward = -1;
   }
 
+  reward += next_potential * 0.955 - curr_potential;
+  
   return reward;
 }

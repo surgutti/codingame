@@ -15,11 +15,8 @@ from state import State
 
 type Agent = PPOAgent | DummyAgent
 
-def combine_actions(action0: torch.Tensor, action1: torch.Tensor) -> torch.Tensor:
-  raise NotImplemented()
-
 def train(
-  config: PPOConfig(),
+  config: PPOConfig,
   writer: SummaryWriter,
   envs: VecEnv,
   agent0: PPOAgent,
@@ -69,7 +66,7 @@ def train(
       start = time.perf_counter()
       next_state, reward, done = envs.step(env_action)
 
-      # torch.cuda.syncronize()
+      # torch.cuda.synchronize()
       simulation_time += (time.perf_counter() - start)
 
       states[step] = state0
