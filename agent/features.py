@@ -32,7 +32,7 @@ def extract_features(state: State) -> torch.Tensor:
     
     cp_feats = []
     for k in (0, 1, 2):
-      cp_xy = get_checkpoint_xy(state, state.next_cp[:, p] + k)
+      cp_xy = get_checkpoint_xy(state, state.next_cp[..., p] + k)
       dx, dy = cp_xy[..., 0] - px[..., p], cp_xy[..., 1] - py[..., p]
       dist = torch.hypot(dx, dy) + 1e-5
       cos_cp = (f_x * dx + f_y * dy) / dist

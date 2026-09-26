@@ -12,18 +12,45 @@ def layer_init(layer, std=2**0.5, bias_const=0.0):
   return layer
 
 STATE_DIM = -1
-ACTION_DIM = 9
+ACTION_DIM = 81
+MAX_ROT = 0.3141592653589793
+ACTIONS = torch.tensor([
+  [-MAX_ROT,   0.0, 0.0, 0.0], [0.0,   0.0, 0.0, 0.0], [+MAX_ROT,   0.0, 0.0, 0.0],
+  [-MAX_ROT, 200.0, 0.0, 0.0], [0.0, 200.0, 0.0, 0.0], [+MAX_ROT, 200.0, 0.0, 0.0],
+  [-MAX_ROT,   0.0, 1.0, 0.0], [0.0,   0.0, 1.0, 0.0], [+MAX_ROT,   0.0, 1.0, 0.0],
+], dtype=torch.float32)
+
+ANGLE = torch.tensor([[-MAX_ROT], [0.0], [+MAX_ROT]])
+THRUST = torch.tensor([
+  [0.0,   0.0, 0.0],
+  [200.0, 0.0, 0.0],
+  [0.0,   1.0, 0.0]
+])
+
+ACTIONS = torch.cat([
+  ANGLE.repeat(3, 1),
+  THRUST.repeat_interleave(3, dim=0)
+], dim=1) # [9, 4]
+
+ACTIONS_2 = torch.cat([
+  ACTIONS.repeat_interleave(9, dim=0),
+  ACTIONS.repeat(9, 1)
+], dim=1) # [81, 8]
+
 
 class PPOAgent(nn.Module):
   def __init__(
     self, 
     config: PPOConfig,
+    state_dim: int,
   ):
     super().__init__()
     self.config = config
+    self.action_dim = ACTION_DIM
+    self.state_dim = state_dim
 
     self.critic = nn.Sequential(
-      layer_init(nn.Linear(STATE_DIM, 256)),
+      layer_init(nn.Linear(state_dim, 256)),
       nn.LayerNorm(256),
       nn.SiLU(),
       layer_init(nn.Linear(256, 256)),
@@ -33,7 +60,7 @@ class PPOAgent(nn.Module):
     )
 
     self.actor = nn.Sequential(
-      layer_init(nn.Linear(STATE_DIM, 128)),
+      layer_init(nn.Linear(state_dim, 128)),
       nn.LayerNorm(128),
       nn.SiLU(),
       layer_init(nn.Linear(128, 128)),
@@ -42,23 +69,32 @@ class PPOAgent(nn.Module):
       layer_init(nn.Linear(128, ACTION_DIM), std=0.01)
     )
 
+    self.optimizer = torch.optim.AdamW(
+      [ 
+        {'params': self.critic.parameters()},
+        {'params': self.actor.parameters()}
+      ],
+      lr=config.learning_rate,
+      eps=1e-5
+    )
+
   def get_value(self, state: torch.Tensor) -> torch.Tensor:
-    return self.critic(state).squeeze(-1)
+    return self.critic(state)
 
   def act_dist(self, state: torch.Tensor) -> torch.Tensor:
     return Categorical(logits=self.actor(state))
 
   def act(self, state: torch.Tensor) -> torch.Tensor:
-    return self.act_dist(state).sample().squeeze(-1)
+    return self.act_dist(state).sample().unsqueeze(-1)
 
   def act_with_value_and_logprob(self, state: torch.Tensor):
     dist = self.act_dist(state)
    
-    action = dist.sample().squeeze(-1)
-    value = self.get_value(state).squeeze(-1)
+    action = dist.sample()
+    value = self.get_value(state)
     logprob = dist.log_prob(action)
     
-    return action, value, logprob
+    return action.unsqueeze(-1), value, logprob.unsqueeze(-1)
 
   def encode_state(self, state: State) -> torch.Tensor:
     return extract_features(state)
@@ -67,14 +103,7 @@ class PPOAgent(nn.Module):
     self, 
     action: torch.Tensor # [B, E, 1]
   ) -> torch.Tensor:
-    MAX_ROT = 0.3141592653589793
-    ACTIONS = torch.tensor([
-      [-MAX_ROT,   0.0, 0.0, 0.0], [0.0,   0.0, 0.0, 0.0], [+MAX_ROT,   0.0, 0.0, 0.0],
-      [-MAX_ROT, 200.0, 0.0, 0.0], [0.0, 200.0, 0.0, 0.0], [+MAX_ROT, 200.0, 0.0, 0.0],
-      [-MAX_ROT,   0.0, 1.0, 0.0], [0.0,   0.0, 1.0, 0.0], [+MAX_ROT,   0.0, 1.0, 0.0],
-    ], dtype=torch.float32)
-
-    d_action = ACTIONS[action].squeeze(-2)
+    d_action = ACTIONS_2[action].squeeze(-2)
     return d_action
 
   def update(
@@ -91,10 +120,11 @@ class PPOAgent(nn.Module):
     T = dones.shape[0]
 
     target_values = rewards + self.config.gamma * next_values * (1.0 - dones)
-    delta = target_valeus - values
+    delta = target_values - values
 
     advantages = torch.zeros_like(delta)
     A = torch.zeros_like(values[0]) # (E, 1)
+    dones = dones.bool()
     for i in reversed(range(T)):
       A = torch.where(dones[i], 0.0, A)
       A = delta[i] + self.config.gamma * self.config.gae_lambda * A
@@ -123,7 +153,7 @@ class PPOAgent(nn.Module):
         mb_targets = target_values[mb_idx]
 
         dist = self.act_dist(mb_states)
-        logprobs = dist.log_probs(mb_actions)
+        logprobs = dist.log_prob(mb_actions.squeeze(-1)).unsqueeze(-1)
         values = self.get_value(mb_states)
       
         ratio = torch.exp(logprobs - mb_old_logprobs)
@@ -142,7 +172,8 @@ class PPOAgent(nn.Module):
 
         self.optimizer.zero_grad()
         loss.backward()
-        nn.utils.clip_grad_norm_(self.net.parameters(), max_norm=self.config.grad_clipping)
+        nn.utils.clip_grad_norm_(self.actor.parameters(), max_norm=self.config.grad_clip)
+        nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=self.config.grad_clip)
         self.optimizer.step()
 
         L_clip_acc += L_clip.item()

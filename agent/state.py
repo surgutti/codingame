@@ -63,8 +63,20 @@ class State:
     flipped[..., 47] = self.raw[..., 46]
     return State(flipped)
 
-def get_checkpoint_xy(state: State, cp_idx: torch.Tensor) -> torch.Tensor:
-  mod_idx = cp_idx % state.num_cps
-  gather_idx = mod_idx.unsqueeze(-1).unsqueeze(-1).expand(*mod_idx.shape, 1, 2)
-  result = torch.gather(state.checkpoints, dim=-2, index=gather_idx)
-  return result.squeeze(-2)
+def get_checkpoint_xy(
+  state: State, # [B, E] 
+  cp_idx: torch.Tensor # [B, E] or [B, E, 1]
+  ) -> torch.Tensor:
+  print(f"> {state.raw.shape} {cp_idx.shape}")
+  is_2dim = (cp_idx.dim() == 2)
+  if is_2dim:
+      cp_idx = cp_idx.unsqueeze(-1)
+  mod_idx = cp_idx % state.num_cps.unsqueeze(-1)
+  gather_idx = mod_idx.unsqueeze(-1).expand(-1, -1, -1, 2)
+
+  result = torch.gather(state.checkpoints, dim=2, index=gather_idx)
+
+  if is_2dim:
+    result = result.squeeze(-2)
+
+  return result
