@@ -121,8 +121,7 @@ class PPOAgent(nn.Module):
     E = dones.shape[1]
     B = T * E
 
-    target_values = rewards + self.config.gamma * next_values * (1.0 - dones)
-    delta = target_values - values
+    delta = rewards + self.config.gamma * next_values * (1.0 - dones) - values
 
     advantages = torch.zeros_like(delta)
     A = torch.zeros_like(values[0]) # (E, 1)
@@ -132,7 +131,7 @@ class PPOAgent(nn.Module):
       A = delta[i] + self.config.gamma * self.config.gae_lambda * A
       advantages[i] = A
 
-    raw_advantages = advantages
+    target_values = values + advantages
     advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
    
     states = states.flatten(0, 1)
@@ -153,10 +152,10 @@ class PPOAgent(nn.Module):
     total_batches = 0
 
     for epoch in range(self.config.update_epochs):
-      inds = torch.randperm(T, device=self.config.device)
+      inds = torch.randperm(B, device=self.config.device)
 
-      for start in range(0, T, self.config.minibatch_size):
-        end = min(start + self.config.minibatch_size, T)
+      for start in range(0, B, self.config.minibatch_size):
+        end = min(start + self.config.minibatch_size, B)
         
         mb_idx = inds[start:end]
 

@@ -4,7 +4,7 @@ from state import State, get_checkpoint_xy
 def compute_progress(state: State) -> torch.Tensor:
   cp_xy = get_checkpoint_xy(state, state.next_cp)
   dist = torch.hypot(cp_xy[..., 0] - state.x, cp_xy[..., 1] - state.y)
-  return state.next_cp.float() - (dist / 6000.0)
+  return state.next_cp.float() - (dist / 20000.0)
 
 def extract_features(state: State) -> torch.Tensor:
   px, py = state.x, state.y

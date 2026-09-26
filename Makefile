@@ -22,7 +22,7 @@ PYTHON_INC := -I/usr/include/python3.13
 PYTHON_EXT := .cpython-313-x86_64-linux-gnu.so
 
 NB_INCS    := -I./nanobind/include -I./nanobind/ext/robin_map/include
-NB_SRC     := ./nanobind/src/nb_combined.ccc
+NB_SRC     := ./nanobind/src/nb_combined.cpp
 
 INCLUDES   := $(PYTHON_INC) $(NB_INCS) -I./src
 ALL_FLAGS  := $(CXXFLAGS) 

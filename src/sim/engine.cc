@@ -340,7 +340,7 @@ f32 Engine::nextTurn() {
     reward = -1;
   }
 
-  reward += next_potential * 0.955 - curr_potential;
+  reward += next_potential /*  * 0.955  */ - curr_potential;
   
   return reward;
 }

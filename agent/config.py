@@ -8,7 +8,7 @@ class PPOConfig:
 
   total_episodes: int = 1_000_000
   episode_steps: int = 256
-  num_envs: int = 128
+  num_envs: int = 64
   minibatch_size: int = 128
 
   learning_rate: float = 1e-4
