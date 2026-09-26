@@ -1,5 +1,12 @@
 # Mad Pod Racing
 
+## Cloning
+
+```bash
+sudo apt install python3-dev
+git clone --recurse-submodules -b mad-pod-racing https://github.com/surgutti/codingame.git
+```
+
 ## Build
 
 ```bash

@@ -6,7 +6,7 @@ from state import State
 class DummyAgent:
 
   @torch.no_grad()
-  def act(self, state: State) -> torch.Tensor
+  def act(self, state: State) -> torch.Tensor:
     B = state.raw.shape[0]
     moves = torch.zeros((B, 2, 4), dtype=torch.float32, device=state.raw.device)
     for p in (0, 1):

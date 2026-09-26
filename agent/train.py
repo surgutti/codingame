@@ -5,10 +5,12 @@ import time
 
 from torch.utils.tensorboard import SummaryWriter
 
-from env import VecEnv
+from env import VecEnv, RAW_STATE_DIM
 from config import PPOConfig
 from ppo import PPOAgent
 from dummy import DummyAgent
+from features import extract_features
+from state import State
 
 type Agent = PPOAgent | DummyAgent
 
@@ -103,12 +105,14 @@ def train(
 if __name__ == "__main__":
   config = PPOConfig()
   writer = SummaryWriter(log_dir=f"runs/ppo_{config.name}")
-  envs = VecEnv(config.num_envs, config.seed)
-  
-  state_dim = extract_features(torch.zeros((RAW_STATE_DIM), dtype=torch.float32)).shape[0]
+  envs = VecEnv(config.num_envs, config.seed, config.device)
+ 
+  init_state = State(torch.ones((1, RAW_STATE_DIM), dtype=torch.float32))  
+  state_dim = extract_features(init_state).shape[0]
 
   print(f"State Dim: {state_dim}")
   print(f"Action Dim: {action_dim}")
+  exit(0)
 
   agent0 = PPOAgent(config)
   agent1 = DummyAgent()

@@ -1,16 +1,17 @@
-import torch import torch.nn as nn
+import torch
+import torch.nn as nn
 from torch.distributions.categorical import Categorical
 from state import State, get_checkpoint_xy
 
 from config import PPOConfig
 from features import extract_features
 
-def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
+def layer_init(layer, std=2**0.5, bias_const=0.0):
   torch.nn.init.orthogonal_(layer.weight, std)
   torch.nn.init.constant_(layer.bias, bias_const)
   return layer
 
-STATE_DIM = ?
+STATE_DIM = -1
 ACTION_DIM = 9
 
 class PPOAgent(nn.Module):
@@ -41,7 +42,7 @@ class PPOAgent(nn.Module):
       layer_init(nn.Linear(128, ACTION_DIM), std=0.01)
     )
 
-  def get_value(self, state: torch.Tensor) -> torch.Tensor
+  def get_value(self, state: torch.Tensor) -> torch.Tensor:
     return self.critic(state).squeeze(-1)
 
   def act_dist(self, state: torch.Tensor) -> torch.Tensor:
