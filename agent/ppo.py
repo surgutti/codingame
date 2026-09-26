@@ -14,11 +14,6 @@ def layer_init(layer, std=2**0.5, bias_const=0.0):
 STATE_DIM = -1
 ACTION_DIM = 81
 MAX_ROT = 0.3141592653589793
-ACTIONS = torch.tensor([
-  [-MAX_ROT,   0.0, 0.0, 0.0], [0.0,   0.0, 0.0, 0.0], [+MAX_ROT,   0.0, 0.0, 0.0],
-  [-MAX_ROT, 200.0, 0.0, 0.0], [0.0, 200.0, 0.0, 0.0], [+MAX_ROT, 200.0, 0.0, 0.0],
-  [-MAX_ROT,   0.0, 1.0, 0.0], [0.0,   0.0, 1.0, 0.0], [+MAX_ROT,   0.0, 1.0, 0.0],
-], dtype=torch.float32)
 
 ANGLE = torch.tensor([[-MAX_ROT], [0.0], [+MAX_ROT]])
 THRUST = torch.tensor([
@@ -112,7 +107,7 @@ class PPOAgent(nn.Module):
     actions,     # (T, E, action_dim)
     rewards,     # (T, E, 1)
     dones,       # (T, E, 1)
-    next_states, # (T, E, state_dim)
+    # next_states, # (T, E, state_dim)
     logprobs,    # (T, E, 1)
     values,      # (T, E, 1)
     next_values  # (T, E, 1)
@@ -132,13 +127,15 @@ class PPOAgent(nn.Module):
       advantages[i] = A
 
     target_values = values + advantages
-    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+
+    if self.config.norm_adv:
+      advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
    
     states = states.flatten(0, 1)
     actions = actions.flatten(0, 1)
     rewards = rewards.flatten(0, 1)
     dones = dones.flatten(0, 1)
-    next_states = next_states.flatten(0, 1)
+    # next_states = next_states.flatten(0, 1)
     logprobs = logprobs.flatten(0, 1)
     values = values.flatten(0, 1)
     next_values = next_values.flatten(0, 1)
@@ -170,7 +167,7 @@ class PPOAgent(nn.Module):
 
         dist = self.act_dist(mb_states)
         mb_logprobs = dist.log_prob(mb_actions.squeeze(-1)).unsqueeze(-1)
-        values = self.get_value(mb_states)
+        mb_values = self.get_value(mb_states)
       
         ratio = torch.exp(mb_logprobs - mb_old_logprobs)
 
@@ -181,7 +178,7 @@ class PPOAgent(nn.Module):
                 ) * mb_advantages
 
         L_clip = -torch.min(surr1, surr2).mean()
-        L_vf = nn.functional.mse_loss(values, mb_targets)
+        L_vf = nn.functional.mse_loss(mb_values, mb_targets)
         S_pi = dist.entropy().mean()
 
         loss = L_clip + self.config.vf_coef * L_vf - self.config.ent_coef * S_pi

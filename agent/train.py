@@ -29,7 +29,7 @@ def train(
   dones = torch.zeros_like(rewards)
   logprobs = torch.zeros_like(rewards)
   values = torch.zeros_like(rewards)
-  next_states = torch.zeros_like(states)
+  # next_states = torch.zeros_like(states)
   next_values = torch.zeros_like(rewards)
   
   state = envs.reset()
@@ -73,7 +73,7 @@ def train(
       actions[step] = action0
       rewards[step] = reward
       dones[step] = done
-      next_states[step] = agent0.encode_state(next_state)
+      # next_states[step] = agent0.encode_state(next_state)
       logprobs[step] = logprob
       values[step] = value
       if step > 0:
@@ -95,7 +95,7 @@ def train(
       actions=actions,
       rewards=rewards,
       dones=dones,
-      next_states=next_states,
+      # next_states=next_states,
       logprobs=logprobs,
       values=values,
       next_values=next_values
@@ -131,7 +131,7 @@ if __name__ == "__main__":
   init_state = State(torch.ones((1, 1, RAW_STATE_DIM), dtype=torch.float32))  
   state_dim = extract_features(init_state).shape[-1]
 
-  agent0 = PPOAgent(config, state_dim)
+  agent0 = PPOAgent(config, state_dim).to(config.device)
   agent1 = DummyAgent()
 
   train(

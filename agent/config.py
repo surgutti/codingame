@@ -8,11 +8,11 @@ class PPOConfig:
 
   total_episodes: int = 1_000_000
   episode_steps: int = 256
-  num_envs: int = 64
-  minibatch_size: int = 128
+  num_envs: int = 8
+  minibatch_size: int = 256
 
   learning_rate: float = 1e-4
-  gamma: float = 0.995
+  gamma: float = 0.9995
   gae_lambda: float = 0.95
   grad_clip: float = 0.5
 
@@ -20,7 +20,7 @@ class PPOConfig:
 
   norm_adv: bool = True
   clip_eps: float = 0.2
-  clip_vloss: bool = True
+  clip_vloss: bool = False
   ent_coef: float = 0.01
   vf_coef: float = 0.5
 

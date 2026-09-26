@@ -57,7 +57,8 @@ def extract_features(state: State) -> torch.Tensor:
       prox = torch.exp(-d / 1500.0)
       dvx, dvy = pvx[..., o] - pvx[..., p], pvy[..., o] - pvy[..., p]
       rel_vx = torch.tanh((f_x * dvx + f_y * dvy) / 600.0)
-      rel_feats.append(torch.stack([cos_o, sin_o, prox, rel_vx], dim=-1))
+      rel_vy = torch.tanh((f_x * dvy - f_y * dvx) / 600.0)
+      rel_feats.append(torch.stack([cos_o, sin_o, prox, rel_vx, rel_vy], dim=-1))
 
     is_leader = torch.where(
       progress[..., p] >= progress[..., p ^ 1], 1.0, -1.0

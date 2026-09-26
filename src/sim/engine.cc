@@ -90,10 +90,10 @@ void Engine::resetRace() {
 
   for (i32 podId = 0; podId < POD_NB; ++podId) {
     Pod& pod = pods_[podId];
-    pod.angle = pod.getAngle(track_[1]); // START_ANGLE;
     pod.next = 1;
     pod.x = roundHalfUp(track_[0].x + direction.y * START_OFFSETS[podId].x);
     pod.y = roundHalfUp(track_[0].y + direction.x * START_OFFSETS[podId].y);
+    pod.angle = pod.getAngle(track_[1]); // START_ANGLE;
   }
 }
 
@@ -182,7 +182,7 @@ f32 Engine::statePotential() {
     Pod const& pod = pods_[podId];
     Checkpoint const& cp = track_[pod.next % static_cast<i32>(track_.size())];
     
-    potential[podId] += (1.0 - std::min(1.0, pod.distance(cp) / 1000.0)) / finishIndex;
+    potential[podId] += (1.0 - std::min(1.0, pod.distance(cp) / 3000.0)) / finishIndex;
     potential[podId] += (f32) pod.next / finishIndex;
   }
 
@@ -335,9 +335,9 @@ f32 Engine::nextTurn() {
   f32 reward = 0;
 
   if (winnerTeam_ == 0) {
-    reward = +1;
+    reward = +5;
   } else if (winnerTeam_ == 1) {
-    reward = -1;
+    reward = -5;
   }
 
   reward += next_potential /*  * 0.955  */ - curr_potential;
