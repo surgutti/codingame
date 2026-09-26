@@ -2,93 +2,23 @@ import torch import torch.nn as nn
 from torch.distributions.categorical import Categorical
 from state import State, get_checkpoint_xy
 
-def compute_progress(state: State) -> torch.Tensor:
-  cp_xy = get_checkpoint_xy(state, state.next_cp)
-  dist = torch.hypot(cp_xy[:, :, 0] - state.x, cp_xy[:, :, 1] - state.y)
-  return state.pods[:, :, 5] - (dist / 6000.0)
-
-def extract_features(state: State) -> torch.Tensor:
-  px, py = state.x, state.y
-  pvx, pvy = state.vx, state.vy
-  pang = state.angle
-
-  fx, fy = torch.cos(pang), torch.sin(pang)
-
-  slide_x = px + 5.6667 * pvx
-  slide_y = py + 5.6667 * pvy
-
-  progress = compute_progress(state) # [B, 4]
-  timeout_0 = state.timeouts[:, 0] / 100.0
-
-  pod_feature_list = []
-  for p in (0, 1):
-    f_x, f_y = fx[:, p], fy[:, p]
-    vx_c = (f_x * pvx[:, p] + f_y * pvy[:, p]) / 600.0
-    vy_c = (f_x * pvy[:, p] - f_y * pvx[:, p]) / 600.0
-    spd = torch.hypot(pvx[:, p], pvy[:, p]) / 600.0
-    shld = state.shield[:, p] / 3.0
-    bst = 1.0 - state.boosted[:, p]
-    self_feats = torch.stack([vx_c, vy_c, spd, shld, bst, timeout_0], dim=-1)
-    
-    cp_feats = []
-    for k in (0, 1, 2):
-      cp_xy = get_checkpoint_xy(state, state.next_cp[:, p] + k)
-      dx, dy = cp_xy[:, 0] - px[:, p], cp_xy[:, 1] - py[:, p]
-      dist = torch.hypot(dx, dy) + 1e-5
-      cos_cp = (f_x * dx + f_y * dy) / dist
-      sin_cp = (f_x * dy - f_y * dx) / dist
-      dist_norm = torch.tanh(dist / 5000.0)
-
-      sdx, sdy = cp_xy[:, 0] - slide_x[:, p], cp_xy[:, 1] - slide_y[:, p]
-      sdist = torch.hypot(sdx, sdy) + 1e-5
-      cos_slide = (f_x * sdx + f_y * sdy) / sdist
-      sin_slide = (f_x * sdy - f_y * sdx) / sdist
-      cp_feats.append(
-        torch.stack([cos_cp, sin_cp, dist_norm, cos_slide, sin_slide], dim=-1)
-      )
-
-    rel_feats = []
-    for xor_mask in (1, 2, 3):
-      o = p ^ xor_mask
-      dx, dy = px[:, o] - px[:, p], py[:, o] - py[:, p]
-      d = torch.hypot(dx, dy) + 1e-5
-      cos_o = (f_x * dx + f_y * dy) / d
-      sin_o = (f_x * dy - f_y * dx) / d
-      prox = torch.exp(-d / 1500.0)
-      dvx, dvy = pvx[:, o] - pvx[:, p], pvy[:, o] - pvy[:, p]
-      rel_vx = torch.tanh((f_x * dvx + f_y * dvy) / 600.0)
-      rel_feats.append(torch.stack([cos_o, sin_o, prox, rel_vx], dim=-1))
-
-    is_leader = torch.where(
-      progress[:, p] >= progress[:, p ^ 1], 1.0, -1.0
-    ).unsqueeze(-1)
-
-    pod_feature_list.append(
-      torch.cat([self_feats, *cp_feats, *rel_feats, is_leader], dim=-1)
-    )
-
-  return torch.cat(pod_feature_list, dim=-1)
+from config import PPOConfig
+from features import extract_features
 
 def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
   torch.nn.init.orthogonal_(layer.weight, std)
   torch.nn.init.constant_(layer.bias, bias_const)
   return layer
 
-class Agent(nn.Module):
+class PPOAgent(nn.Module):
   def __init__(
     self, 
-    state_dim: int, 
-    device: torch.Device):
+    config: PPOConfig,
+    action_dim: int,
+    state_dim: int,
+  ):
     super().__init__()
-    self.device = device
-    self.register_buffer(
-      "angle_table",
-      torch.linspace(-MAX_ROTATION, +MAX_ROTATION, 3, device=device),
-    )
-    self.register_buffer(
-      "thrust_table",
-      torch.tensor([0.0, 200.0, 0.0, 200.0], device=device),
-    )
+    self.config = config
 
     self.critic = nn.Sequential(
       layer_init(nn.Linear(state_dim, 256)),
@@ -100,41 +30,113 @@ class Agent(nn.Module):
       layer_init(nn.Linear(256, 1), std=1.0)
     )
 
-    self.actor_trunk = nn.Sequential(
+    self.actor = nn.Sequential(
       layer_init(nn.Linear(state_dim, 128)),
       nn.LayerNorm(128),
       nn.SiLU(),
       layer_init(nn.Linear(128, 128)),
       nn.LayerNorm(128),
-      nn.SiLU()
+      nn.SiLU(),
+      layer_init(nn.Linear(128, action_dim), std=0.01)
     )
 
-    self.head_ang0 = layer_init(nn.Linear(128, 3), std=0.01)
-    self.head_thr0 = layer_init(nn.Linear(128, 4), std=0.01)
-    self.head_ang1 = layer_init(nn.Linear(128, 3), std=0.01)
-    self.head_thr1 = layer_init(nn.Linear(128, 4), std=0.01)
+  def get_value(self, state: torch.Tensor) -> torch.Tensor
+    return self.critic(state).squeeze(-1)
 
-  def get_value(self, obs: torch.Tensor) -> torch.Tensor
-    return self.critic(obs).squeeze(-1)
+  def act_dist(self, state: torch.Tensor) -> torch.Tensor:
+    return Categorical(logits=self.actor(state))
 
-  def get_action_and_value(
+  def act(self, state: torch.Tensor) -> torch.Tensor:
+    return self.act_dist(state).sample()
+
+  def act_with_value_and_logprob(
     self,
-    obs: torch.Tensor,
-    actions: torch.Tensor | None = None
+    state: torch.Tensor,
   ):
-    h = self.actor_trunk(obs)
-    dists = [
-      Categorical(logits=self.head_ang0(h)),
-      Categorical(logits=self.head_thr0(h)),
-      Categorical(logits=self.head_ang1(h)),
-      Categorical(logits=self.head_thr1(h)),
-    ]
-    if actions is None:
-      actions = torch.stack([d.sample() for d in dists], dim=-1)
+    dist = self.act_dist(state)
+   
+    action = dist.sample() 
+    value = self.get_value(state)
+    logprob = dist.log_prob(action)
+    
+    return action, value, logprob
 
-    logprob = sum(dists[i].log_prob(actions[:, i]) for i in range(4))
-    entropy = sum(d.entropy() for d in dists)
-    value = self.critic(obs).squeeze(-1)
-    return actions, logprob, entropy, value
+  def update(
+    self,
+    states,      # (T, E, state_dim)
+    actions,     # (T, E, action_dim)
+    rewards,     # (T, E, 1)
+    dones,       # (T, E, 1)
+    next_states, # (T, E, state_dim)
+    logprobs,    # (T, E, 1)
+    values,      # (T, E, 1)
+    next_values  # (T, E, 1)
+  ):
+    T = dones.shape[0]
 
-  def decode_actions(
+    target_values = rewards + self.config.gamma * next_values * (1.0 - dones)
+    delta = target_valeus - values
+
+    advantages = torch.zeros_like(delta)
+    A = torch.zeros_like(values[0]) # (E, 1)
+    for i in reversed(range(T)):
+      A = torch.where(dones[i], 0.0, A)
+      A = delta[i] + self.config.gamma * self.config.gae_lambda * A
+      advantages[i] = A
+
+    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+
+    L_clip_acc = 0
+    L_vf_acc = 0
+    S_pi_acc = 0
+    total_batches = 0
+
+    for epoch in range(self.config.update_epochs):
+      inds = torch.randperm(T, device=self.config.device)
+
+      for start in range(0, T, self.config.minibatch_size):
+        end = min(start + self.config.minibatch_size, T)
+        
+        mb_idx = inds[start:end]
+
+        mb_states = states[mb_idx]
+        mb_actions = actions[mb_idx]
+        mb_rewards = rewards[mb_idx]
+        mb_old_logprobs = logprobs[mb_idx]
+        mb_advantages = advantages[mb_idx]
+        mb_targets = target_values[mb_idx]
+
+        dist = self.act_dist(mb_states)
+        logprobs = dist.log_probs(mb_actions)
+        values = self.get_value(mb_states)
+      
+        ratio = torch.exp(logprobs - mb_old_logprobs)
+
+        surr1 = ratio * mb_advantages
+        surr2 = torch.clamp(
+                  ratio, 
+                  1.0 - self.config.clip_eps, 
+                  1.0 + self.config.clip_eps
+                ) * mb_advantages
+
+        L_clip = -torch.min(surr1, surr2).mean()
+        L_vf = nn.functional.mse_loss(values, mb_targets)
+        S_pi = dist.entropy().mean()
+
+        loss = L_clip + self.config.vf_coef * L_vf - self.confi.entropy_coef * S_pi
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        nn.utils.clip_grad_norm_(self.net.parameters(), max_norm=self.config.grad_clipping)
+        self.optimizer.step()
+
+        L_clip_acc += L_clip.item()
+        L_vf_acc += L_vf.item()
+        S_pi_acc += S_pi.item()
+
+        total_batches += 1
+      
+      return L_clip_acc / total_batches, \
+             L_vf_acc / total_batches, \
+             S_pi_acc / total_batches
+      
