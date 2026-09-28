@@ -11,27 +11,7 @@ def layer_init(layer, std=2**0.5, bias_const=0.0):
   torch.nn.init.constant_(layer.bias, bias_const)
   return layer
 
-STATE_DIM = -1
 ACTION_DIM = 81
-MAX_ROT = 0.3141592653589793
-
-ANGLE = torch.tensor([[-MAX_ROT], [0.0], [+MAX_ROT]])
-THRUST = torch.tensor([
-  [0.0,   0.0, 0.0],
-  [200.0, 0.0, 0.0],
-  [0.0,   1.0, 0.0]
-])
-
-ACTIONS = torch.cat([
-  ANGLE.repeat(3, 1),
-  THRUST.repeat_interleave(3, dim=0)
-], dim=1) # [9, 4]
-
-ACTIONS_2 = torch.cat([
-  ACTIONS.repeat_interleave(9, dim=0),
-  ACTIONS.repeat(9, 1)
-], dim=1) # [81, 8]
-
 
 class PPOAgent(nn.Module):
   def __init__(
@@ -44,7 +24,7 @@ class PPOAgent(nn.Module):
     self.action_dim = ACTION_DIM
     self.state_dim = state_dim
 
-    self.critic = nn.Sequential(
+    self.critic = torch.compile(nn.Sequential(
       layer_init(nn.Linear(state_dim, 256)),
       nn.LayerNorm(256),
       nn.SiLU(),
@@ -52,9 +32,9 @@ class PPOAgent(nn.Module):
       nn.LayerNorm(256),
       nn.SiLU(),
       layer_init(nn.Linear(256, 1), std=1.0)
-    )
+    ))
 
-    self.actor = nn.Sequential(
+    self.actor = torch.compile(nn.Sequential(
       layer_init(nn.Linear(state_dim, 128)),
       nn.LayerNorm(128),
       nn.SiLU(),
@@ -62,7 +42,7 @@ class PPOAgent(nn.Module):
       nn.LayerNorm(128),
       nn.SiLU(),
       layer_init(nn.Linear(128, ACTION_DIM), std=0.01)
-    )
+    ))
 
     self.optimizer = torch.optim.AdamW(
       [ 
@@ -70,14 +50,34 @@ class PPOAgent(nn.Module):
         {'params': self.actor.parameters()}
       ],
       lr=config.learning_rate,
-      eps=1e-5
+      eps=1e-5,
+      fused=(config.device != "cpu")
     )
+
+    MAX_ROT = 0.3141592653589793
+
+    ANGLE = torch.tensor([[-MAX_ROT], [0.0], [+MAX_ROT]])
+    THRUST = torch.tensor([
+      [0.0,   0.0, 0.0],
+      [200.0, 0.0, 0.0],
+      [0.0,   1.0, 0.0]
+    ])
+
+    ACTIONS = torch.cat([
+      ANGLE.repeat(3, 1),
+      THRUST.repeat_interleave(3, dim=0)
+    ], dim=1) # [9, 4]
+
+    self.ACTIONS_2 = torch.cat([
+      ACTIONS.repeat_interleave(9, dim=0),
+      ACTIONS.repeat(9, 1)
+    ], dim=1).to(config.device) # [81, 8]
 
   def get_value(self, state: torch.Tensor) -> torch.Tensor:
     return self.critic(state)
 
   def act_dist(self, state: torch.Tensor) -> torch.Tensor:
-    return Categorical(logits=self.actor(state))
+    return Categorical(logits=self.actor(state), validate_args=False)
 
   def act(self, state: torch.Tensor) -> torch.Tensor:
     return self.act_dist(state).sample().unsqueeze(-1)
@@ -98,7 +98,7 @@ class PPOAgent(nn.Module):
     self, 
     action: torch.Tensor # [B, E, 1]
   ) -> torch.Tensor:
-    d_action = ACTIONS_2[action].squeeze(-2)
+    d_action = self.ACTIONS_2[action].squeeze(-2)
     return d_action
 
   def update(
@@ -121,7 +121,8 @@ class PPOAgent(nn.Module):
     advantages = torch.zeros_like(delta)
     A = torch.zeros_like(values[0]) # (E, 1)
     dones = dones.bool()
-    for i in reversed(range(T)):
+
+    for i in range(T - 1, -1, -1):
       A = torch.where(dones[i], 0.0, A)
       A = delta[i] + self.config.gamma * self.config.gae_lambda * A
       advantages[i] = A

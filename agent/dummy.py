@@ -6,22 +6,20 @@ from state import State, get_checkpoint_xy, MAX_ROT
 class DummyAgent:
 
   @torch.no_grad()
+  @torch.compile(fullgraph=True)
   def act(self, state: State) -> torch.Tensor:
-    moves = torch.zeros((*state.raw.shape[:-1], 2, 4), dtype=torch.float32, device=state.raw.device)
-    for p in (0, 1):
-      cp_xy = get_checkpoint_xy(state, state.next_cp[..., p])
-      target_angle = torch.atan2(
-        cp_xy[..., 1] - state.y[..., p], cp_xy[..., 0] - state.x[..., p]
-      )
-      diff = (target_angle - state.angle[..., p] + math.pi) % (
-        2.0 * math.pi
-      ) - math.pi
+    B, E, _ = state.raw.shape
 
-      moves[..., p, 0] = diff.clamp(-MAX_ROT, +MAX_ROT)
-      moves[..., p, 1] = 100.0
-      #moves[..., p, 2] = 0.0
-      #moves[..., p, 3] = 0.0
-    return moves.view(*state.raw.shape[:-1], 8)
+    cps = state.checkpoints
+    idx = (state.next_cp[:, :, :2] % state.num_cps.unsqueeze(-1)).unsqueeze(-1).expand(B, E, 2, 2)
+    cp_xy = torch.gather(cps, dim=2, index=idx)
+    target_angle = torch.atan2(cp_xy[:, :, :, 1] - state.y[:, :, :2], cp_xy[:, :, :, 0] - state.x[:, :, :2])
+    diff = (target_angle - state.angle[:, :, :2] + math.pi) % (2.0 * math.pi) - math.pi
+    moves = torch.zeros((B, E, 2, 4), dtype=torch.float32, device=state.raw.device)
+    moves[:, :, :, 0] = diff.clamp(-MAX_ROT, +MAX_ROT)
+    moves[:, :, :, 1] = 100.0
+
+    return moves.view(B, E, 8)
 
   def decode_action(self, action: torch.Tensor):
     return action

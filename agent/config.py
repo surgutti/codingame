@@ -3,20 +3,20 @@ from dataclasses import dataclass
 @dataclass
 class PPOConfig:
   name: str = "init"
-  device: str = "cpu"
+  device: str = "cuda"
   seed: int = 42
 
   total_episodes: int = 1_000_000
   episode_steps: int = 256
-  num_envs: int = 8
-  minibatch_size: int = 256
+  num_envs: int = 256
+  minibatch_size: int = 4096
 
   learning_rate: float = 1e-4
-  gamma: float = 0.9995
+  gamma: float = 0.995
   gae_lambda: float = 0.95
   grad_clip: float = 0.5
 
-  update_epochs: int = 16
+  update_epochs: int = 4
 
   norm_adv: bool = True
   clip_eps: float = 0.2

@@ -13,9 +13,11 @@ class VecEnv:
     self.device = device
     self.envs = VectorEnv(num_envs, seed)
 
-    self.state_cpu = torch.zeros((1, num_envs, RAW_STATE_DIM), dtype=torch.float32)
-    self.rewards_cpu = torch.zeros((1, num_envs, 1), dtype=torch.float32)
-    self.dones_cpu = torch.zeros((1, num_envs, 1), dtype=torch.float32)
+    pin = (device != "cpu")
+
+    self.state_cpu = torch.zeros((1, num_envs, RAW_STATE_DIM), dtype=torch.float32, pin_memory=pin)
+    self.rewards_cpu = torch.zeros((1, num_envs, 1), dtype=torch.float32, pin_memory=pin)
+    self.dones_cpu = torch.zeros((1, num_envs, 1), dtype=torch.float32, pin_memory=pin)
 
     self._state_np = self.state_cpu.numpy()
     self._rewards_np = self.rewards_cpu.numpy()

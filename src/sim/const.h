@@ -44,4 +44,7 @@ constexpr f64 POD_DIAMETER_SQ = POD_DIAMETER * POD_DIAMETER;
 
 constexpr f64 START_ANGLE = -1.0 * DEG_TO_RAD;
 
+
+constexpr f32 GAMMA = 0.995f;
+
 #endif // CONST_H
