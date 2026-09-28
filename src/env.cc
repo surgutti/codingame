@@ -68,7 +68,7 @@ public:
 
         rew_ptr[i] = envs_[i].nextTurn();
         if (envs_[i].winnerTeam() != -1) {
-          done_ptr[i] = 1.0f;
+          done_ptr[i] = static_cast<f32>(envs_[i].winnerTeam() + 1);
           i64 env_seed = base_seed_ + static_cast<i64>(i) * 1000000LL + (episode_counts_[i]++);
           envs_[i].initializeRefereeGenerated(LAPS, env_seed);
         } else {

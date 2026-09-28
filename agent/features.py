@@ -6,6 +6,7 @@ def compute_progress(state: State) -> torch.Tensor:
   dist = torch.hypot(cp_xy[..., 0] - state.x, cp_xy[..., 1] - state.y)
   return state.next_cp.float() - (dist / 20000.0)
 
+@torch.compile()
 def extract_features(state: State) -> torch.Tensor:
   px, py = state.x, state.y
   pvx, pvy = state.vx, state.vy

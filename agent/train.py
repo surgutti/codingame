@@ -13,6 +13,7 @@ from ppo import PPOAgent
 from dummy import DummyAgent
 from features import extract_features
 from state import State
+from stats import CUSTOM_LAYOUT
 
 type Agent = PPOAgent | DummyAgent
 
@@ -25,14 +26,14 @@ def train(
 
   shape = [config.episode_steps, config.num_envs]
   states = torch.zeros((*shape, agent0.state_dim), dtype=torch.float32, device=config.device)
-  actions = torch.zeros((*shape, 1), dtype=torch.float32, device=config.device)
+  actions = torch.zeros((*shape, 1), dtype=torch.long, device=config.device)
   rewards = torch.zeros((*shape, 1), dtype=torch.float32, device=config.device)
   dones = torch.zeros_like(rewards)
   logprobs = torch.zeros_like(rewards)
   values = torch.zeros_like(rewards)
-  # next_states = torch.zeros_like(states)
   next_values = torch.zeros_like(rewards)
   
+  writer.add_custom_scalars(CUSTOM_LAYOUT)
   state0_raw, state1_raw = envs.reset()
 
   for episode in tqdm(range(config.total_episodes)):
@@ -41,7 +42,7 @@ def train(
     simulation_time = 0.0
     updating_time = 0.0
 
-    rewards_acc = 0.0
+    rewards_acc = torch.zeros((), device=config.device)
 
     agent0.eval()
 
@@ -73,7 +74,6 @@ def train(
       actions[step] = action0
       rewards[step] = reward
       dones[step] = done
-      # next_states[step] = agent0.encode_state(next_state)
       logprobs[step] = logprob
       values[step] = value
       if step > 0:
@@ -82,7 +82,7 @@ def train(
       state0_raw = next_state0_raw
       state1_raw = next_state1_raw
 
-      rewards_acc += reward.mean().item()
+      rewards_acc += reward.mean()
 
     with torch.no_grad():
       next_values[-1] = agent0.get_value(agent0.encode_state(state0_raw))
@@ -119,7 +119,7 @@ def train(
     writer.add_scalar('perf/sps', config.num_envs * config.episode_steps / total_time, episode)
 
     writer.add_scalar(
-      'reward', rewards_acc / config.episode_steps, episode
+      'reward', (rewards_acc / config.episode_steps).item(), episode
     )
   
   writer.close() 
@@ -132,7 +132,7 @@ if __name__ == "__main__":
   init_state = State(torch.ones((1, 1, RAW_STATE_DIM), dtype=torch.float32))  
   state_dim = extract_features(init_state).shape[-1]
 
-  agent0 = torch.compile(PPOAgent(config, state_dim).to(config.device))
+  agent0 = PPOAgent(config, state_dim).to(config.device)
   agent1 = DummyAgent()
 
   train(

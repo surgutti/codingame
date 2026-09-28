@@ -32,7 +32,7 @@ class PPOAgent(nn.Module):
       nn.LayerNorm(256),
       nn.SiLU(),
       layer_init(nn.Linear(256, 1), std=1.0)
-    ))
+    ).to(config.device))
 
     self.actor = torch.compile(nn.Sequential(
       layer_init(nn.Linear(state_dim, 128)),
@@ -42,7 +42,7 @@ class PPOAgent(nn.Module):
       nn.LayerNorm(128),
       nn.SiLU(),
       layer_init(nn.Linear(128, ACTION_DIM), std=0.01)
-    ))
+    ).to(config.device))
 
     self.optimizer = torch.optim.AdamW(
       [ 
@@ -107,7 +107,6 @@ class PPOAgent(nn.Module):
     actions,     # (T, E, action_dim)
     rewards,     # (T, E, 1)
     dones,       # (T, E, 1)
-    # next_states, # (T, E, state_dim)
     logprobs,    # (T, E, 1)
     values,      # (T, E, 1)
     next_values  # (T, E, 1)
@@ -116,7 +115,8 @@ class PPOAgent(nn.Module):
     E = dones.shape[1]
     B = T * E
 
-    delta = rewards + self.config.gamma * next_values * (1.0 - dones) - values
+    is_done = (dones > 0.5).float()
+    delta = rewards + self.config.gamma * next_values * (1.0 - is_done) - values
 
     advantages = torch.zeros_like(delta)
     A = torch.zeros_like(values[0]) # (E, 1)
@@ -249,6 +249,13 @@ class PPOAgent(nn.Module):
       "actions/thrust_0_frac": (thrust_idx == 0).float().mean().item(),
       "actions/thrust_200_frac": (thrust_idx == 1).float().mean().item(),
       "actions/shield_frac": (thrust_idx == 2).float().mean().item(),
+      "actions/same_action_frac": (pod0_act == pod1_act).float().mean().item(),
+
+      "game/expisode_completed": is_done.sum().item(),
+      "game/win_rate": ((dones == 1.0).sum() / is_done.sum().clamp_min(1)).item(),
+      "game/loss_rate": ((dones == 2.0).sum() / is_done.sum().clamp_min(1)).item(),
+      "game/draw_rate": ((dones == 3.0).sum() / is_done.sum().clamp_min(1)).item(),
+      "game/mean_episode_length": ((self.config.episode_steps * self.config.num_envs) / is_done.sum().clamp_min(1)).item()
     }
 
     return metrics

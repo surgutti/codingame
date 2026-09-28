@@ -21,6 +21,6 @@ class PPOConfig:
   norm_adv: bool = True
   clip_eps: float = 0.2
   clip_vloss: bool = False
-  ent_coef: float = 0.01
+  ent_coef: float = 0.003
   vf_coef: float = 0.5
 
