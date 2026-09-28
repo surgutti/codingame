@@ -128,6 +128,18 @@ class PPOAgent(nn.Module):
       advantages[i] = A
 
     target_values = values + advantages
+    raw_adv_std = advantages.std()
+
+    y_pred = values.flatten()
+    y_true = target_values.flatten()
+    var_y = torch.var(y_true)
+    explained_var = 1.0 - torch.var(y_true - y_pred) / (var_y + 1e-8)
+
+    act_flat = actions.long().flatten()
+    pod0_act, pod1_act = act_flat // 9, act_flat % 9
+    all_pods_acts = torch.cat([pod0_act, pod1_act], dim=0)
+    steer_idx = all_pods_acts % 3
+    thrust_idx = all_pods_acts // 3
 
     if self.config.norm_adv:
       advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
@@ -144,9 +156,14 @@ class PPOAgent(nn.Module):
     target_values = target_values.flatten(0, 1)
     advantages = advantages.flatten(0, 1)
 
-    L_clip_acc = 0
-    L_vf_acc = 0
-    S_pi_acc = 0
+    L_clip_acc = torch.zeros((), device=states.device)
+    L_vf_acc = torch.zeros((), device=states.device)
+    S_pi_acc = torch.zeros((), device=states.device)
+    approx_kl_acc = torch.zeros((), device=states.device)
+    clip_frac_acc = torch.zeros((), device=states.device)
+    max_prob_acc = torch.zeros((), device=states.device)
+    actor_grad_acc = torch.zeros((), device=states.device)
+    critic_grad_acc = torch.zeros((), device=states.device)
     total_batches = 0
 
     for epoch in range(self.config.update_epochs):
@@ -154,11 +171,8 @@ class PPOAgent(nn.Module):
 
       for start in range(0, B, self.config.minibatch_size):
         end = min(start + self.config.minibatch_size, B)
-        
         mb_idx = inds[start:end]
 
-        #print(f"{logprobs.shape=} {states.shape=}")
-        #print(f"{rewards.shape=}")
         mb_states = states[mb_idx]
         mb_actions = actions[mb_idx]
         mb_rewards = rewards[mb_idx]
@@ -170,7 +184,8 @@ class PPOAgent(nn.Module):
         mb_logprobs = dist.log_prob(mb_actions.squeeze(-1)).unsqueeze(-1)
         mb_values = self.get_value(mb_states)
       
-        ratio = torch.exp(mb_logprobs - mb_old_logprobs)
+        log_ratio = mb_logprobs - mb_old_logprobs
+        ratio = torch.exp(log_ratio)
 
         surr1 = ratio * mb_advantages
         surr2 = ratio.clamp(
@@ -186,17 +201,55 @@ class PPOAgent(nn.Module):
 
         self.optimizer.zero_grad()
         loss.backward()
-        nn.utils.clip_grad_norm_(self.actor.parameters(), max_norm=self.config.grad_clip)
-        nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=self.config.grad_clip)
+        actor_gn = nn.utils.clip_grad_norm_(self.actor.parameters(), max_norm=self.config.grad_clip)
+        critic_gn = nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=self.config.grad_clip)
         self.optimizer.step()
 
-        L_clip_acc += L_clip.item()
-        L_vf_acc += L_vf.item()
-        S_pi_acc += S_pi.item()
+        with torch.no_grad():
+          L_clip_acc += L_clip.detach()
+          L_vf_acc += L_vf.detach()
+          S_pi_acc += S_pi.detach()
+          approx_kl_acc += ((ratio - 1.0) - log_ratio).mean()
+          clip_frac_acc += ((ratio - 1.0).abs() > self.config.clip_eps).float().mean()
+          max_prob_acc += dist.probs.max(dim=-1).values.mean()
+          actor_grad_acc += actor_gn
+          critic_grad_acc += critic_gn
+          total_batches += 1
+    
+    with torch.no_grad():
+      actor_w_norm = torch.norm(torch.stack([p.norm(2) for p in self.actor.parameters()]))
+      critic_w_norm = torch.norm(torch.stack([p.norm(2) for p in self.critic.parameters()]))
 
-        total_batches += 1
+    metrics = {
+      "critic/explained_variance": explained_var.item(),
+      "critic/value_loss": (L_vf_acc / total_batches).item(),
+      "critic/value_mean": y_pred.mean().item(),
+      "critic/value_std": y_pred.std().item(),
+      "critic/return_mean": y_true.mean().item(),
+      "critic/return_std": y_true.std().item(),
+      "critic/td_residual_abs_mean": delta.abs().mean().item(),
+
+      "policy/loss_clip": (L_clip_acc / total_batches).item(),
+      "policy/approx_kl": (approx_kl_acc / total_batches).item(),
+      "policy/clip_fraction": (clip_frac_acc / total_batches).item(),
+      "policy/entropy_raw": (S_pi_acc / total_batches).item(),
+      "policy/entropy_normalized": ((S_pi_acc / total_batches) / 4.394449).item(),
+      "policy/max_action_prob": (max_prob_acc / total_batches).item(),
+      "policy/advantage_raw_std": raw_adv_std.item(),
       
-    return L_clip_acc / total_batches, \
-           L_vf_acc / total_batches, \
-           S_pi_acc / total_batches
+      "grad/actor_grad_norm": (actor_grad_acc / total_batches).item(),
+      "grad/critic_grad_norm": (critic_grad_acc / total_batches).item(),
+
+      "plasticity/actor_weight_norm": actor_w_norm.item(),
+      "plasticity/critic_weight_norm": critic_w_norm.item(),
+      
+      "actions/steer_left_frac": (steer_idx == 0).float().mean().item(),
+      "actions/steer_straight_frac": (steer_idx == 1).float().mean().item(),
+      "actions/steer_right_frac": (steer_idx == 2).float().mean().item(),
+      "actions/thrust_0_frac": (thrust_idx == 0).float().mean().item(),
+      "actions/thrust_200_frac": (thrust_idx == 1).float().mean().item(),
+      "actions/shield_frac": (thrust_idx == 2).float().mean().item(),
+    }
+
+    return metrics
     

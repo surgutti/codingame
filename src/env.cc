@@ -18,22 +18,27 @@ public:
       episode_counts_(num_envs, 0) {
   }
 
-  void reset(nb::ndarray<f32, nb::c_contig, nb::device::cpu> state_out) {
-    f32* state_ptr = state_out.data();
+  void reset(nb::ndarray<f32, nb::c_contig, nb::device::cpu> state0_out,
+             nb::ndarray<f32, nb::c_contig, nb::device::cpu> state1_out) {
+    f32* state0_ptr = state0_out.data();
+    f32* state1_ptr = state1_out.data();
     #pragma omp parallel for schedule(static)
     for (i32 i = 0; i < num_envs_; i++) {
       i64 env_seed = base_seed_ + static_cast<i64>(i) * 1000000LL + (episode_counts_[i]++);
       envs_[i].initializeRefereeGenerated(LAPS, env_seed);
-      writeRawState(envs_[i], state_ptr + i * RAW_STATE_DIM);
+      writeRawState(envs_[i], state0_ptr + i * RAW_STATE_DIM, 0);
+      writeRawState(envs_[i], state1_ptr + i * RAW_STATE_DIM, 1);
     }
   }
 
   void step(nb::ndarray<const f32, nb::c_contig, nb::device::cpu> actions_in,
-              nb::ndarray<f32, nb::c_contig, nb::device::cpu> state_out,
+              nb::ndarray<f32, nb::c_contig, nb::device::cpu> state0_out,
+              nb::ndarray<f32, nb::c_contig, nb::device::cpu> state1_out,
               nb::ndarray<f32, nb::c_contig, nb::device::cpu> rewards_out,
               nb::ndarray<f32, nb::c_contig, nb::device::cpu> dones_out) {
     const f32* act_ptr = actions_in.data();
-    f32* state_ptr = state_out.data();
+    f32* state0_ptr = state0_out.data();
+    f32* state1_ptr = state1_out.data();
     f32* rew_ptr = rewards_out.data();
     f32* done_ptr = dones_out.data();
 
@@ -69,24 +74,26 @@ public:
         } else {
           done_ptr[i] = 0.0f;
         }
-        writeRawState(envs_[i], state_ptr + i * RAW_STATE_DIM);
+        writeRawState(envs_[i], state0_ptr + i * RAW_STATE_DIM, 0);
+        writeRawState(envs_[i], state1_ptr + i * RAW_STATE_DIM, 1);
       }
     }
   }
 
 private:
 
-  static void writeRawState(Engine const& eng, f32* out) {
+  static void writeRawState(Engine const& eng, f32* out, int team) {
     auto const& pods = eng.pods();
     for (i32 p = 0; p < POD_NB; p++) {
-      out[p * 8 + 0] = static_cast<f32>(pods[p].x);
-      out[p * 8 + 1] = static_cast<f32>(pods[p].y);
-      out[p * 8 + 2] = static_cast<f32>(pods[p].vx);
-      out[p * 8 + 3] = static_cast<f32>(pods[p].vy);
-      out[p * 8 + 4] = static_cast<f32>(pods[p].angle);
-      out[p * 8 + 5] = static_cast<f32>(pods[p].next);
-      out[p * 8 + 6] = static_cast<f32>(pods[p].shield);
-      out[p * 8 + 7] = static_cast<f32>(pods[p].boosted);
+      i32 q = (team == 0 ? p : (p ^ 2));
+      out[p * 8 + 0] = static_cast<f32>(pods[q].x);
+      out[p * 8 + 1] = static_cast<f32>(pods[q].y);
+      out[p * 8 + 2] = static_cast<f32>(pods[q].vx);
+      out[p * 8 + 3] = static_cast<f32>(pods[q].vy);
+      out[p * 8 + 4] = static_cast<f32>(pods[q].angle);
+      out[p * 8 + 5] = static_cast<f32>(pods[q].next);
+      out[p * 8 + 6] = static_cast<f32>(pods[q].shield);
+      out[p * 8 + 7] = static_cast<f32>(pods[q].boosted);
     }
 
     auto const& cps = eng.checkpoints();
@@ -97,8 +104,8 @@ private:
     }
     out[44] = static_cast<f32>(cps_len);
     out[45] = static_cast<f32>(LAPS);
-    out[46] = static_cast<f32>(eng.timeouts()[0]);
-    out[47] = static_cast<f32>(eng.timeouts()[1]);
+    out[46] = static_cast<f32>(eng.timeouts()[0 ^ team]);
+    out[47] = static_cast<f32>(eng.timeouts()[1 ^ team]);
   }
 
   i32 num_envs_;

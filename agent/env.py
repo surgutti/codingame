@@ -15,24 +15,28 @@ class VecEnv:
 
     pin = (device != "cpu")
 
-    self.state_cpu = torch.zeros((1, num_envs, RAW_STATE_DIM), dtype=torch.float32, pin_memory=pin)
+    self.state0_cpu = torch.zeros((1, num_envs, RAW_STATE_DIM), dtype=torch.float32, pin_memory=pin)
+    self.state1_cpu = torch.zeros((1, num_envs, RAW_STATE_DIM), dtype=torch.float32, pin_memory=pin)
     self.rewards_cpu = torch.zeros((1, num_envs, 1), dtype=torch.float32, pin_memory=pin)
     self.dones_cpu = torch.zeros((1, num_envs, 1), dtype=torch.float32, pin_memory=pin)
 
-    self._state_np = self.state_cpu.numpy()
+    self._state0_np = self.state0_cpu.numpy()
+    self._state1_np = self.state1_cpu.numpy()
     self._rewards_np = self.rewards_cpu.numpy()
     self._dones_np = self.dones_cpu.numpy()
 
   def reset(self) -> State:
-    self.envs.reset(self._state_np)
-    return State(self.state_cpu.to(self.device, non_blocking=True))
+    self.envs.reset(self._state0_np, self._state1_np)
+    return State(self.state0_cpu.to(self.device, non_blocking=True)), \
+           State(self.state1_cpu.to(self.device, non_blocking=True))
 
   def step(self, actions_tensor: torch.Tensor) -> State:
     actions_np = np.ascontiguousarray(actions_tensor.cpu().numpy())
-    self.envs.step(actions_np, self._state_np, self._rewards_np, self._dones_np)
+    self.envs.step(actions_np, self._state0_np, self._state1_np, self._rewards_np, self._dones_np)
 
-    state_gpu = self.state_cpu.to(self.device, non_blocking=True)
+    state0_gpu = self.state0_cpu.to(self.device, non_blocking=True)
+    state1_gpu = self.state1_cpu.to(self.device, non_blocking=True)
     rewards_gpu = self.rewards_cpu.to(self.device, non_blocking=True)
     dones_gpu = self.dones_cpu.to(self.device, non_blocking=True)
 
-    return State(state_gpu), rewards_gpu, dones_gpu
+    return State(state0_gpu), State(state1_gpu), rewards_gpu, dones_gpu

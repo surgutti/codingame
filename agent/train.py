@@ -4,7 +4,7 @@ import torch
 import time
 
 from torch.utils.tensorboard import SummaryWriter
-from torch.profiler import profile, record_function, ProfilerActivity
+# from torch.profiler import profile, record_function, ProfilerActivity
 from tqdm import tqdm
 
 from env import VecEnv, RAW_STATE_DIM
@@ -23,10 +23,6 @@ def train(
   agent0: PPOAgent,
   agent1: Agent):
 
-  activities = [ProfilerActivity.CPU]
-  if torch.cuda.is_available():
-    activities.append(ProfilerActivity.CUDA)
-
   shape = [config.episode_steps, config.num_envs]
   states = torch.zeros((*shape, agent0.state_dim), dtype=torch.float32, device=config.device)
   actions = torch.zeros((*shape, 1), dtype=torch.float32, device=config.device)
@@ -37,10 +33,9 @@ def train(
   # next_states = torch.zeros_like(states)
   next_values = torch.zeros_like(rewards)
   
-  state = envs.reset()
+  state0_raw, state1_raw = envs.reset()
 
   for episode in tqdm(range(config.total_episodes)):
-  # for episode in range(config.total_episodes):
 
     inference_time = 0.0
     simulation_time = 0.0
@@ -50,97 +45,82 @@ def train(
 
     agent0.eval()
 
-####
-    with profile(activities=activities, record_shapes=True) as prof:
-######
-      for step in range(config.episode_steps):
-        torch.cuda.synchronize()
-        start = time.perf_counter()
-
-        with record_function("ENCODE"):
-          state0 = agent0.encode_state(state)
-        with record_function("FLIP"):
-          state1 = agent1.encode_state(state.flip_teams())
-
-        with record_function("ACTOR CRITIC FORWARD"):
-          with torch.no_grad():
-            action0, value, logprob = agent0.act_with_value_and_logprob(state0)
-            action1 = agent1.act(state1)
-  
-        with record_function("DECODE"):
-          env_action0 = agent0.decode_action(action0)
-          env_action1 = agent1.decode_action(action1)
-          env_action = torch.cat([env_action0, env_action1], -1)
-
-        torch.cuda.synchronize()
-        inference_time += (time.perf_counter() - start)
-
-        start = time.perf_counter()
-        with record_function("STEP"):
-          next_state, reward, done = envs.step(env_action)
-
-        # torch.cuda.synchronize()
-        simulation_time += (time.perf_counter() - start)
-        
-        with record_function("SAVE"):
-          states[step] = state0
-          actions[step] = action0
-          rewards[step] = reward
-          dones[step] = done
-          # next_states[step] = agent0.encode_state(next_state)
-          logprobs[step] = logprob
-          values[step] = value
-          if step > 0:
-            next_values[step - 1] = value
-
-          state = next_state
-
-          rewards_acc += reward.mean().item()
-
-      with torch.no_grad():
-        next_values[-1] = agent0.get_value(agent0.encode_state(next_state))
-    
-      # torch.cuda.synchronize()
+    for step in range(config.episode_steps):
+      torch.cuda.synchronize()
       start = time.perf_counter()
 
-      with record_function("UPDATE"):
-        agent0.train()
-        L_clip, L_vf, S_pi = agent0.update(
-          states=states,
-          actions=actions,
-          rewards=rewards,
-          dones=dones,
-          # next_states=next_states,
-          logprobs=logprobs,
-          values=values,
-          next_values=next_values
-        )
-######
-    if episode == 5: 
-      print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=100))
-      prof.export_chrome_trace("trace.json")
-      exit(0) 
-    
+      state0 = agent0.encode_state(state0_raw)
+      state1 = agent1.encode_state(state1_raw)
 
-    # torch.cuda.synchronize()
+      with torch.no_grad():
+        action0, value, logprob = agent0.act_with_value_and_logprob(state0)
+        action1 = agent1.act(state1)
+
+      env_action0 = agent0.decode_action(action0)
+      env_action1 = agent1.decode_action(action1)
+      env_action = torch.cat([env_action0, env_action1], -1)
+
+      torch.cuda.synchronize()
+      inference_time += (time.perf_counter() - start)
+
+      start = time.perf_counter()
+      next_state0_raw, next_state1_raw, reward, done = envs.step(env_action)
+
+      torch.cuda.synchronize()
+      simulation_time += (time.perf_counter() - start)
+      
+      states[step] = state0
+      actions[step] = action0
+      rewards[step] = reward
+      dones[step] = done
+      # next_states[step] = agent0.encode_state(next_state)
+      logprobs[step] = logprob
+      values[step] = value
+      if step > 0:
+        next_values[step - 1] = value
+
+      state0_raw = next_state0_raw
+      state1_raw = next_state1_raw
+
+      rewards_acc += reward.mean().item()
+
+    with torch.no_grad():
+      next_values[-1] = agent0.get_value(agent0.encode_state(state0_raw))
+  
+    torch.cuda.synchronize()
+    start = time.perf_counter()
+
+    agent0.train()
+    metrics = agent0.update(
+      states=states,
+      actions=actions,
+      rewards=rewards,
+      dones=dones,
+      # next_states=next_states,
+      logprobs=logprobs,
+      values=values,
+      next_values=next_values
+    )
+
+    for tag, val in metrics.items():
+      writer.add_scalar(tag, val, episode)
+
+    torch.cuda.synchronize()
     updating_time += (time.perf_counter() - start)
 
-    writer.add_scalar('L_clip', L_clip, episode)
-    writer.add_scalar('L_vf', L_vf, episode)
-    writer.add_scalar('S_pi', S_pi, episode)
-
-    writer.add_scalars('Performance', { 
-        'Inference': inference_time,
-        'Simulation': simulation_time,
-        'Updating': updating_time 
+    total_time = inference_time + simulation_time + updating_time
+    writer.add_scalars('perf', { 
+        'inference': inference_time,
+        'simulation': simulation_time,
+        'update': updating_time,
       }, episode
     )
 
-    writer.add_scalar(
-      'Reward', rewards_acc / config.episode_steps, episode
-    )
+    writer.add_scalar('perf/sps', config.num_envs * config.episode_steps / total_time, episode)
 
-    # exit(0)
+    writer.add_scalar(
+      'reward', rewards_acc / config.episode_steps, episode
+    )
   
   writer.close() 
 
