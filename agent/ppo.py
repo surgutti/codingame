@@ -120,10 +120,10 @@ class PPOAgent(nn.Module):
 
     advantages = torch.zeros_like(delta)
     A = torch.zeros_like(values[0]) # (E, 1)
-    dones = dones.bool()
 
+    is_done_bool = is_done.bool()
     for i in range(T - 1, -1, -1):
-      A = torch.where(dones[i], 0.0, A)
+      A = torch.where(is_done_bool[i], 0.0, A)
       A = delta[i] + self.config.gamma * self.config.gae_lambda * A
       advantages[i] = A
 
