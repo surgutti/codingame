@@ -1,10 +1,11 @@
 import os
+import json
 import torch
 import shutil
 import random
 
 from torch.utils.tensorboard import SummaryWriter
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 
 from env import VecEnv
 from ppo import PPOAgent
@@ -23,10 +24,6 @@ class BotEntry:
   purge_step: int | None = field(default=None, repr=False)
   writer: SummaryWriter | None = field(init=False, default=None, repr=False)
 
-  def __post_init__(self):
-    if self.log_dir is not None:
-      self.writer = SummaryWriter(log_dir=self.log_dir, purge_step=self.purge_step)
-
   @property
   def games(self) -> int:
     return int(self.wins + self.losses + self.draws)
@@ -44,8 +41,10 @@ class BotEntry:
     self.recent_win_rate = (1.0 - ema_alpha) * self.recent_win_rate + ema_alpha * batch_wr
 
   def log_step(self, global_ep: int, rank: int):
-    if self.writer is None:
+    if self.log_dir is None:
       return
+    if self.writer is None:
+      self.writer = SummaryWriter(log_dir=self.log_dir, purge_step=self.purge_step)
     total = max(self.games, 1)
     self.writer.add_scalar("bot/elo", self.elo, global_ep)
     self.writer.add_scalar("bot/rank", rank, global_ep)
@@ -54,14 +53,21 @@ class BotEntry:
     self.writer.add_scalar("bot/games_played", self.games, global_ep)
 
   def to_dict(self) -> dict:
-    d = asdict(self)
-    d.pop("writer", None)
-    d.pop("purge_step", None)
-    return d
+    return {
+      "name": self.name,
+      "path": self.path,
+      "log_dir": self.log_dir,
+      "elo": self.elo,
+      "wins": self.wins,
+      "losses": self.losses,
+      "draws": self.draws,
+      "recent_win_rate": self.recent_win_rate,
+    }
 
   def cleanup(self):
     if self.writer is not None:
       self.writer.close()
+      self.writer = None
     if self.path and os.path.exists(self.path):
       os.remove(self.path)
     if self.log_dir and os.path.exists(self.log_dir):
