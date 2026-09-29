@@ -7,14 +7,14 @@ from torch.utils.tensorboard import SummaryWriter
 # from torch.profiler import profile, record_function, ProfilerActivity
 from tqdm import tqdm
 
-from env import VecEnv, RAW_STATE_DIM
+from arena import Arena, BotEntry
 from config import PPOConfig
+from env import VecEnv, RAW_STATE_DIM
 from ppo import PPOAgent
 from dummy import DummyAgent
 from features import extract_features
 from state import State
 from stats import CUSTOM_LAYOUT
-from arena import Arena
 
 type Agent = PPOAgent | DummyAgent
 
@@ -26,8 +26,7 @@ def train(
   agent1: Agent,
   num_episodes: int,
   start_episode: int
-  ):
-
+):
   shape = [config.episode_steps, config.num_envs]
   states = torch.zeros((*shape, agent0.state_dim), dtype=torch.float32, device=config.device)
   actions = torch.zeros((*shape, 1), dtype=torch.long, device=config.device)
@@ -37,8 +36,11 @@ def train(
   values = torch.zeros_like(rewards)
   next_values = torch.zeros_like(rewards)
   
-  writer.add_custom_scalars(CUSTOM_LAYOUT)
   state0_raw, state1_raw = envs.reset()
+
+  total_wins = torch.zeros((), device=config.device)
+  total_losses = torch.zeros((), device=config.device)
+  total_draws = torch.zeros((), device=config.device)
 
   with tqdm(
     range(start_episode, start_episode + num_episodes),
@@ -51,7 +53,7 @@ def train(
 
       inference_time = 0.0
       simulation_time = 0.0
-      updating_time = 0.0
+      update_time = 0.0
 
       rewards_acc = torch.zeros((), device=config.device)
 
@@ -97,6 +99,10 @@ def train(
 
       with torch.no_grad():
         next_values[-1] = agent0.get_value(agent0.encode_state(state0_raw))
+
+      total_wins += (dones == 1.0).sum()
+      total_losses += (dones == 2.0).sum()
+      total_draws += (dones == 3.0).sum()
     
       torch.cuda.synchronize()
       start = time.perf_counter()
@@ -116,9 +122,9 @@ def train(
         writer.add_scalar(tag, val, episode)
 
       torch.cuda.synchronize()
-      updating_time += (time.perf_counter() - start)
+      update_time += (time.perf_counter() - start)
 
-      total_time = inference_time + simulation_time + updating_time
+      total_time = inference_time + simulation_time + update_time
       writer.add_scalar('perf/inference', inference_time, episode)
       writer.add_scalar('perf/simulation', simulation_time, episode)
       writer.add_scalar('perf/update', update_time, episode)
@@ -128,11 +134,12 @@ def train(
         'reward', (rewards_acc / config.episode_steps).item(), episode
       )
   
-  writer.close() 
+  return total_wins.item(), total_losses.item(), total_draws.item()
 
 if __name__ == "__main__":
   config = PPOConfig()
   writer = SummaryWriter(log_dir=f"runs/ppo_{config.name}")
+  writer.add_custom_scalars(CUSTOM_LAYOUT)
   envs = VecEnv(config.num_envs, config.seed, config.device)
  
   init_state = State(torch.ones((1, 1, RAW_STATE_DIM), dtype=torch.float32, device=config.device))
@@ -144,7 +151,7 @@ if __name__ == "__main__":
   learner_entry = BotEntry(name="learner", path="learner", elo=1000.0)
   global_ep = 0
 
-  for gen in range(config.total_episodes // 10):
+  for gen in range(config.total_episodes // config.episodes_per_gen):
     opp_entry, agent1 = arena.sample_opponent(learner_entry.elo)
     wins, losses, draws = train(
       config, writer, envs, agent0, agent1,
@@ -152,7 +159,7 @@ if __name__ == "__main__":
     )
     global_ep += 10
 
-    arena.update_elo(learner_entry, opp_entry, wins, losses, draw)
+    arena.update_elo(learner_entry, opp_entry, wins, losses, draws)
 
     ckpt_entry = arena.register_and_prune(gen, agent0, envs, global_ep, start_elo=learner_entry.elo)
     learner_entry.elo = ckpt_entry.elo
@@ -166,3 +173,6 @@ if __name__ == "__main__":
     for idx, b in enumerate(sorted(arena.pool, key=lambda x: x.elo, reverse=True), 1):
       md += f"| {idx} | `{b.name}` | **{b.elo:.0f}** | {b.games} |\n"
     writer.add_text("arena/leaderboard", md, global_ep)
+
+  writer.close() 
+
