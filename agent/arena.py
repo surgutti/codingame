@@ -1,6 +1,6 @@
 import os
 import torch
-import shutils
+import shutil
 import random
 
 from torch.utils.tensorboard import SummaryWriter

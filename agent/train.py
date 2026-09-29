@@ -155,9 +155,9 @@ if __name__ == "__main__":
     opp_entry, agent1 = arena.sample_opponent(learner_entry.elo)
     wins, losses, draws = train(
       config, writer, envs, agent0, agent1,
-      num_episodes=10, start_episode=global_ep
+      num_episodes=config.episodes_per_gen, start_episode=global_ep
     )
-    global_ep += 10
+    global_ep += config.episodes_per_gen
 
     arena.update_elo(learner_entry, opp_entry, wins, losses, draws)
 

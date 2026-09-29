@@ -10,8 +10,8 @@ class PPOConfig:
   total_episodes: int = 1_000_000
   episode_steps: int = 512
   num_envs: int = 512
-  minibatch_size: int = 8192
-  episodes_per_gen: int = 10
+  minibatch_size: int = 4096
+  episodes_per_gen: int = 50
 
   learning_rate: float = 1e-4
   gamma: float = 0.995
