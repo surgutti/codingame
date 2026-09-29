@@ -155,41 +155,43 @@ if __name__ == "__main__":
   if global_ep == 0:
     writer.add_custom_scalars(CUSTOM_LAYOUT)
 
-  total_gens = config.total_episodes // config.epsiodes_per_gen
+  total_gens = config.total_episodes // config.episodes_per_gen
 
-  try:
-    for gen in range(start_gen, total_gens):
-      train(
-        config, 
-        writer, 
-        envs, 
-        agent0,
-        arena,
-        learner_entry,
-        num_episodes=config.episodes_per_gen, 
-        start_episode=global_ep
-      )
-      global_ep += config.episodes_per_gen
+  #try:
+  for gen in range(start_gen, total_gens):
+    train(
+      config, 
+      writer, 
+      envs, 
+      agent0,
+      arena,
+      learner_entry,
+      num_episodes=config.episodes_per_gen, 
+      start_episode=global_ep
+    )
+    global_ep += config.episodes_per_gen
 
-      ckpt_entry = arena.register_and_prune(
-        gen, agent0, envs, global_ep, start_elo=learner_entry.elo
-      )
-      learner_entry.elo = ckpt_entry.elo
+    ckpt_entry = arena.register_and_prune(
+      gen, agent0, envs, global_ep, start_elo=learner_entry.elo
+    )
+    learner_entry.elo = ckpt_entry.elo
 
-      arena.save_state(agent0, learner_entry, next_gen=gen + 1, global_ep=global_ep)
+    arena.save_state(agent0, learner_entry, next_gen=gen + 1, global_ep=global_ep)
 
-      elos = [b.elo for b in arena.pool if b.path is not None]
-      writer.add_scalar("arena/learner_elo", learner_entry.elo, global_ep)
-      writer.add_scalar("arena/top1_elo", max(elos), global_ep)
-      writer.add_scalar(f"arena/top{config.max_bots}_elo", min(elos), global_ep)
+    elos = [b.elo for b in arena.pool if b.path is not None]
+    writer.add_scalar("arena/learner_elo", learner_entry.elo, global_ep)
+    writer.add_scalar("arena/top1_elo", max(elos), global_ep)
+    writer.add_scalar(f"arena/top{config.max_bots}_elo", min(elos), global_ep)
 
-      md = "| Rank | Bot | Elo | Games |\n|---|---|---|---|\n"
-      for idx, b in enumerate(sorted(arena.pool, key=lambda x: x.elo, reverse=True), 1):
-        md += f"| {idx} | `{b.name}` | **{b.elo:.0f}** | {b.games} |\n"
-      writer.add_text("arena/leaderboard", md, global_ep)
+    md = "| Rank | Bot | Elo | Games |\n|---|---|---|---|\n"
+    for idx, b in enumerate(sorted(arena.pool, key=lambda x: x.elo, reverse=True), 1):
+      md += f"| {idx} | `{b.name}` | **{b.elo:.0f}** | {b.games} |\n"
+    writer.add_text("arena/leaderboard", md, global_ep)
+  ''' 
   except:
-    print(f"\n[Train] Interrupted at episode {global_ep}. Last saved genertion is safe in '{arena.save-dir}/'.")
+    print(f"\n[Train] Interrupted at episode {global_ep}. Last saved genertion is safe in '{arena.save_dir}/'.")
   finally:
     arena.close()
     writer.close()
+  '''
 

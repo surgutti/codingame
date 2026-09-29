@@ -4,7 +4,7 @@ import shutil
 import random
 
 from torch.utils.tensorboard import SummaryWriter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 
 from env import VecEnv
 from ppo import PPOAgent
