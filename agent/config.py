@@ -4,7 +4,7 @@ from dataclasses import dataclass
 class PPOConfig:
   name: str = "init"
   device: str = "cuda"
-  max_bots: int = 20
+  max_bots: int = 9
   seed: int = 42
 
   total_episodes: int = 1_000_000

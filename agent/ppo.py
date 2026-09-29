@@ -251,7 +251,7 @@ class PPOAgent(nn.Module):
       "actions/shield_frac": (thrust_idx == 2).float().mean().item(),
       "actions/same_action_frac": (pod0_act == pod1_act).float().mean().item(),
 
-      "game/expisode_completed": is_done.sum().item(),
+      "game/episode_completed": is_done.sum().item(),
       "game/win_rate": ((dones == 1.0).sum() / is_done.sum().clamp_min(1)).item(),
       "game/loss_rate": ((dones == 2.0).sum() / is_done.sum().clamp_min(1)).item(),
       "game/draw_rate": ((dones == 3.0).sum() / is_done.sum().clamp_min(1)).item(),

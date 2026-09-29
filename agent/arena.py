@@ -20,11 +20,12 @@ class BotEntry:
   losses: float = 0.0
   draws: float = 0.0
   recent_win_rate:  float = 0.5
+  purge_step: int | None = field(default=None, repr=False)
   writer: SummaryWriter | None = field(init=False, default=None, repr=False)
 
   def __post_init__(self):
     if self.log_dir is not None:
-      self.writer = SummaryWriter(log_dir=self.log_dir)
+      self.writer = SummaryWriter(log_dir=self.log_dir, purge_step=self.purge_step)
 
   @property
   def games(self) -> int:
@@ -52,6 +53,12 @@ class BotEntry:
     self.writer.add_scalar("bot/win_rate_recent", self.recent_win_rate, global_ep)
     self.writer.add_scalar("bot/games_played", self.games, global_ep)
 
+  def to_dict(self) -> dict:
+    d = asdict(self)
+    d.pop("writer", None)
+    d.pop("purge_step", None)
+    return d
+
   def cleanup(self):
     if self.writer is not None:
       self.writer.close()
@@ -73,6 +80,8 @@ class Arena:
     self.max_bots = max_bots
     self.save_dir = save_dir
     self.bots_log_root = f"runs/ppo_{config.name}/bots"
+    self.state_path = os.path.join(save_dir, "arena_state.json")
+    self.learner_path = os.path.join(save_dir, "learner_latest.pt")
     os.makedirs(save_dir, exist_ok=True)
 
     self.pool: list[BotEntry] = [
@@ -88,6 +97,93 @@ class Arena:
     self._opponent_model.eval()
 
     self._dummy = DummyAgent()
+
+  def save_state(
+    self,
+    learner: PPOAgent,
+    learner_entry: BotEntry,
+    next_gen: int,
+    global_ep: int
+  ):
+    tmp_learner = self.learner_path + ".tmp"
+    torch.save(
+      {
+        "model": learner.state_dict(),
+        "optimizer": learner.optimizer.state_dict()
+      },
+      tmp_learner
+    )
+
+    os.replace(tmp_learner, self.learner_path)
+
+    state_data = {
+      "next_gen": next_gen,
+      "global_ep": global_ep,
+      "learner_entry": learner_entry.to_dict(),
+      "pool": [b.to_dict() for b in self.pool]
+    }
+    tmp_state = self.state_path + ".tmp"
+    with open(tmp_state, "w", encoding="utf-8") as f:
+      json.dump(state_data, f, indent=2)
+    os.replace(tmp_state, self.state_path)
+  
+  def load_state(self, learner: PPOAgent, learner_entry: BotEntry) -> tuple[int, int]:
+    if not (os.path.exists(self.state_path) and os.path.exists(self.learner_path)):
+      return 0, 0
+
+    with open(self.state_path, "r", encoding="utf-8") as f:
+      data = json.load(f)
+
+    next_gen = int(data["next_gen"])
+    global_ep = int(data["global_ep"])
+
+    ckpt = torch.load(self.learner_path, map_location=self.config.device, weights_only=True)
+    learner.load_state_dict(ckpt["model"])
+    learner.optimizer.load_state_dict(ckpt["optimizer"])
+
+    le = data.get("learner_entry", {})
+    learner_entry.elo = float(le.get("elo", 1000.0))
+    learner_entry.wins = float(le.get("wins", 0.0))
+    learner_entry.losses = float(le.get("losses", 0.0))
+    learner_entry.draws = float(le.get("draws", 0.0))
+    learner_entry.recent_win_rate = float(le.get("recent_win_rate", 0.5))
+
+    for b in self.pool:
+      if b.writer is not None:
+        b.writer.close()
+
+    loaded_pool: list[BotEntry] = []
+    for item in data.get("pool", []):
+      path = item.get("path")
+      if path is not None and not os.path.exists(path):
+        continue
+      loaded_pool.append(
+        BotEntry(
+          name=item["name"],
+          path=path,
+          log_dir=item.get("log_dir"),
+          elo=float(item.get("elo", 1000.0)),
+          wins=float(item.get("wins", 0.0)),
+          losses=float(item.get("losses", 0.0)),
+          draws=float(item.get("draws", 0.0)),
+          recent_win_rate=float(item.get("recent_win_rate", 0.5)),
+          purge_step=global_ep,
+        )
+      )
+
+    if loaded_pool:
+      self.pool = loaded_pool
+
+    print(
+      f"[Arena] Resumed from gen={next_gen}, global_ep={global_ep}, "
+      f"learner_elo={learner_entry.elo:.1f}, pool_size={len(self.pool)}"
+    )
+    return next_gen, global_ep
+
+  def close(self):
+    for b in self.pool:
+      if b.writer is not None:
+        b.writer.close()
 
   def load_bot(self, entry: BotEntry):
     if entry.path is None:
@@ -128,7 +224,7 @@ class Arena:
     b.record_result(losses, wins, draws)
 
   @torch.no_grad()
-  def play_match(self, envs: VecEnv, agent_a, agent_b, steps: int = 250):
+  def play_match(self, envs: VecEnv, agent_a, agent_b, steps: int = 512):
     s0, s1 = envs.reset()
     wins = torch.zeros((), device=self.config.device)
     losses = torch.zeros((), device=self.config.device)
@@ -164,7 +260,7 @@ class Arena:
     opponents = random.sample(self.pool, k=min(3, len(self.pool)))
     for opp_entry in opponents:
       opp_agent = self.load_bot(opp_entry)
-      w, l, d = self.play_match(envs, learner, opp_agent)
+      w, l, d = self.play_match(envs, learner, opp_agent, steps=self.config.episode_steps)
       self.update_elo(new_bot, opp_entry, w, l, d)
 
     self.pool.append(new_bot)
