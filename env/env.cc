@@ -32,10 +32,10 @@ public:
   }
 
   void step(nb::ndarray<const f32, nb::c_contig, nb::device::cpu> actions_in,
-              nb::ndarray<f32, nb::c_contig, nb::device::cpu> state0_out,
-              nb::ndarray<f32, nb::c_contig, nb::device::cpu> state1_out,
-              nb::ndarray<f32, nb::c_contig, nb::device::cpu> rewards_out,
-              nb::ndarray<f32, nb::c_contig, nb::device::cpu> dones_out) {
+            nb::ndarray<f32, nb::c_contig, nb::device::cpu> state0_out,
+            nb::ndarray<f32, nb::c_contig, nb::device::cpu> state1_out,
+            nb::ndarray<f32, nb::c_contig, nb::device::cpu> rewards_out,
+            nb::ndarray<f32, nb::c_contig, nb::device::cpu> dones_out) {
     const f32* act_ptr = actions_in.data();
     f32* state0_ptr = state0_out.data();
     f32* state1_ptr = state1_out.data();

@@ -48,6 +48,10 @@ class State:
     return self.raw[..., 46:48] # [B, E, 2]
 
   @property
+  def meta(self) -> torch.Tensor:
+    return self.raw[..., 44:48] # [B, E, 4]
+
+  @property
   def checkpoints(self) -> torch.Tensor:
     return self.raw[..., 32:44].view(*self.raw.shape[:-1], 6, 2) # [B, E, 6 cps, 2]
 

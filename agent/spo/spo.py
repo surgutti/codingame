@@ -1,48 +1,47 @@
+#!/usr/bin/env python3
 import torch
 import torch.nn as nn
 from torch.distributions.categorical import Categorical
-from state import State, get_checkpoint_xy
 
-from config import PPOConfig
-from features import extract_features
+from model import ActorNetwork, CriticNetwork
+from config import SPOConfig
 
-def layer_init(layer, std=2**0.5, bias_const=0.0):
-  torch.nn.init.orthogonal_(layer.weight, std)
-  torch.nn.init.constant_(layer.bias, bias_const)
-  return layer
-
-ACTION_DIM = 81
-
-class PPOAgent(nn.Module):
+class SPOAgent(nn.Module):
   def __init__(
     self, 
-    config: PPOConfig,
-    state_dim: int,
+    config: SPOConfig,
   ):
     super().__init__()
     self.config = config
-    self.action_dim = ACTION_DIM
-    self.state_dim = state_dim
+    self.batch_dim = (config.episode_steps, config.num_envs)
+    
+    MAX_ROT = 0.3141592653589793
+    angles = torch.tensor([[-MAX_ROT], [0.0], [+MAX_ROT]])
+    thrusts = torch.tensor([
+      [0.0,   0.0, 0.0],
+      [200.0, 0.0, 0.0],
+      [0.0,   0.0, 1.0],
+      [0.0,   1.0, 0.0],
+    ])
 
-    self.critic = torch.compile(nn.Sequential(
-      layer_init(nn.Linear(state_dim, 256)),
-      nn.LayerNorm(256),
-      nn.SiLU(),
-      layer_init(nn.Linear(256, 256)),
-      nn.LayerNorm(256),
-      nn.SiLU(),
-      layer_init(nn.Linear(256, 1), std=1.0)
-    ).to(config.device))
+    pod_action = torch.cat([
+      angles.repeat(4, 1),
+      thrusts.repeat_interleave(3, dim=0)
+    ], dim=1)
 
-    self.actor = torch.compile(nn.Sequential(
-      layer_init(nn.Linear(state_dim, 128)),
-      nn.LayerNorm(128),
-      nn.SiLU(),
-      layer_init(nn.Linear(128, 128)),
-      nn.LayerNorm(128),
-      nn.SiLU(),
-      layer_init(nn.Linear(128, ACTION_DIM), std=0.01)
-    ).to(config.device))
+    self.action_list = torch.cat([
+      pod_action.repeat_interleave(12, dim=0),
+      pod_action.repeat(12, 1)
+    ], dim=1).to(config.device)
+
+    for i in range(self.action_list.shape[0]):
+      print(i, self.action_list[i])
+
+    state_dim  = config.state_dim
+    action_dim = len(self.action_list)
+
+    self.actor = torch.compile(ActorNetwork(action_dim))
+    self.critic = torch.compile(CriticNetwork())
 
     self.optimizer = torch.optim.AdamW(
       [ 
@@ -54,72 +53,58 @@ class PPOAgent(nn.Module):
       fused=(config.device != "cpu")
     )
 
-    MAX_ROT = 0.3141592653589793
-
-    ANGLE = torch.tensor([[-MAX_ROT], [0.0], [+MAX_ROT]])
-    THRUST = torch.tensor([
-      [0.0,   0.0, 0.0],
-      [200.0, 0.0, 0.0],
-      [0.0,   1.0, 0.0]
-    ])
-
-    ACTIONS = torch.cat([
-      ANGLE.repeat(3, 1),
-      THRUST.repeat_interleave(3, dim=0)
-    ], dim=1) # [9, 4]
-
-    self.ACTIONS_2 = torch.cat([
-      ACTIONS.repeat_interleave(9, dim=0),
-      ACTIONS.repeat(9, 1)
-    ], dim=1).to(config.device) # [81, 8]
+    self.batch_idx   = 0
+    self.states      = torch.zeros((*self.batch_dim, state_dim), dtype=torch.float32, device=config.device)
+    self.actions     = torch.zeros((*self.batch_dim,         1), dtype=torch.long   , device=config.device)
+    self.rewards     = torch.zeros((*self.batch_dim,         1), dtype=torch.float32, device=config.device)
+    self.dones       = torch.zeros((*self.batch_dim,         1), dtype=torch.long   , device=config.device)
+    self.logprobs    = torch.zeros((*self.batch_dim,         1), dtype=torch.float32, device=config.device)
+    self.values      = torch.zeros((*self.batch_dim,         1), dtype=torch.float32, device=config.device)
+    self.next_values = torch.zeros((*self.batch_dim,         1), dtype=torch.float32, device=config.device)
 
   def get_value(self, state: torch.Tensor) -> torch.Tensor:
     return self.critic(state)
 
-  def act_dist(self, state: torch.Tensor) -> torch.Tensor:
+  def observe(self, reward, next_state, done) -> torch.Tensor:
+    with torch.no_grad():
+      self.rewards[self.batch_idx] = reward
+      self.next_values[self.batch_idx] = self.get_value(next_state)
+      self.dones[self.batch_idx] = done
+
+    self.batch_idx += 1
+
+  def act_dist(self, state: torch.Tensor) -> Categorical:
     return Categorical(logits=self.actor(state), validate_args=False)
-
-  def act(self, state: torch.Tensor) -> torch.Tensor:
-    return self.act_dist(state).sample().unsqueeze(-1)
-
-  def act_with_value_and_logprob(self, state: torch.Tensor):
-    dist = self.act_dist(state)
-   
-    action = dist.sample()
-    value = self.get_value(state)
-    logprob = dist.log_prob(action)
     
-    return action.unsqueeze(-1), value, logprob.unsqueeze(-1)
+  @torch.no_grad()
+  def act(self, state: torch.Tensor, is_training: bool = True) -> torch.Tensor:
+    dist = self.act_dist(state)
+    action_idx = dist.sample()
+    action = self.action_list[action_idx]
 
-  def encode_state(self, state: State) -> torch.Tensor:
-    return extract_features(state)
+    if is_training:
+      self.states[self.batch_idx] = state
+      self.actions[self.batch_idx] = action_idx.unsqueeze(-1)
+      self.logprobs[self.batch_idx] = dist.log_prob(action_idx).unsqueeze(-1)
+      self.values[self.batch_idx] = self.get_value(state)
 
-  def decode_action(
-    self, 
-    action: torch.Tensor # [B, E, 1]
-  ) -> torch.Tensor:
-    d_action = self.ACTIONS_2[action].squeeze(-2)
-    return d_action
+    return action
 
-  def update(
-    self,
-    states,      # (T, E, state_dim)
-    actions,     # (T, E, action_dim)
-    rewards,     # (T, E, 1)
-    dones,       # (T, E, 1)
-    logprobs,    # (T, E, 1)
-    values,      # (T, E, 1)
-    next_values  # (T, E, 1)
-  ):
-    T = dones.shape[0]
-    E = dones.shape[1]
+  def parameter_count(self):
+    return sum(p.numel() for p in self.parameters())
+  
+  def update(self):
+    T, E = self.batch_dim
     B = T * E
 
-    is_done = (dones > 0.5).float()
-    delta = rewards + self.config.gamma * next_values * (1.0 - is_done) - values
+    assert self.batch_idx == B
+    self.batch_idx = 0
+
+    is_done = (self.dones > 0.5).float()
+    delta = self.rewards + self.config.gamma * self.next_values * (1.0 - is_done) - self.values
 
     advantages = torch.zeros_like(delta)
-    A = torch.zeros_like(values[0]) # (E, 1)
+    A = torch.zeros_like(self.values[0]) # (E, 1)
 
     is_done_bool = is_done.bool()
     for i in range(T - 1, -1, -1):
@@ -127,16 +112,16 @@ class PPOAgent(nn.Module):
       A = delta[i] + self.config.gamma * self.config.gae_lambda * A
       advantages[i] = A
 
-    target_values = values + advantages
+    target_values = self.values + advantages
     raw_adv_std = advantages.std()
 
-    y_pred = values.flatten()
+    y_pred = self.values.flatten()
     y_true = target_values.flatten()
     var_y = torch.var(y_true)
     explained_var = 1.0 - torch.var(y_true - y_pred) / (var_y + 1e-8)
 
-    act_flat = actions.long().flatten()
-    pod0_act, pod1_act = act_flat // 9, act_flat % 9
+    act_flat = self.actions.flatten()
+    pod0_act, pod1_act = act_flat // 12, act_flat % 12
     all_pods_acts = torch.cat([pod0_act, pod1_act], dim=0)
     steer_idx = all_pods_acts % 3
     thrust_idx = all_pods_acts // 3
@@ -144,17 +129,17 @@ class PPOAgent(nn.Module):
     if self.config.norm_adv:
       advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
    
-    states = states.flatten(0, 1)
-    actions = actions.flatten(0, 1)
-    rewards = rewards.flatten(0, 1)
-    dones = dones.flatten(0, 1)
-    # next_states = next_states.flatten(0, 1)
-    logprobs = logprobs.flatten(0, 1)
-    values = values.flatten(0, 1)
-    next_values = next_values.flatten(0, 1)
+    states        = self.states.flatten(0, 1)
+    actions       = self.actions.flatten(0, 1)
+    rewards       = self.rewards.flatten(0, 1)
+    dones         = self.dones.flatten(0, 1)
+    logprobs      = self.logprobs.flatten(0, 1)
+    values        = self.values.flatten(0, 1)
+    next_values   = self.next_values.flatten(0, 1)
+    target_values = self.target_values.flatten(0, 1)
+    advantages    = advantages.flatten(0, 1)
 
-    target_values = target_values.flatten(0, 1)
-    advantages = advantages.flatten(0, 1)
+    assert actions.shape == (B, 1)
 
     L_clip_acc = torch.zeros((), device=states.device)
     L_vf_acc = torch.zeros((), device=states.device)
@@ -188,16 +173,18 @@ class PPOAgent(nn.Module):
         ratio = torch.exp(log_ratio)
 
         surr1 = ratio * mb_advantages
-        surr2 = ratio.clamp(
-                  1.0 - self.config.clip_eps, 
-                  1.0 + self.config.clip_eps
-                ) * mb_advantages
+        #surr2 = ratio.clamp(
+        #          1.0 - self.config.clip_eps, 
+        #          1.0 + self.config.clip_eps
+        #        ) * mb_advantages
+        surr3 = mb_advantages.abs() * (0.5 * 1/self.clip_eps) * (ratio - 1).pow(2)
 
-        L_clip = -torch.min(surr1, surr2).mean()
+        L_spo = - (surr1 - surr3)
+        #L_clip = -torch.min(surr1, surr2).mean()
         L_vf = nn.functional.mse_loss(mb_values, mb_targets)
         S_pi = dist.entropy().mean()
 
-        loss = L_clip + self.config.vf_coef * L_vf - self.config.ent_coef * S_pi
+        loss = L_spo + self.config.vf_coef * L_vf - self.config.ent_coef * S_pi
 
         self.optimizer.zero_grad()
         loss.backward()
@@ -232,8 +219,7 @@ class PPOAgent(nn.Module):
       "policy/loss_clip": (L_clip_acc / total_batches).item(),
       "policy/approx_kl": (approx_kl_acc / total_batches).item(),
       "policy/clip_fraction": (clip_frac_acc / total_batches).item(),
-      "policy/entropy_raw": (S_pi_acc / total_batches).item(),
-      "policy/entropy_normalized": ((S_pi_acc / total_batches) / 4.394449).item(),
+      "policy/entropy": ((S_pi_acc / total_batches) / 4.394449).item(),
       "policy/max_action_prob": (max_prob_acc / total_batches).item(),
       "policy/advantage_raw_std": raw_adv_std.item(),
       
@@ -252,11 +238,36 @@ class PPOAgent(nn.Module):
       "actions/same_action_frac": (pod0_act == pod1_act).float().mean().item(),
 
       "game/episode_completed": is_done.sum().item(),
-      "game/win_rate": ((dones == 1.0).sum() / is_done.sum().clamp_min(1)).item(),
-      "game/loss_rate": ((dones == 2.0).sum() / is_done.sum().clamp_min(1)).item(),
-      "game/draw_rate": ((dones == 3.0).sum() / is_done.sum().clamp_min(1)).item(),
+      "game/win_rate": ((dones == 1).sum().float() / is_done.sum().clamp_min(1)).item(),
+      "game/loss_rate": ((dones == 2).sum().float() / is_done.sum().clamp_min(1)).item(),
+      "game/draw_rate": ((dones == 3).sum().float() / is_done.sum().clamp_min(1)).item(),
       "game/mean_episode_length": ((self.config.episode_steps * self.config.num_envs) / is_done.sum().clamp_min(1)).item()
     }
 
     return metrics
+
+if __name__ == "__main__":
+
+  config = SPOConfig()
+
+  agent = SPOAgent(config)
+
+  B, E = agent.batch_dim
+
+  for i in range(B):
+    state = torch.randn((E, config.state_dim))
+    next_state = torch.randn_like(state)
+    reward = torch.randn((E, 1))
+    done = torch.randn((E, 1), dtype=torch.float32).long()
+
+    agent.act(state)
+    agent.observe(next_state, reward, done)
     
+    if i % 100 == 0:
+      agent.act(state, training=False)
+    
+  agent.update()
+  print(f"{state.shape}")
+
+  print(agent.act(state))
+  print("Ok") 

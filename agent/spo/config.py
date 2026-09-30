@@ -1,16 +1,17 @@
 from dataclasses import dataclass
 
 @dataclass
-class PPOConfig:
-  name: str = "init"
+class SPOConfig:
+  name: str = "swiglu"
   device: str = "cpu"
   max_bots: int = 9
   seed: int = 42
+  state_dim: int = 48
 
   total_episodes: int = 1_000_000
-  episode_steps: int = 512
-  num_envs: int = 512
-  minibatch_size: int = 4096
+  episode_steps: int = 64
+  num_envs: int = 8
+  minibatch_size: int = 256
   episodes_per_gen: int = 10
 
   learning_rate: float = 1e-4
