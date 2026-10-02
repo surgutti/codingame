@@ -20,9 +20,3 @@ class DummyAgent:
     moves[:, :, :, 1] = 100.0
 
     return moves.view(B, E, 8)
-
-  def decode_action(self, action: torch.Tensor):
-    return action
-
-  def encode_state(self, state: State):
-    return state

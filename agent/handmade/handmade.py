@@ -2,6 +2,7 @@
 
 import math
 import torch
+import torch.nn as nn
 from state import State, MAX_ROT
 
 PI = math.pi
@@ -66,8 +67,10 @@ def racer_act(state: State) -> torch.Tensor:
   thrust = torch.where(mate & (dist > dist.flip(-1)), torch.zeros_like(thrust), thrust)
   return torch.stack([rot, thrust, shield.float(), boost.float()], dim=-1).view(B, E, 8)
 
-class HandmadeAgent:
-  def act(self, state): 
+class HandmadeAgent(nn.Module):
+  def __init__(self):
+    super().__init__()
+  def act(self, state):
     return racer_act(state)
   def observe(self, reward, next_state, done):
     return
