@@ -22,8 +22,17 @@ class SPOConfig:
   update_epochs: int = 4
 
   norm_adv: bool = True
-  clip_eps: float = 0.2
+  clip_eps_low: float = 0.2
+  clip_eps_high: float = 0.28
   clip_vloss: bool = False
   ent_coef: float = 0.003
   vf_coef: float = 0.5
 
+  scale_vf: bool = True
+  adv_tail_c: float = 4.0
+  dual_clip_c: float = 3.0
+  spo_ratio_cap: float = 3.0
+  target_kl: float = 0.04
+  refresh_gae_every_epoch: bool = False
+  use_huber_vf: bool = True
+  scale_critic_targets: bool = True
