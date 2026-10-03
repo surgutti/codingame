@@ -10,13 +10,13 @@ DUMMY_BOT_BIN := $(BUILD_DIR)/dummy_bot
 MODULE_NAME := engine
 
 SIM_SRCS := \
-	src/env.cc \
-	src/sim/engine.cc \
-	src/sim/java_math.cc \
-	src/sim/mapgen.cc \
-	src/sim/pod.cc \
-	src/sim/unit.cc \
-	src/sim/vector.cc
+	env/env.cc \
+	env/src/engine.cc \
+	env/src/java_math.cc \
+	env/src/mapgen.cc \
+	env/src/pod.cc \
+	env/src/unit.cc \
+	env/src/vector.cc
 
 PYTHON_INC := -I/usr/include/python3.13
 PYTHON_EXT := .cpython-313-x86_64-linux-gnu.so
@@ -24,7 +24,7 @@ PYTHON_EXT := .cpython-313-x86_64-linux-gnu.so
 NB_INCS    := -I./nanobind/include -I./nanobind/ext/robin_map/include
 NB_SRC     := ./nanobind/src/nb_combined.cpp
 
-INCLUDES   := $(PYTHON_INC) $(NB_INCS) -I./src
+INCLUDES   := $(PYTHON_INC) $(NB_INCS) -I./env
 ALL_FLAGS  := $(CXXFLAGS) 
 
 TARGET     := $(BUILD_DIR)/$(MODULE_NAME)$(PYTHON_EXT)
@@ -39,14 +39,14 @@ $(TARGET): $(SIM_SRCS) $(NB_OBJ) | $(BUILD_DIR)
 all: $(TARGET)
 
 TEST_SRCS := \
-	src/test/test_engine.cc \
+	env/test/test_engine.cc \
 	$(SIM_SRCS)
 
 DUMMY_BOT_SRCS := \
-	src/test/dummy_bot.cc
+	env/test/dummy_bot.cc
 
 PERF_SRCS := \
-	src/test/perf_engine.cc \
+	env/test/perf_engine.cc \
 	$(SIM_SRCS)
 
 .PHONY: all dummy_bot validate clean

@@ -6,7 +6,7 @@ from state import State, get_checkpoint_xy, MAX_ROT
 class DummyAgent:
 
   @torch.no_grad()
-  @torch.compile(fullgraph=True)
+  # @torch.compile(fullgraph=True)
   def act(self, state: State) -> torch.Tensor:
     B, E, _ = state.raw.shape
 

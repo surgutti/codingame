@@ -5,7 +5,7 @@
 #include <cmath>
 #include <vector>
 
-#include "sim/engine.h"
+#include "src/engine.h"
 
 namespace nb = nanobind;
 
