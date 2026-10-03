@@ -8,8 +8,9 @@ from torch.utils.tensorboard import SummaryWriter
 from dataclasses import dataclass, field
 
 from env import VecEnv
-from ppo import PPOAgent
-from dummy import DummyAgent
+from agent import Agent
+from handmade.handmade import HandmadeAgent
+from spo.spo import SPOAgent
 
 @dataclass
 class BotEntry:
@@ -77,12 +78,10 @@ class Arena:
   def __init__(
     self,
     config,
-    state_dim: int,
     max_bots: int = 20,
     save_dir: str = "checkpoints"
   ):
     self.config = config
-    self.state_dim = state_dim
     self.max_bots = max_bots
     self.save_dir = save_dir
     self.bots_log_root = f"runs/ppo_{config.name}/bots"
@@ -99,14 +98,13 @@ class Arena:
       )
     ]
 
-    self._opponent_model = PPOAgent(config, state_dim).to(config.device)
+    self._opponent_model = SPOAgent(config).to(config.device)
     self._opponent_model.eval()
-
-    self._dummy = DummyAgent()
+    self._dummy = HandmadeAgent()
 
   def save_state(
     self,
-    learner: PPOAgent,
+    learner: Agent,
     learner_entry: BotEntry,
     next_gen: int,
     global_ep: int
@@ -133,7 +131,7 @@ class Arena:
       json.dump(state_data, f, indent=2)
     os.replace(tmp_state, self.state_path)
   
-  def load_state(self, learner: PPOAgent, learner_entry: BotEntry) -> tuple[int, int]:
+  def load_state(self, learner: Agent, learner_entry: BotEntry) -> tuple[int, int]:
     if not (os.path.exists(self.state_path) and os.path.exists(self.learner_path)):
       return 0, 0
 
@@ -236,8 +234,8 @@ class Arena:
     losses = torch.zeros((), device=self.config.device)
     draws = torch.zeros((), device=self.config.device)
     for _ in range(steps):
-      a0 = agent_a.decode_action(agent_a.act(agent_a.encode_state(s0)))
-      a1 = agent_b.decode_action(agent_b.act(agent_b.encode_state(s1)))
+      a0 = agent_a.act(s0)
+      a1 = agent_b.act(s1)
       s0, s1, _, done = envs.step(torch.cat([a0, a1], dim=-1))
       wins += (done == 1.0).sum()
       losses += (done == 2.0).sum()
@@ -248,7 +246,7 @@ class Arena:
   def register_and_prune(
     self, 
     gen: int, 
-    learner: PPOAgent, 
+    learner: Agent, 
     envs: VecEnv, 
     global_ep: int, 
     start_elo: float

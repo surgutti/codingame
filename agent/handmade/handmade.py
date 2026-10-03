@@ -75,4 +75,4 @@ class HandmadeAgent(nn.Module):
   def observe(self, reward, next_state, done):
     return
   def update(self):
-    return
+    return {}

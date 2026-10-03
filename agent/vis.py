@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 import torch
 import numpy as np
+
+from os import environ
+environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 import pygame
 
 from state import State
 from env import VecEnv
 from dummy import DummyAgent
+from handmade.handmade import HandmadeAgent
 
 class RenderEnv(VecEnv):
   def __init__(self, width=1280, height=720):
@@ -116,8 +120,8 @@ class RenderEnv(VecEnv):
     self.clock.tick(15)
 
 def visualize_fight(
-  agent0: DummyAgent,
-  agent1: DummyAgent
+  agent0: DummyAgent | HandmadeAgent,
+  agent1: DummyAgent | HandmadeAgent
 ):
   env = RenderEnv()
   s0, s1 = env.reset()
@@ -132,7 +136,7 @@ def visualize_fight(
       break
 
 if __name__ == "__main__":
-  agent0 = DummyAgent()
-  agent1 = DummyAgent()
+  agent0 = HandmadeAgent()
+  agent1 = HandmadeAgent()
 
   visualize_fight(agent0, agent1)

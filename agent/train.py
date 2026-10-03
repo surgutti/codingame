@@ -8,36 +8,26 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from arena import Arena, BotEntry
-from config import PPOConfig
 from env import VecEnv, RAW_STATE_DIM
-from ppo import PPOAgent
-from dummy import DummyAgent
-from features import extract_features
+from spo.config import SPOConfig
+from spo.spo import SPOAgent
+from handmade.handmade import HandmadeAgent
 from state import State
 from stats import CUSTOM_LAYOUT
 
 type Agent = PPOAgent | DummyAgent
 
 def train(
-  config: PPOConfig,
+  config: SPOConfig,
   writer: SummaryWriter,
   envs: VecEnv,
-  agent0: PPOAgent,
+  agent0: Agent,
   arena: Arena,
   learner_entry: BotEntry,
   num_episodes: int,
   start_episode: int
 ):
-  shape = [config.episode_steps, config.num_envs]
-  states = torch.zeros((*shape, agent0.state_dim), dtype=torch.float32, device=config.device)
-  actions = torch.zeros((*shape, 1), dtype=torch.long, device=config.device)
-  rewards = torch.zeros((*shape, 1), dtype=torch.float32, device=config.device)
-  dones = torch.zeros_like(rewards)
-  logprobs = torch.zeros_like(rewards)
-  values = torch.zeros_like(rewards)
-  next_values = torch.zeros_like(rewards)
-  
-  state0_raw, state1_raw = envs.reset()
+  state0, state1 = envs.reset()
 
   with tqdm(
     range(start_episode, start_episode + num_episodes),
@@ -56,71 +46,61 @@ def train(
       rewards_acc = torch.zeros((), device=config.device)
 
       agent0.eval()
+      agent1.eval()
 
+      ep_wins = torch.zeros((), device=config.device)
+      ep_losses = torch.zeros((), device=config.device)
+      ep_draws = torch.zeros((), device=config.device)
       for step in range(config.episode_steps):
-        torch.cuda.synchronize()
+        # torch.cuda.synchronize()
         start = time.perf_counter()
 
-        state0 = agent0.encode_state(state0_raw)
-        state1 = agent1.encode_state(state1_raw)
-
         with torch.no_grad():
-          action0, value, logprob = agent0.act_with_value_and_logprob(state0)
+          action0 = agent0.act(state0, training=True)
           action1 = agent1.act(state1)
+    
+        # print(f"{action0.shape=} {action1.shape=}")
+        env_action = torch.cat([action0, action1], -1)
 
-        env_action0 = agent0.decode_action(action0)
-        env_action1 = agent1.decode_action(action1)
-        env_action = torch.cat([env_action0, env_action1], -1)
-
-        torch.cuda.synchronize()
+        # torch.cuda.synchronize()
         inference_time += (time.perf_counter() - start)
 
         start = time.perf_counter()
-        next_state0_raw, next_state1_raw, reward, done = envs.step(env_action)
+        next_state0, next_state1, reward, done = envs.step(env_action)
 
-        torch.cuda.synchronize()
+        agent0.observe(+reward, next_state0, done)
+        # agent1.observe(-reward, next_state1, done)
+
+        # torch.cuda.synchronize()
         simulation_time += (time.perf_counter() - start)
-        
-        states[step] = state0
-        actions[step] = action0
-        rewards[step] = reward
-        dones[step] = done
-        logprobs[step] = logprob
-        values[step] = value
-        if step > 0:
-          next_values[step - 1] = value
 
-        state0_raw = next_state0_raw
-        state1_raw = next_state1_raw
+        state0 = next_state0
+        state1 = next_state1
 
         rewards_acc += reward.mean()
+        
+        ep_wins += (done == 1.0).sum()
+        ep_losses += (done == 2.0).sum()
+        ep_draws += (done == 3.0).sum()
 
-      with torch.no_grad():
-        next_values[-1] = agent0.get_value(agent0.encode_state(state0_raw))
+      arena.update_elo(
+        learner_entry, 
+        opp_entry, 
+        ep_wins.item(), 
+        ep_losses.item(), 
+        ep_draws.item()
+      )
 
-      ep_wins = (dones == 1.0).sum().item()
-      ep_losses = (dones == 2.0).sum().item()
-      ep_draws = (dones == 3.0).sum().item()
-      arena.update_elo(learner_entry, opp_entry, ep_wins, ep_losses, ep_draws)
-
-      torch.cuda.synchronize()
+      # torch.cuda.synchronize()
       start = time.perf_counter()
 
       agent0.train()
-      metrics = agent0.update(
-        states=states,
-        actions=actions,
-        rewards=rewards,
-        dones=dones,
-        logprobs=logprobs,
-        values=values,
-        next_values=next_values
-      )
+      metrics = agent0.update()
 
       for tag, val in metrics.items():
         writer.add_scalar(tag, val, episode)
 
-      torch.cuda.synchronize()
+      # torch.cuda.synchronize()
       update_time += (time.perf_counter() - start)
 
       total_time = inference_time + simulation_time + update_time
@@ -134,15 +114,12 @@ def train(
       )
 
 if __name__ == "__main__":
-  config = PPOConfig()
+  config = SPOConfig()
   envs = VecEnv(config.num_envs, config.seed, config.device)
  
-  init_state = State(torch.ones((1, 1, RAW_STATE_DIM), dtype=torch.float32, device=config.device))
-  state_dim = extract_features(init_state).shape[-1]
+  agent0 = SPOAgent(config).to(config.device)
 
-  agent0 = PPOAgent(config, state_dim).to(config.device)
-
-  arena = Arena(config, state_dim, max_bots=config.max_bots)
+  arena = Arena(config, max_bots=config.max_bots)
   learner_entry = BotEntry(name="learner", path="learner", elo=1000.0)
   global_ep = 0
 

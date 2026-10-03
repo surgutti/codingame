@@ -7,9 +7,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 
-from model import ActorNetwork, CriticNetwork
-from config import SPOConfig
-from spo_utils import _fast_sample_and_logprob, compute_spo_dual_clip_loss, _compute_gae_fused, RunningReturnScaler
+from state import State
+from spo.model import ActorNetwork, CriticNetwork
+from spo.config import SPOConfig
+from spo.spo_utils import _fast_sample_and_logprob, compute_spo_dual_clip_loss, _compute_gae_fused, RunningReturnScaler
 
 class SPOAgent(nn.Module):
   def __init__(self, config: SPOConfig):
@@ -35,11 +36,14 @@ class SPOAgent(nn.Module):
         [pod_action.repeat_interleave(12, dim=0), pod_action.repeat(12, 1)],
         dim=1,
     ).to(self.device)  # (144, 8)
+    # print(f"{action_list=}")
 
     self.register_buffer("action_list", action_list)
 
     state_dim = config.state_dim
     action_dim = len(self.action_list)
+
+    self.state_dim = state_dim
     self.action_dim = action_dim
     self.entropy_norm_const = math.log(action_dim) # ln(144) = 4.9698133
 
@@ -70,19 +74,13 @@ class SPOAgent(nn.Module):
     self.next_values = torch.zeros((*self.batch_dim, 1), dtype=torch.float32, device=self.device)
     self.last_next_state = torch.zeros((config.num_envs, state_dim), dtype=torch.float32, device=self.device)
 
-  @staticmethod
-  def _unwrap_state(state: torch.Tensor) -> torch.Tensor:
-    raw = getattr(state, "raw", getattr(state, "state", state))
-    if raw.dim() == 3 and raw.shape[0] == 1:
-      return raw.squeeze(0)
-    return raw
 
   def get_value(self, state: torch.Tensor) -> torch.Tensor:
-    return self.critic(self._unwrap_state(state))
+    return self.critic(state)
 
   def act_dist(self, state: torch.Tensor) -> Categorical:
     return Categorical(
-      logits=self.actor(self._unwrap_state(self.state)), 
+      logits=self.actor(self.state),
       validate_args=False
     )
 
@@ -90,9 +88,9 @@ class SPOAgent(nn.Module):
   def act(
     self,
     state,
-    training: bool = True
+    training: bool = False
   ):
-    s = self._unwrap_state(state)
+    s = state.raw.squeeze(0)
     logits = self.actor(s)
     action, action_idx, chosen_logprob = _fast_sample_and_logprob(
       logits, self.action_list
@@ -104,22 +102,21 @@ class SPOAgent(nn.Module):
       self.actions[idx].copy_(action_idx)
       self.logprobs[idx].copy_(chosen_logprob)
 
-    return action
+    return action.unsqueeze(0)
   
   @torch.no_grad()
   def observe(
     self,
     reward: torch.Tensor,
-    next_state: torch.Tensor,
+    next_state: State,
     done: torch.Tensor
   ):
     idx = self.batch_idx
-    # print(f"> {self.rewards[idx].shape=} {reward.shape}")
     self.rewards[idx].copy_(reward.view(-1, 1))
     self.dones[idx].copy_(done.view(-1, 1).long())
 
     if idx == self.batch_dim[0] - 1:
-      self.last_next_state.copy_(next_state)
+      self.last_next_state.copy_(next_state.raw.squeeze(0))
 
     self.batch_idx += 1
   
@@ -216,35 +213,7 @@ class SPOAgent(nn.Module):
     total_batches = 0
     actor_batches = 0
 
-    for epoch in range(self.config.update_epochs):
-      if epoch > 0 and self.config.refresh_gae_every_epoch and B >= 64:
-        with torch.no_grad():
-          self._evaluate_rollout_values()
-          cur_logits = self.actor(states)
-          cur_lp = F.log_softmax(cur_logits, dim=-1).gather(-1, actions)
-          epoch_log_ratio = (cur_lp - logprobs).view(T, E, 1)
-          ref_adv, ref_targ, _ = _compute_vtrace_gae_fused(
-            self.rewards,
-            self.values,
-            self.next_values,
-            is_done,
-            epoch_log_ratio,
-            gamma=self.config.gamma,
-            gae_lambda=self.config.gae_lambda
-          )
-          return_scale_std = self.return_scaler.update(ref_targ)
-          if self.config.norm_adv:
-            ref_adv = (ref_adv - ref_adv.mean()) / (
-              ref_adv.std(unbiased=False) + 1e-8
-            )
-            ref_adv = self.config.adv_tail_c * torch.asinh(ref_adv / self.config.adv_tail_c)
-            ref_adv = (ref_adv - ref_adv.mean()) / (
-              ref_adv.std(unbiased=False) + 1e-8
-            )
-          values = self.values.flatten(0, 1)
-          target_values_flat = ref_targ.flatten(0, 1)
-          advantages_flat = ref_adv.flatten(0, 1)
-          
+    for epoch in range(self.config.update_epochs): 
       inds = torch.randperm(B, device=self.device)
       do_actor_step = True
 
@@ -279,7 +248,7 @@ class SPOAgent(nn.Module):
           clip_eps_low=self.config.clip_eps_low,
           clip_eps_high=self.config.clip_eps_high,
           dual_clip_c=self.config.dual_clip_c,
-          ratio_cap=config.spo_ratio_cap
+          ratio_cap=self.config.spo_ratio_cap
         )
 
         if float(approx_kl.detach().item()) > self.config.target_kl:
@@ -356,7 +325,7 @@ class SPOAgent(nn.Module):
         "critic/return_mean": y_true.mean().item(),
         "critic/return_std": y_true.std(unbiased=False).item(),
         "critic/td_residual_abs_mean": delta.abs().mean().item(),
-        # "critic/return_scale_std": float(return_scale_std),
+        "critic/return_scale_std": float(return_scale_std),
 
         "policy/loss_spo": mean_spo_loss,
         "policy/loss_clip": mean_spo_loss,

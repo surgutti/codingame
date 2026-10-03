@@ -18,8 +18,8 @@ class SwiGLU(nn.Module):
   ):
     super().__init__()
 
-    self.W = layer_init(nn.Linear(input_dim, hidden_dim))
-    self.V = layer_init(nn.Linear(input_dim, hidden_dim))
+    self.W = layer_init(nn.Linear(input_dim, hidden_dim), std=1.0)
+    self.V = layer_init(nn.Linear(input_dim, hidden_dim), std=1.0)
     self.W2 = layer_init(nn.Linear(hidden_dim, output_dim))
     self.beta = nn.Parameter(torch.ones(()))
 
@@ -84,13 +84,13 @@ class CriticNetwork(nn.Module):
     super().__init__()
 
     self.embd = StateEmbedding(
-      output_pods=128,
+      output_pods=64,
       output_cps=64,
       output_meta=16
     )
 
     self.core = nn.Sequential(
-      SwiGLU(self.embd.output_dim, 256, 128),
+      SwiGLU(self.embd.output_dim, 128, 128),
       nn.LayerNorm(128),
       nn.SiLU(),
       layer_init(nn.Linear(128, 1), std=1.0)
