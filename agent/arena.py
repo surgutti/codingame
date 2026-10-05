@@ -8,15 +8,15 @@ from torch.utils.tensorboard import SummaryWriter
 from dataclasses import dataclass, field
 
 from env import VecEnv
-from agent import Agent
-from handmade.handmade import HandmadeAgent
-from spo.spo import SPOAgent
+from agent import Agent, AGENT_REGISTRY
 
 @dataclass
 class BotEntry:
   name: str
   path: str | None
-  log_dir: str | None = None
+  log_dir: str
+  agent_type: str
+  agent_kwargs: dict = field(default_factory=dict)
   elo: float = 1000.0
   wins: float = 0.0
   losses: float = 0.0
@@ -24,6 +24,8 @@ class BotEntry:
   recent_win_rate:  float = 0.5
   purge_step: int | None = field(default=None, repr=False)
   writer: SummaryWriter | None = field(init=False, default=None, repr=False)
+
+  _instance: Agent | None = field(init=False, default=None, repr=False)
 
   @property
   def games(self) -> int:
@@ -58,6 +60,8 @@ class BotEntry:
       "name": self.name,
       "path": self.path,
       "log_dir": self.log_dir,
+      "agent_type": self.agent_type,
+      "agent_kwargs": self.agent_kwargs,
       "elo": self.elo,
       "wins": self.wins,
       "losses": self.losses,
@@ -73,34 +77,24 @@ class BotEntry:
       os.remove(self.path)
     if self.log_dir and os.path.exists(self.log_dir):
       shutil.rmtree(self.log_dir, ignore_errors=True)
+    self._instance = None
 
 class Arena:
   def __init__(
     self,
     config,
-    max_bots: int = 20,
+    env: VecEnv,
     save_dir: str = "checkpoints"
   ):
     self.config = config
-    self.max_bots = max_bots
     self.save_dir = save_dir
     self.bots_log_root = f"runs/ppo_{config.name}/bots"
     self.state_path = os.path.join(save_dir, "arena_state.json")
     self.learner_path = os.path.join(save_dir, "learner_latest.pt")
+    self.env = env
     os.makedirs(save_dir, exist_ok=True)
 
-    self.pool: list[BotEntry] = [
-      BotEntry(
-        name="dummy",
-        path=None,
-        log_dir=os.path.join(self.bots_log_root, "dummy"),
-        elo=1000.0
-      )
-    ]
-
-    self._opponent_model = SPOAgent(config).to(config.device)
-    self._opponent_model.eval()
-    self._dummy = HandmadeAgent()
+    self.pool: list[BotEntry] = []
 
   def save_state(
     self,
@@ -161,11 +155,14 @@ class Arena:
       path = item.get("path")
       if path is not None and not os.path.exists(path):
         continue
+
       loaded_pool.append(
         BotEntry(
           name=item["name"],
           path=path,
           log_dir=item.get("log_dir"),
+          agent_type=item.get("agent_type", "SPOAgent"),
+          agent_kwargs=item.get("agent_kwargs", {}),
           elo=float(item.get("elo", 1000.0)),
           wins=float(item.get("wins", 0.0)),
           losses=float(item.get("losses", 0.0)),
@@ -190,14 +187,23 @@ class Arena:
         b.writer.close()
 
   def load_bot(self, entry: BotEntry):
-    if entry.path is None:
-      return self._dummy
+    if entry._instance is not None:
+      return entry._instance
 
-    ckpt = torch.load(entry.path, map_location=self.config.device, weights_only=True)
-    self._opponent_model.load_state_dict(ckpt)
-    self._opponent_model.eval()
+    agent_cls = AGENT_REGISTRY.get(entry.agent_type)
+    if agent_cls is None:
+      raise ValueError(f"Unknown type: {entry.agent_type}")
 
-    return self._opponent_model
+    agent = agent_cls(**entry.agent_kwargs)
+
+    if entry.path is not None and os.path.exists(entry.path):
+      ckpt = torch.load(entry.path, map_location=self.config.device, weights_only=True)
+      if isinstance(agent, torch.nn.Module):
+        agent.load_state_dict(ckpt)
+        # agent.eval()
+      
+    entry._instance = agent
+    return agent 
 
   def sample_opponent(self, learner_elo: float):
     weights = [1.0 / (1.0 + abs(b.elo - learner_elo) / 200.0) for b in self.pool]
@@ -217,72 +223,87 @@ class Arena:
     if total == 0:
       return
     exp_a = 1.0 / (1.0 + 10.0 ** ((b.elo - a.elo) / 400.0))
-    score_a = (wins + 0.5 * draws) / total
-    delta = k * (score_a - exp_a)
-    if a.path is not None:
-      a.elo += delta
-    if b.path is not None:
-      b.elo -= delta
+    expected_score = total * exp_a
+    
+    actual_score = wins + 0.5 * draws
+
+    delta = k * (actual_score - expected_score)
+    delta = max(-300, delta)
+    delta = min(+300, delta)
+
+    a.elo += delta
+    b.elo -= delta
 
     a.record_result(wins, losses, draws)
     b.record_result(losses, wins, draws)
 
   @torch.no_grad()
-  def play_match(self, envs: VecEnv, agent_a, agent_b, steps: int = 512):
-    s0, s1 = envs.reset()
+  def play_match(self, agent_a, agent_b, steps: int = 512):
+    s0, s1 = self.env.reset()
     wins = torch.zeros((), device=self.config.device)
     losses = torch.zeros((), device=self.config.device)
     draws = torch.zeros((), device=self.config.device)
     for _ in range(steps):
       a0 = agent_a.act(s0)
       a1 = agent_b.act(s1)
-      s0, s1, _, done = envs.step(torch.cat([a0, a1], dim=-1))
+      s0, s1, _, done = self.env.step(torch.cat([a0, a1], dim=-1))
       wins += (done == 1.0).sum()
       losses += (done == 2.0).sum()
       draws += (done == 3.0).sum()
 
     return wins.item(), losses.item(), draws.item()
 
-  def register_and_prune(
+  def register(
     self, 
-    gen: int, 
-    learner: Agent, 
-    envs: VecEnv, 
-    global_ep: int, 
-    start_elo: float
+    name: str,
+    agent: Agent, 
+    global_ep: int,
+    start_elo: float = 1000.0,
+    agent_kwargs: dict | None = None,
   ) -> BotEntry:
-    name = f"gen_{gen:04d}"
     path = os.path.join(self.save_dir, f"{name}.pt")
-    torch.save(learner.state_dict(), path)
+    torch.save(agent.state_dict(), path)
+
     new_bot = BotEntry(
       name=name, 
       path=path, 
       log_dir=os.path.join(self.bots_log_root, name),
+      agent_type=type(agent).__name__,
+      agent_kwargs=agent_kwargs or {},
       elo=start_elo,
     )
 
-    opponents = random.sample(self.pool, k=min(3, len(self.pool)))
-    for opp_entry in opponents:
+    new_bot._instance = agent
+
+    for opp_entry in self.pool:
       opp_agent = self.load_bot(opp_entry)
-      w, l, d = self.play_match(envs, learner, opp_agent, steps=self.config.episode_steps)
+      w, l, d = self.play_match(agent, opp_agent, steps=self.config.episode_steps)
       self.update_elo(new_bot, opp_entry, w, l, d)
 
     self.pool.append(new_bot)
 
-    neural_bots = sorted(
-      [b for b in self.pool if b.path is not None], 
-      key=lambda x: x.elo, 
-      reverse=True
-    )
-    while len(neural_bots) > self.max_bots:
-      dropped = neural_bots.pop()
-      dropped.cleanup()
+    self.log_ranks(global_ep)
 
-    self.pool = [b for b in self.pool if b.path is None] + neural_bots
+    return new_bot
+  
+  def stabilize(self, num_matches: int = 10):
+    if len(self.pool) < 2:
+      return
 
+    for _ in range(num_matches):
+      entry_a = random.choice(self.pool)
+      entry_b = random.choice(self.pool)
+      while entry_b is entry_a:
+        entry_b = random.choice(self.pool)
+
+      agent_a = self.load_bot(entry_a)
+      agent_b = self.load_bot(entry_b)
+
+      w, l, d = self.play_match(agent_a, agent_b)
+
+      self.update_elo(entry_a, entry_b, w, l, d)
+
+  def log_ranks(self, global_ep):
     ranked_all = sorted(self.pool, key=lambda x: x.elo, reverse=True)
     for rank, bot in enumerate(ranked_all, start=1):
       bot.log_step(global_ep, rank)
-    return new_bot
-
-

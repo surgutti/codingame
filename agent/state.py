@@ -9,7 +9,7 @@ class State:
 
   @property
   def pods(self) -> torch.Tensor:
-    return self.raw[..., :32].view(*self.raw.shape[:-1], 4, 8)
+    return self.raw[..., :64].view(*self.raw.shape[:-1], 4, 16)
 
   @property
   def x(self) -> torch.Tensor:
@@ -44,21 +44,27 @@ class State:
     return self.pods[..., 7] # [B, E, 4]
   
   @property
+  def laps(self) -> torch.Tensor:
+    return self.raw[..., 77].long() # [B, E]
+
+  @property
   def timeouts(self) -> torch.Tensor:
-    return self.raw[..., 46:48] # [B, E, 2]
+    return self.raw[..., 78:80] # [B, E, 2]
 
   @property
   def meta(self) -> torch.Tensor:
-    return self.raw[..., 44:48] # [B, E, 4]
+    return self.raw[..., 76:80] # [B, E, 4]
 
   @property
   def checkpoints(self) -> torch.Tensor:
-    return self.raw[..., 32:44].view(*self.raw.shape[:-1], 6, 2) # [B, E, 6 cps, 2]
+    return self.raw[..., 64:76].view(*self.raw.shape[:-1], 6, 2) # [B, E, 6 cps, 2]
 
   @property
   def num_cps(self) -> torch.Tensor:
-    return self.raw[..., 44].long() # [B, E]
+    return self.raw[..., 76].long() # [B, E]
 
+  '''
+  wrong and not used
   def flip_teams(self) -> "State":
     flipped = self.raw.clone()
     flipped[..., 0:16] = self.raw[..., 16:32]
@@ -66,6 +72,7 @@ class State:
     flipped[..., 46] = self.raw[..., 47]
     flipped[..., 47] = self.raw[..., 46]
     return State(flipped)
+  '''
 
 def get_checkpoint_xy(
   state: State, # [B, E] 

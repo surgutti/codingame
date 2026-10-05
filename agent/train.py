@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import torch
 import time
 
@@ -9,13 +10,14 @@ from tqdm import tqdm
 
 from arena import Arena, BotEntry
 from env import VecEnv, RAW_STATE_DIM
+from agent import Agent
 from spo.config import SPOConfig
 from spo.spo import SPOAgent
 from handmade.handmade import HandmadeAgent
+from handmade.handmade2 import Handmade2Agent
+from dummy.dummy import DummyAgent
 from state import State
 from stats import CUSTOM_LAYOUT
-
-type Agent = PPOAgent | DummyAgent
 
 def train(
   config: SPOConfig,
@@ -27,7 +29,6 @@ def train(
   num_episodes: int,
   start_episode: int
 ):
-  state0, state1 = envs.reset()
 
   with tqdm(
     range(start_episode, start_episode + num_episodes),
@@ -37,6 +38,8 @@ def train(
     unit="ep"
   ) as pbar:
     for episode in pbar:
+      state0, state1 = envs.reset()
+
       opp_entry, agent1 = arena.sample_opponent(learner_entry.elo)
 
       inference_time = 0.0
@@ -57,7 +60,7 @@ def train(
 
         with torch.no_grad():
           action0 = agent0.act(state0, training=True)
-          action1 = agent1.act(state1)
+          action1 = agent1.act(state1) #training=True)
     
         # print(f"{action0.shape=} {action1.shape=}")
         env_action = torch.cat([action0, action1], -1)
@@ -118,12 +121,39 @@ if __name__ == "__main__":
   envs = VecEnv(config.num_envs, config.seed, config.device)
  
   agent0 = SPOAgent(config).to(config.device)
+  arena = Arena(config, envs)
+    
+  learner_entry = BotEntry(
+    name="learner", 
+    path=None,
+    log_dir=os.path.join(arena.bots_log_root, "learner"),
+    agent_type="SPOAgent",
+    elo=1000.0
+  )
 
-  arena = Arena(config, max_bots=config.max_bots)
-  learner_entry = BotEntry(name="learner", path="learner", elo=1000.0)
   global_ep = 0
 
   start_gen, global_ep = arena.load_state(agent0, learner_entry)
+
+  if len(arena.pool) == 0:
+    arena.register(
+      "Handmade1",
+      HandmadeAgent(),
+      global_ep=0,
+      start_elo=1000.0
+    )
+    arena.register(
+      "Handmade2",
+      Handmade2Agent(),
+      global_ep=0,
+      start_elo=1000.0
+    )
+    arena.register(
+      "Dummy",
+      DummyAgent(),
+      global_ep=0,
+      start_elo=1000.0
+    )
 
   writer = SummaryWriter(
     log_dir=f"runs/ppo_{config.name}",
@@ -148,22 +178,42 @@ if __name__ == "__main__":
       )
       global_ep += config.episodes_per_gen
 
-      ckpt_entry = arena.register_and_prune(
-        gen, agent0, envs, global_ep, start_elo=learner_entry.elo
+      arena.stabilize()
+      arena.log_ranks(global_ep)
+
+      frozen_learner = SPOAgent(config).to(config.device)
+      frozen_learner.load_state_dict(agent0.state_dict())
+      frozen_learner.eval()
+
+      ckpt_name = f"gen_{gen:04d}"
+      ckpt_entry = arena.register(
+        name=ckpt_name,
+        agent=frozen_learner,
+        global_ep=global_ep,
+        start_elo=learner_entry.elo
       )
+
+      tb_vid = visualize_fight(
+        agent0,
+        Handmade2Agent(),
+        save_path=f"replays/match_{ckpt_name}.mp4",
+        agent_names=["Learner", "Handmade2"]
+      )
+      writer.add_video("arena/match", tb_vid, global_step=global_ep, fps=15)
+
       learner_entry.elo = ckpt_entry.elo
 
-      arena.save_state(agent0, learner_entry, next_gen=gen + 1, global_ep=global_ep)
+      arena.save_state(
+        agent0, 
+        learner_entry, 
+        next_gen=gen + 1, 
+        global_ep=global_ep
+      )
 
       elos = [b.elo for b in arena.pool if b.path is not None]
       writer.add_scalar("arena/learner_elo", learner_entry.elo, global_ep)
       writer.add_scalar("arena/top1_elo", max(elos), global_ep)
       writer.add_scalar(f"arena/top{config.max_bots}_elo", min(elos), global_ep)
-
-      md = "| Rank | Bot | Elo | Games |\n|---|---|---|---|\n"
-      for idx, b in enumerate(sorted(arena.pool, key=lambda x: x.elo, reverse=True), 1):
-        md += f"| {idx} | `{b.name}` | **{b.elo:.0f}** | {b.games} |\n"
-      writer.add_text("arena/leaderboard", md, global_ep)
   except KeyboardInterrupt:
     print(f"\n[Train] Interrupted at episode {global_ep}. Last saved genertion is safe in '{arena.save_dir}/'.")
   finally:

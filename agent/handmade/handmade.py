@@ -70,7 +70,7 @@ def racer_act(state: State) -> torch.Tensor:
 class HandmadeAgent(nn.Module):
   def __init__(self):
     super().__init__()
-  def act(self, state):
+  def act(self, state, training=False):
     return racer_act(state)
   def observe(self, reward, next_state, done):
     return

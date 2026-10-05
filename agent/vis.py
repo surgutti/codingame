@@ -3,19 +3,19 @@ import torch
 import numpy as np
 
 from os import environ
+environ['SDL_VIDEODRIVER'] = 'dummy'
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 import pygame
+import imageio
 
 from state import State
 from env import VecEnv
-from dummy import DummyAgent
-from handmade.handmade import HandmadeAgent
+from agent import Agent
+
 
 class RenderEnv(VecEnv):
   def __init__(self, width=1280, height=720):
     super().__init__(1, seed=np.random.randint(0, 2**20))
-    self.window = None
-    self.clock = None
     self.screen_w = width
     self.screen_h = height
 
@@ -28,35 +28,27 @@ class RenderEnv(VecEnv):
     self.COLOR_P1 = (0, 220, 255)
     self.COLOR_P2 = (255, 40, 80)
     self.COLOR_CP = (60, 65, 80)
+    self.COLOR_TEXT = (220, 225, 235)
+
+    pygame.init()
+    pygame.font.init()
+    pygame.display.set_mode((1, 1))
+
+    self.font_large = pygame.font.SysFont("monospace", 24, bold=True)
+    self.font_small = pygame.font.SysFont("monospace", 16)
 
   def reset(self) -> State:
-    s = super().reset()
-    self._render()
-    return s
+    self.step_count = 0
+    return super().reset()
 
   def step(self, a: torch.Tensor) -> State:
-    r = super().step(a)
-    self._render()
-    return r
+    self.step_count += 1
+    return super().step(a)
 
   def _world_to_screen(self, x: float, y: float):
     return int(x * self.scale), int(y * self.scale)
 
-  def _render(self):
-    if self.window is None:
-      pygame.init()
-      pygame.display.init()
-      pygame.display.set_caption("Mad Pod Racing")
-      self.window = pygame.display.set_mode((self.screen_w, self.screen_h), pygame.DOUBLEBUF)
-
-    if self.clock is None:
-      self.clock = pygame.time.Clock()
-    
-    for event in pygame.event.get():
-      if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-          pygame.quit()
-          exit(0)
-
+  def render(self, agent_names = None) -> np.ndarray:
     canvas = pygame.Surface((self.screen_w, self.screen_h))
     canvas.fill(self.COLOR_BG)
     
@@ -99,6 +91,9 @@ class RenderEnv(VecEnv):
         2
       )
 
+      cp_text = self.font_small.render(str(i), True, (100, 110, 130))
+      canvas.blit(cp_text, cp_text.get_rect(center=(x, y)))
+
     pod_radius_px = int(400 * self.scale)
     for i in range(4):
       px = float(state.x[..., i].item())
@@ -115,16 +110,37 @@ class RenderEnv(VecEnv):
         pod_radius_px 
       )
 
-    self.window.blit(canvas, (0, 0))
-    pygame.display.flip()
-    self.clock.tick(15)
+      next_cp = int(state.next_cp[..., i].item())
+      pod_label = self.font_small.render(f"P{i} (CP:{next_cp})", True, self.COLOR_TEXT)
+      canvas.blit(pod_label, (sx + pod_radius_px + 8, sy - 10))
+
+    hud_surface = pygame.Surface((self.screen_w, 50), pygame.SRCALPHA)
+    hud_surface.fill((10, 12, 16, 200))
+
+    step_text = self.font_large.render(f"Step: {self.step_count}", True, self.COLOR_TEXT)
+    hud_surface.blit(step_text, (20, 12))
+
+    if agent_names is not None:
+      match_title = self.font_large.render(f"{agent_names[0]} vs {agent_names[1]}", True, self.COLOR_TEXT)
+      hud_surface.blit(match_title, match_title.get_rect(center=(self.screen_w // 2, 25)))
+
+    canvas.blit(hud_surface, (0, 0))
+
+    frame = pygame.surfarray.array3d(canvas)
+    return np.transpose(frame, (1, 0, 2))
 
 def visualize_fight(
-  agent0: DummyAgent | HandmadeAgent,
-  agent1: DummyAgent | HandmadeAgent
-):
+  agent0: Agent,
+  agent1: Agent,
+  save_path: str,
+  agent_names = None
+) -> np.ndarray:
   env = RenderEnv()
   s0, s1 = env.reset()
+
+  frames = []
+  frames.append(env.render(agent_names))
+
   for i in range(300):
     a0 = agent0.act(s0)
     a1 = agent1.act(s1)
@@ -132,11 +148,35 @@ def visualize_fight(
     a = torch.cat([a0, a1], -1)
 
     s0, s1, reward, done = env.step(a)
+    frames.append(env.render(agent_names))
+
     if done.item():
       break
+ 
+  imageio.mimwrite(save_path, frames, format='FFMPEG', fps=15, macro_block_size=1) 
+
+  vid = np.array(frames)
+  vid = np.transpose(vid, (0, 3, 1, 2))
+  tb_video = np.expand_dims(vid, axis=0)
+
+  return tb_video
 
 if __name__ == "__main__":
-  agent0 = HandmadeAgent()
-  agent1 = HandmadeAgent()
+  from handmade.handmade import HandmadeAgent
+  from handmade.handmade2 import Handmade2Agent
 
-  visualize_fight(agent0, agent1)
+  agent0 = HandmadeAgent()
+  agent1 = Handmade2Agent()
+
+  tb_vid = visualize_fight(
+    agent0, 
+    agent1, 
+    save_path="replays/match.mp4",
+    agent_names=["Handmade1", "Handmade2"]
+  )
+
+  from torch.utils.tensorboard import SummaryWriter
+  writer = SummaryWriter("runs/pod_racing")
+  writer.add_video("eval/match", tb_vid, global_step=0, fps=15)
+
+  writer.close()

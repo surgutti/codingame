@@ -9,7 +9,7 @@ class DummyAgent(nn.Module):
     super().__init__()
   @torch.no_grad()
   @torch.compile(fullgraph=True)
-  def act(self, state: State) -> torch.Tensor:
+  def act(self, state: State, training=False) -> torch.Tensor:
     B, E, _ = state.raw.shape
     cps = state.checkpoints
     idx = (state.next_cp[:, :, :2] % state.num_cps.unsqueeze(-1)).unsqueeze(-1).expand(B, E, 2, 2)

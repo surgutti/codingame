@@ -2,19 +2,19 @@ from dataclasses import dataclass
 
 @dataclass
 class SPOConfig:
-  name: str = "swiglu"
-  device: str = "cpu"
+  name: str = "simple-mlp"
+  device: str = "gpu"
   max_bots: int = 9
   seed: int = 42
-  state_dim: int = 48
+  state_dim: int = 80
 
   total_episodes: int = 1_000_000
-  episode_steps: int = 128
-  num_envs: int = 2 # 8
-  minibatch_size: int = 32 # 256
-  episodes_per_gen: int = 5
+  episode_steps: int = 256 # 512
+  num_envs: int = 4 # 512
+  minibatch_size: int = 128
+  episodes_per_gen: int = 1000
 
-  learning_rate: float = 1e-4
+  learning_rate: float = 3e-5
   gamma: float = 0.995
   gae_lambda: float = 0.95
   grad_clip: float = 0.5

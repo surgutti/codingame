@@ -293,6 +293,7 @@ class SPOAgent(nn.Module):
         self.optimizer.step()
 
         with torch.no_grad():
+          L_spo_acc += L_spo.detach()
           L_vf_acc += L_vf.detach()
           S_pi_acc += S_pi.detach()
           approx_kl_acc += approx_kl.detach()

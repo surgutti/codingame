@@ -40,7 +40,7 @@ def _compute_gae_fused(
 # C^1-Smooth Hybrid SPO
 # Dual-Clip
 # Huberized-Gain Surrogate Objective
-@torch.compile(fullgraph=True)
+# @torch.compile(fullgraph=True)
 def compute_spo_dual_clip_loss(
     logits: torch.Tensor,
     mb_actions: torch.Tensor,
@@ -110,6 +110,12 @@ def compute_spo_dual_clip_loss(
   # Kong's effective sample size ess
   mean_r = ratio.mean()
   ess = (mean_r * mean_r) / (ratio * ratio).mean().clamp_min(1e-12)
+
+  print("SPO Loss: ", L_spo.item())
+  print("Adv mean: ", mb_advantages.mean().item())
+  print("Adv std: ", mb_advantages.std().item())
+  print("Ratio mean: ", ratio.mean().item())
+  print("Ratio min/max ", ratio.min().item(), ratio.max().item())
 
   return (
       L_spo,

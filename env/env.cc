@@ -84,28 +84,33 @@ private:
 
   static void writeRawState(Engine const& eng, f32* out, int team) {
     auto const& pods = eng.pods();
-    for (i32 p = 0; p < POD_NB; p++) {
-      i32 q = (team == 0 ? p : (p ^ 2));
-      out[p * 8 + 0] = static_cast<f32>(pods[q].x);
-      out[p * 8 + 1] = static_cast<f32>(pods[q].y);
-      out[p * 8 + 2] = static_cast<f32>(pods[q].vx);
-      out[p * 8 + 3] = static_cast<f32>(pods[q].vy);
-      out[p * 8 + 4] = static_cast<f32>(pods[q].angle);
-      out[p * 8 + 5] = static_cast<f32>(pods[q].next);
-      out[p * 8 + 6] = static_cast<f32>(pods[q].shield);
-      out[p * 8 + 7] = static_cast<f32>(pods[q].boosted);
-    }
-
     auto const& cps = eng.checkpoints();
     i32 cps_len = static_cast<i32>(cps.size());
-    for (i32 c = 0; c < MAX_CP; c++) {
-      out[32 + c * 2 + 0] = static_cast<f32>(cps[c % cps_len].x);
-      out[32 + c * 2 + 1] = static_cast<f32>(cps[c % cps_len].y);
+    for (i32 p = 0; p < POD_NB; p++) {
+      i32 q = (team == 0 ? p : (p ^ 2));
+      out[p * 16 + 0] = static_cast<f32>(pods[q].x);
+      out[p * 16 + 1] = static_cast<f32>(pods[q].y);
+      out[p * 16 + 2] = static_cast<f32>(pods[q].vx);
+      out[p * 16 + 3] = static_cast<f32>(pods[q].vy);
+      out[p * 16 + 4] = static_cast<f32>(pods[q].angle);
+      out[p * 16 + 5] = static_cast<f32>(pods[q].next);
+      out[p * 16 + 6] = static_cast<f32>(pods[q].shield);
+      out[p * 16 + 7] = static_cast<f32>(pods[q].boosted);
+
+      for (i32 cpId = 0; cpId < 4; cpId++) {
+        Checkpoint const& cp = cps[(pods[q].next + cpId) % cps_len];
+        out[p * 16 + 8 + cpId * 2 + 0] = static_cast<f32>(cp.x);
+        out[p * 16 + 8 + cpId * 2 + 1] = static_cast<f32>(cp.y);
+      }
     }
-    out[44] = static_cast<f32>(cps_len);
-    out[45] = static_cast<f32>(LAPS);
-    out[46] = static_cast<f32>(eng.timeouts()[0 ^ team]);
-    out[47] = static_cast<f32>(eng.timeouts()[1 ^ team]);
+    for (i32 c = 0; c < MAX_CP; c++) {
+      out[64 + c * 2 + 0] = static_cast<f32>(cps[c % cps_len].x);
+      out[64 + c * 2 + 1] = static_cast<f32>(cps[c % cps_len].y);
+    }
+    out[76] = static_cast<f32>(cps_len);
+    out[77] = static_cast<f32>(LAPS);
+    out[78] = static_cast<f32>(eng.timeouts()[0 ^ team]);
+    out[79] = static_cast<f32>(eng.timeouts()[1 ^ team]);
   }
 
   i32 num_envs_;

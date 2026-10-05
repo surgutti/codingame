@@ -9,6 +9,7 @@ def layer_init(layer, std=2**0.5, bias_const=0.0):
   nn.init.constant_(layer.bias, bias_const)
   return layer
 
+'''
 class SwiGLU(nn.Module):
   def __init__(
     self,
@@ -53,6 +54,13 @@ class StateEmbedding(nn.Module):
       self.cp_embd(cps).flatten(-2),
       self.meta_embd(meta)
     ], dim=-1)
+'''
+
+pod_scale = [1/16000, 1/9000, 1/2000, 1/2000, 1.0, 1/6, 1/3, 1.0]
+cp_scale = [1/16000, 1/9000]
+meta_scale = [1/6, 1/4, 1/100, 1/100]
+
+scale_list = (pod_scale * 4) + (cp_scale * 6) + meta_scale
 
 class ActorNetwork(nn.Module):
   def __init__(
@@ -61,6 +69,7 @@ class ActorNetwork(nn.Module):
   ):
     super().__init__()
 
+    '''
     self.embd = StateEmbedding(
       output_pods=16,
       output_cps=8,
@@ -73,16 +82,32 @@ class ActorNetwork(nn.Module):
       nn.SiLU(),
       layer_init(nn.Linear(128, action_dim), std=0.01)
     )
+    '''
+
+    self.register_buffer("scale", torch.tensor(scale_list, dtype=torch.float32))
+
+    input_dim = 8 * 4 + 2 * 6 + 4 * 1
+    self.net = nn.Sequential(
+      layer_init(nn.Linear(input_dim, 128)),
+      nn.LayerNorm(128),
+      nn.SiLU(),
+      layer_init(nn.Linear(128, 128)),
+      nn.LayerNorm(128),
+      nn.SiLU(),
+      layer_init(nn.Linear(128, action_dim), std=0.01)
+    )
 
   def forward(self, state):
-    return self.core(self.embd(state))
+    return self.net(state * self.scale)
+    # return self.core(self.embd(state))
 
 class CriticNetwork(nn.Module):
   def __init__(
     self,
   ):
     super().__init__()
-
+ 
+    ''' 
     self.embd = StateEmbedding(
       output_pods=64,
       output_cps=64,
@@ -95,9 +120,24 @@ class CriticNetwork(nn.Module):
       nn.SiLU(),
       layer_init(nn.Linear(128, 1), std=1.0)
     )
+    '''
+    
+    self.register_buffer("scale", torch.tensor(scale_list, dtype=torch.float32))
+
+    input_dim = 8 * 4 + 2 * 6 + 4 * 1
+    self.net = nn.Sequential(
+      layer_init(nn.Linear(input_dim, 256)),
+      nn.LayerNorm(256),
+      nn.SiLU(),
+      layer_init(nn.Linear(256, 256)),
+      nn.LayerNorm(256),
+      nn.SiLU(),
+      layer_init(nn.Linear(256, 1), std=1.0)
+    )
 
   def forward(self, state):
-    return self.core(self.embd(state))
+    return self.net(state * self.scale)
+    # return self.core(self.embd(state))
 
 if __name__ == "__main__":
 
@@ -105,6 +145,7 @@ if __name__ == "__main__":
   critic = CriticNetwork()
   state = torch.randn((21, 37, 67, 48))
   
+  print(actor.scale)
   assert actor(state).shape == (21, 37, 67, 81)
   assert critic(state).shape == (21, 37, 67, 1)
 
