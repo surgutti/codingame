@@ -18,6 +18,7 @@ from handmade.handmade2 import Handmade2Agent
 from dummy.dummy import DummyAgent
 from state import State
 from stats import CUSTOM_LAYOUT
+from vis import visualize_fight
 
 def train(
   config: SPOConfig,
@@ -190,7 +191,8 @@ if __name__ == "__main__":
         name=ckpt_name,
         agent=frozen_learner,
         global_ep=global_ep,
-        start_elo=learner_entry.elo
+        start_elo=learner_entry.elo,
+        agent_kwargs={"config": config}
       )
 
       tb_vid = visualize_fight(

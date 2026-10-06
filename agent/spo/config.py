@@ -1,9 +1,10 @@
+import torch
 from dataclasses import dataclass
 
 @dataclass
 class SPOConfig:
   name: str = "simple-mlp"
-  device: str = "gpu"
+  device: str = "gpu" if torch.cuda.is_available() else "cpu"
   max_bots: int = 9
   seed: int = 42
   state_dim: int = 80
@@ -12,7 +13,7 @@ class SPOConfig:
   episode_steps: int = 256 # 512
   num_envs: int = 4 # 512
   minibatch_size: int = 128
-  episodes_per_gen: int = 1000
+  episodes_per_gen: int = 200
 
   learning_rate: float = 3e-5
   gamma: float = 0.995

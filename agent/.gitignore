@@ -3,4 +3,5 @@ __pycache__
 *.o
 runs/
 checkpoints/
+replays/
 trace.json

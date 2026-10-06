@@ -9,7 +9,6 @@ def layer_init(layer, std=2**0.5, bias_const=0.0):
   nn.init.constant_(layer.bias, bias_const)
   return layer
 
-'''
 class SwiGLU(nn.Module):
   def __init__(
     self,
@@ -27,6 +26,7 @@ class SwiGLU(nn.Module):
   def forward(self, x):
     return self.W2(F.silu(self.W(x) * self.beta) * self.V(x)) 
 
+'''
 class StateEmbedding(nn.Module):
   def __init__(
     self,
@@ -56,7 +56,8 @@ class StateEmbedding(nn.Module):
     ], dim=-1)
 '''
 
-pod_scale = [1/16000, 1/9000, 1/2000, 1/2000, 1.0, 1/6, 1/3, 1.0]
+pod_cp_scale = [1/16000, 1/9000]
+pod_scale = [1/16000, 1/9000, 1/2000, 1/2000, 1.0, 1/6, 1/3, 1.0] + (pod_cp_scale * 4)
 cp_scale = [1/16000, 1/9000]
 meta_scale = [1/6, 1/4, 1/100, 1/100]
 
@@ -86,16 +87,18 @@ class ActorNetwork(nn.Module):
 
     self.register_buffer("scale", torch.tensor(scale_list, dtype=torch.float32))
 
-    input_dim = 8 * 4 + 2 * 6 + 4 * 1
+    input_dim = 16 * 4 + 2 * 6 + 4 * 1
     self.net = nn.Sequential(
       layer_init(nn.Linear(input_dim, 128)),
       nn.LayerNorm(128),
       nn.SiLU(),
-      layer_init(nn.Linear(128, 128)),
+      SwiGLU(128, 128, 128),
       nn.LayerNorm(128),
       nn.SiLU(),
       layer_init(nn.Linear(128, action_dim), std=0.01)
     )
+
+    assert len(scale_list) == input_dim
 
   def forward(self, state):
     return self.net(state * self.scale)
@@ -124,12 +127,12 @@ class CriticNetwork(nn.Module):
     
     self.register_buffer("scale", torch.tensor(scale_list, dtype=torch.float32))
 
-    input_dim = 8 * 4 + 2 * 6 + 4 * 1
+    input_dim = 16 * 4 + 2 * 6 + 4 * 1
     self.net = nn.Sequential(
       layer_init(nn.Linear(input_dim, 256)),
       nn.LayerNorm(256),
       nn.SiLU(),
-      layer_init(nn.Linear(256, 256)),
+      SwiGLU(256, 256, 256),
       nn.LayerNorm(256),
       nn.SiLU(),
       layer_init(nn.Linear(256, 1), std=1.0)

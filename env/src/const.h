@@ -13,7 +13,7 @@ using u64 = unsigned long long;
 constexpr i32 WIDTH = 16000;
 constexpr i32 HEIGHT = 9000;
 
-constexpr i32 RAW_STATE_DIM = 48;
+constexpr i32 RAW_STATE_DIM = 80;
 
 constexpr i32 PLAYER_NB = 2;
 constexpr i32 PODS_PER_PLAYER = 2;
