@@ -18,8 +18,9 @@ SIM_SRCS := \
 	env/src/unit.cc \
 	env/src/vector.cc
 
-PYTHON_INC := -I/usr/include/python3.13
-PYTHON_EXT := .cpython-313-x86_64-linux-gnu.so
+PYTHON_VER := 14
+PYTHON_INC := -I/usr/include/python3.${PYTHON_VER}
+PYTHON_EXT := .cpython-3${PYTHON_VER}-x86_64-linux-gnu.so
 
 NB_INCS    := -I./nanobind/include -I./nanobind/ext/robin_map/include
 NB_SRC     := ./nanobind/src/nb_combined.cpp

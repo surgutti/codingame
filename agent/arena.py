@@ -5,10 +5,21 @@ import shutil
 import random
 
 from torch.utils.tensorboard import SummaryWriter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict, is_dataclass
 
 from env import VecEnv
 from agent import Agent, AGENT_REGISTRY
+from spo.config import SPOConfig
+
+
+# hotfix for saving the entry and configs
+class JSONFix(json.JSONEncoder):
+  def default(self, obj):
+    if is_dataclass(obj):
+      return asdict(obj)
+    if hasattr(obj, "__dict__"):
+      return obj.__dict__
+    return super().default(obj)
 
 @dataclass
 class BotEntry:
@@ -122,7 +133,7 @@ class Arena:
     }
     tmp_state = self.state_path + ".tmp"
     with open(tmp_state, "w", encoding="utf-8") as f:
-      json.dump(state_data, f, indent=2)
+      json.dump(state_data, f, indent=2, cls=JSONFix)
     os.replace(tmp_state, self.state_path)
   
   def load_state(self, learner: Agent, learner_entry: BotEntry) -> tuple[int, int]:
@@ -156,13 +167,17 @@ class Arena:
       if path is not None and not os.path.exists(path):
         continue
 
+      agent_kwargs = item.get("agent_kwargs", {})
+      if "config" in agent_kwargs and isinstance(agent_kwargs["config"], dict):
+        agent_kwargs["config"] = SPOConfig(**agent_kwargs["config"])
+
       loaded_pool.append(
         BotEntry(
           name=item["name"],
           path=path,
           log_dir=item.get("log_dir"),
           agent_type=item.get("agent_type", "SPOAgent"),
-          agent_kwargs=item.get("agent_kwargs", {}),
+          agent_kwargs=agent_kwargs,
           elo=float(item.get("elo", 1000.0)),
           wins=float(item.get("wins", 0.0)),
           losses=float(item.get("losses", 0.0)),

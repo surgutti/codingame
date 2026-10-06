@@ -14,8 +14,8 @@ from agent import Agent
 
 
 class RenderEnv(VecEnv):
-  def __init__(self, width=1280, height=720):
-    super().__init__(1, seed=np.random.randint(0, 2**20))
+  def __init__(self, device="cpu", width=1280, height=720):
+    super().__init__(1, seed=np.random.randint(0, 2**20), device=device)
     self.screen_w = width
     self.screen_h = height
 
@@ -133,9 +133,10 @@ def visualize_fight(
   agent0: Agent,
   agent1: Agent,
   save_path: str,
-  agent_names = None
+  agent_names = None,
+  device = "cpu"
 ) -> np.ndarray:
-  env = RenderEnv()
+  env = RenderEnv(device=device)
   s0, s1 = env.reset()
 
   frames = []

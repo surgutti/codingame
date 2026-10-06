@@ -199,9 +199,10 @@ if __name__ == "__main__":
         agent0,
         Handmade2Agent(),
         save_path=f"replays/match_{ckpt_name}.mp4",
-        agent_names=["Learner", "Handmade2"]
+        agent_names=["Learner", "Handmade2"],
+        device=config.device
       )
-      writer.add_video("arena/match", tb_vid, global_step=global_ep, fps=15)
+      writer.add_video("replays/match", tb_vid, global_step=global_ep, fps=15)
 
       learner_entry.elo = ckpt_entry.elo
 
