@@ -82,7 +82,7 @@ class SPOAgent(nn.Module):
 
   def act_dist(self, state: torch.Tensor) -> Categorical:
     return Categorical(
-      logits=self.actor(self.state),
+      logits=self.actor(state),
       validate_args=False
     )
 
@@ -369,13 +369,13 @@ class SPOAgent(nn.Module):
     return metrics
 
 if __name__ == "__main__":
-  env_cofig = Config
+  env_config = Config
   config = SPOConfig()
   agent = SPOAgent(env_config=env_config, config=config)
 
   T, E = agent.batch_dim
   for i in range(T):
-    state = torch.randn((E, env_config.state_dim))
+    state = State(torch.randn((E, env_config.state_dim)))
     next_state = torch.randn_like(state)
     reward = torch.randn((E, 1))
     done = (torch.randn((E, 1)) < 0.05).long()

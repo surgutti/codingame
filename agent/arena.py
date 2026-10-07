@@ -9,7 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 from dataclasses import dataclass, field, asdict, is_dataclass
 
 from env import VecEnv
-from agent import Agent, AGENT_REGISTRY
+from agent import Agent, AGENT_REGISTRY, BASELINE
 from entry import BotEntry, JSONFix
 from config import Config
 from utils import calculate_nash_weights
@@ -43,7 +43,10 @@ class Arena:
     state_data = {
       "next_gen": next_gen,
       "global_ep": global_ep,
-      "pool": [b.to_dict() for b in self.pool]
+      "pool": [b.to_dict() for b in self.pool],
+      "wins": self.wins.tolist(),
+      "draws": self.draws.tolist(),
+      "losses": self.losses.tolist(),
     }
     tmp_state = self.state_path + ".tmp"
     with open(tmp_state, "w", encoding="utf-8") as f:
@@ -59,6 +62,9 @@ class Arena:
 
     next_gen = int(data["next_gen"])
     global_ep = int(data["global_ep"])
+    self.wins = torch.tensor(state_data.get("wins", []), dtype=torch.int32)
+    self.draws = torch.tensor(state_data.get("draws", []), dtype=torch.int32)
+    self.losses = torch.tensor(state_data.get("losses", []), dtype=torch.int32)
 
     for b in self.pool:
       if b.writer is not None:
@@ -186,7 +192,7 @@ class Arena:
       weights = self.nash_weights()
       weak_bot = -1
       for i, entry in enumerate(self.pool):
-        if entry.type != "baseline" and \
+        if entry.agent_type not in BASELINE \
            (weak_bot == -1 or weights[weak_bot] > weighs[i]):
           weak_bot = i
 
@@ -227,7 +233,7 @@ class Arena:
 
   def remove_bot(self, bot_idx):
     mask = torch.ones(len(self.pool), dtype=torch.bool)
-    mask[i] = False
+    mask[bot_idx] = False
 
     self.wins = self.wins[mask, :][:, mask]
     self.draws = self.draws[mask, :][:, mask]
@@ -245,8 +251,8 @@ class Arena:
     for _ in range(num_matches):
       entry0, entry1 = random.sample(self.pool, k=2)
 
-      agent0 = self.load_bot(entry_a)
-      agent1 = self.load_bot(entry_b)
+      agent0 = self.load_bot(entry0)
+      agent1 = self.load_bot(entry1)
 
       w, d, l = self.play_match(agent0, agent1)
       self.record_match(entry0, entry1, w, d, l)

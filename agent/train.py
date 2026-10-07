@@ -121,9 +121,9 @@ if __name__ == "__main__":
   start_gen, global_ep = arena.load_state()
 
   if len(arena.pool) == 0:
-    arena.register("Handmade1", HandmadeAgent(), agent_type="baseline")
-    arena.register("Handmade2", Handmade2Agent(), agent_type="baseline")
-    arena.register("Dummy", DummyAgent(), agent_type="baseline")
+    arena.register("Handmade1", HandmadeAgent(), agent_type="HandmadeAgent")
+    arena.register("Handmade2", Handmade2Agent(), agent_type="Handmade2Agent")
+    arena.register("Dummy", DummyAgent(), agent_type="baseline", agent_type="DummyAgent")
 
   writer = SummaryWriter(
     log_dir=f"runs/dashboard",
@@ -150,7 +150,7 @@ if __name__ == "__main__":
       print(f"Learner have win ratio: {wr=} against the Nash")
       if is_champion:
         print("Adding learner to the leaderboard")
-        frozen_learner = SPOAgent(agent_config).to(config.device)
+        frozen_learner = SPOAgent(config, agent_config).to(config.device)
         frozen_learner.load_state_dict(agent0.state_dict())
         frozen_learner.eval()
 
@@ -158,7 +158,7 @@ if __name__ == "__main__":
         ckpt_entry = arena.register(
           name=ckpt_name,
           agent=frozen_learner,
-          agent_type=f"{agent_config.name}",
+          agent_type="SPOAgent",
           agent_kwargs={"config": agent_config}
         )
 
@@ -172,7 +172,6 @@ if __name__ == "__main__":
         writer.add_video("replays/match", tb_vid, global_step=global_ep, fps=15)
 
         arena.save_state(
-          agent0, 
           next_gen=gen + 1, 
           global_ep=global_ep
         )
