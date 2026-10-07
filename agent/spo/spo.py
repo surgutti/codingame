@@ -11,12 +11,14 @@ from state import State
 from spo.model import ActorNetwork, CriticNetwork
 from spo.config import SPOConfig
 from spo.spo_utils import _fast_sample_and_logprob, compute_spo_dual_clip_loss, _compute_gae_fused, RunningReturnScaler
+from config import Config
 
 class SPOAgent(nn.Module):
-  def __init__(self, config: SPOConfig):
+  def __init__(self, env_config: Config, config: SPOConfig):
     super().__init__()
     self.config = config
-    self.batch_dim = (config.episode_steps, config.num_envs)
+    self.env_config = env_config
+    self.batch_dim = (env_config.episode_steps, env_config.num_envs)
     self.device = config.device
     
     MAX_ROT = 0.3141592653589793
@@ -40,7 +42,7 @@ class SPOAgent(nn.Module):
 
     self.register_buffer("action_list", action_list)
 
-    state_dim = config.state_dim
+    state_dim = env_config.state_dim
     action_dim = len(self.action_list)
 
     self.state_dim = state_dim
@@ -65,14 +67,14 @@ class SPOAgent(nn.Module):
     ).to(self.device)
 
     self.batch_idx = 0
-    self.states = torch.zeros((*self.batch_dim, state_dim), dtype=torch.float32, device=self.device)
+    self.states = torch.zeros((*self.batch_dim, env_config.state_dim), dtype=torch.float32, device=self.device)
     self.actions = torch.zeros((*self.batch_dim, 1), dtype=torch.long, device=self.device)
     self.rewards = torch.zeros((*self.batch_dim, 1), dtype=torch.float32, device=self.device)
     self.dones = torch.zeros((*self.batch_dim, 1), dtype=torch.long, device=self.device)
     self.logprobs = torch.zeros((*self.batch_dim, 1), dtype=torch.float32, device=self.device)
     self.values = torch.zeros((*self.batch_dim, 1), dtype=torch.float32, device=self.device)
     self.next_values = torch.zeros((*self.batch_dim, 1), dtype=torch.float32, device=self.device)
-    self.last_next_state = torch.zeros((config.num_envs, state_dim), dtype=torch.float32, device=self.device)
+    self.last_next_state = torch.zeros((env_config.num_envs, env_config.state_dim), dtype=torch.float32, device=self.device)
 
 
   def get_value(self, state: torch.Tensor) -> torch.Tensor:
@@ -360,19 +362,20 @@ class SPOAgent(nn.Module):
         "game/loss_rate": ((dones == 2).sum().float() / total_done).item(),
         "game/draw_rate": ((dones == 3).sum().float() / total_done).item(),
         "game/mean_episode_length": (
-            (self.config.episode_steps * self.config.num_envs) / total_done
+            (self.env_config.episode_steps * self.env_config.num_envs) / total_done
         ).item(),
     }
 
     return metrics
 
 if __name__ == "__main__":
+  env_cofig = Config
   config = SPOConfig()
-  agent = SPOAgent(config)
+  agent = SPOAgent(env_config=env_config, config=config)
 
   T, E = agent.batch_dim
   for i in range(T):
-    state = torch.randn((E, config.state_dim))
+    state = torch.randn((E, env_config.state_dim))
     next_state = torch.randn_like(state)
     reward = torch.randn((E, 1))
     done = (torch.randn((E, 1)) < 0.05).long()

@@ -12,7 +12,6 @@ from state import State
 from env import VecEnv
 from agent import Agent
 
-
 class RenderEnv(VecEnv):
   def __init__(self, device="cpu", width=1280, height=720):
     super().__init__(1, seed=np.random.randint(0, 2**20), device=device)
@@ -165,8 +164,9 @@ def visualize_fight(
 if __name__ == "__main__":
   from handmade.handmade import HandmadeAgent
   from handmade.handmade2 import Handmade2Agent
+  from dummy.dummy import DummyAgent
 
-  agent0 = HandmadeAgent()
+  agent0 = DummyAgent()
   agent1 = Handmade2Agent()
 
   tb_vid = visualize_fight(

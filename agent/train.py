@@ -81,16 +81,13 @@ def train(
         rewards_acc += reward.mean()
         
         ep_wins += (done == 1.0).sum()
-        ep_losses += (done == 2.0).sum()
         ep_draws += (done == 3.0).sum()
+        ep_losses += (done == 2.0).sum()
 
-      arena.update_elo(
-        learner_entry, 
-        opp_entry, 
-        ep_wins.item(), 
-        ep_losses.item(), 
-        ep_draws.item()
-      )
+      total_games = ep_wins.item() + ep_draws.item() + ep_losses.item()
+      current_wr = (ep_wins.item() + ep_draws.item() * 0.5) / total_games
+
+      writer.add_scalar('eval/win_ratio', current_wr, episode)
 
       start = time.perf_counter()
 
@@ -100,7 +97,6 @@ def train(
       for tag, val in metrics.items():
         writer.add_scalar(tag, val, episode)
 
-      # torch.cuda.synchronize()
       update_time += (time.perf_counter() - start)
 
       total_time = inference_time + simulation_time + update_time
@@ -118,16 +114,16 @@ if __name__ == "__main__":
   envs = VecEnv(config.num_envs, config.seed, config.device)
   arena = Arena(config, envs)
 
-  agent_config = SPOConfig 
-  agent0 = SPOAgent(agent_config).to(config.device)
+  agent_config = SPOConfig()
+  agent0 = SPOAgent(config, agent_config).to(config.device)
 
   global_ep = 0
-  start_gen, global_ep = arena.load_state(agent0)
+  start_gen, global_ep = arena.load_state()
 
   if len(arena.pool) == 0:
-    arena.register("Handmade1", HandmadeAgent())
-    arena.register("Handmade2", Handmade2Agent())
-    arena.register("Dummy", DummyAgent())
+    arena.register("Handmade1", HandmadeAgent(), agent_type="baseline")
+    arena.register("Handmade2", Handmade2Agent(), agent_type="baseline")
+    arena.register("Dummy", DummyAgent(), agent_type="baseline")
 
   writer = SummaryWriter(
     log_dir=f"runs/dashboard",
@@ -162,6 +158,7 @@ if __name__ == "__main__":
         ckpt_entry = arena.register(
           name=ckpt_name,
           agent=frozen_learner,
+          agent_type=f"{agent_config.name}",
           agent_kwargs={"config": agent_config}
         )
 

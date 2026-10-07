@@ -11,19 +11,20 @@ from dataclasses import dataclass, field, asdict, is_dataclass
 from env import VecEnv
 from agent import Agent, AGENT_REGISTRY
 from entry import BotEntry, JSONFix
-from config import ArenaConfig
+from config import Config
 from utils import calculate_nash_weights
+from spo.config import SPOConfig
 
 class Arena:
   def __init__(
     self,
-    config: ArenaConfig,
+    config: Config,
     env: VecEnv,
     save_dir: str = "checkpoints"
   ):
     self.config = config
     self.save_dir = save_dir
-    self.bots_log_root = f"runs/{config.name}/bots"
+    self.bots_log_root = f"runs/bots"
     self.state_path = os.path.join(save_dir, "arena_state.json")
     self.env = env
     os.makedirs(save_dir, exist_ok=True)
@@ -50,7 +51,7 @@ class Arena:
     os.replace(tmp_state, self.state_path)
   
   def load_state(self) -> tuple[int, int]:
-    if not (os.path.exists(self.state_path) and os.path.exists(self.learner_path)):
+    if not os.path.exists(self.state_path):
       return 0, 0
 
     with open(self.state_path, "r", encoding="utf-8") as f:
@@ -120,9 +121,9 @@ class Arena:
   @torch.no_grad()
   def play_match(self, agent0: Agent, agent1: Agent, steps: int = 512):
     s0, s1 = self.env.reset()
-    wins = torch.zeros((), device=self.config.device)
-    losses = torch.zeros((), device=self.config.device)
-    draws = torch.zeros((), device=self.config.device)
+    wins = torch.zeros((), device=self.config.device, dtype=torch.long)
+    losses = torch.zeros((), device=self.config.device, dtype=torch.long)
+    draws = torch.zeros((), device=self.config.device, dtype=torch.long)
     for _ in range(steps):
       a0 = agent0.act(s0)
       a1 = agent1.act(s1)
@@ -131,7 +132,7 @@ class Arena:
       losses += (done == 2.0).sum()
       draws += (done == 3.0).sum()
     
-    return wins.item(), losses.item(), draws.item()
+    return wins.item(), draws.item(), losses.item()
 
   def record_match(
     self,
@@ -140,13 +141,13 @@ class Arena:
   ):
     idx0, idx1 = entry0.pool_idx, entry1.pool_idx
 
-    self.wins[idx0][idx1] += w 
-    self.draws[idx0][idx1] += d
-    self.losses[idx0][idx1] += l
+    self.wins[idx0, idx1] += w 
+    self.draws[idx0, idx1] += d
+    self.losses[idx0, idx1] += l
 
-    self.wins[idx1][idx0] += l
-    self.draws[idx1][idx0] += d
-    self.losses[idx1][idx0] += w
+    self.wins[idx1, idx0] += l
+    self.draws[idx1, idx0] += d
+    self.losses[idx1, idx0] += w
 
   def register(
     self, 
@@ -175,11 +176,13 @@ class Arena:
     self.losses = F.pad(self.losses, (0, 1, 0, 1), mode='constant', value=0)
     
     for opp_entry in self.pool:
+      if opp_entry.name == bot_entry.name:
+        continue
       opp_agent = self.load_bot(opp_entry)
       w, d, l = self.play_match(agent, opp_agent, steps=self.config.warmup_steps)
       self.record_match(bot_entry, opp_entry, w, d, l)
 
-    if len(self.pool) > config.max_bots:
+    if len(self.pool) > self.config.max_bots:
       weights = self.nash_weights()
       weak_bot = -1
       for i, entry in enumerate(self.pool):
@@ -205,18 +208,22 @@ class Arena:
 
       total_wr += weights[i] * wr
 
-    return total_wr >= config.champion_threshold, total_wr
+    return total_wr >= self.config.champion_threshold, total_wr
 
   def sample_opponent(self, weights):
     entry = random.choices(self.pool, weights=weights, k=1)[0]
     return entry, self.load_bot(entry)
 
   def nash_weights(self):
-    return calculate_nash_weights(
+    weights = calculate_nash_weights(
       self.wins.numpy(),
       self.draws.numpy(),
       self.losses.numpy(),
-    )
+    ).tolist()
+
+    for i, entry in enumerate(self.pool):
+      print(i, ":", entry.name, weights[i], self.wins[i], self.draws[i], self.losses[i])
+    return weights
 
   def remove_bot(self, bot_idx):
     mask = torch.ones(len(self.pool), dtype=torch.bool)
@@ -226,7 +233,10 @@ class Arena:
     self.draws = self.draws[mask, :][:, mask]
     self.losses = self.losses[mask, :][:, mask]
     
-    self.pool.pop(bot_idx
+    self.pool.pop(bot_idx)
+    
+    for i, entry in enumerate(self.pool):
+      entry.pool_idx = i
 
   def stabilize(self, num_matches: int = 20):
     if len(self.pool) < 2:
