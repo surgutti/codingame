@@ -4,131 +4,44 @@ import torch
 import shutil
 import random
 
+import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 from dataclasses import dataclass, field, asdict, is_dataclass
 
 from env import VecEnv
 from agent import Agent, AGENT_REGISTRY
-from spo.config import SPOConfig
-
-
-# hotfix for saving the entry and configs
-class JSONFix(json.JSONEncoder):
-  def default(self, obj):
-    if is_dataclass(obj):
-      return asdict(obj)
-    if hasattr(obj, "__dict__"):
-      return obj.__dict__
-    return super().default(obj)
-
-@dataclass
-class BotEntry:
-  name: str
-  path: str | None
-  log_dir: str
-  agent_type: str
-  agent_kwargs: dict = field(default_factory=dict)
-  elo: float = 1000.0
-  wins: float = 0.0
-  losses: float = 0.0
-  draws: float = 0.0
-  recent_win_rate:  float = 0.5
-  purge_step: int | None = field(default=None, repr=False)
-  writer: SummaryWriter | None = field(init=False, default=None, repr=False)
-
-  _instance: Agent | None = field(init=False, default=None, repr=False)
-
-  @property
-  def games(self) -> int:
-    return int(self.wins + self.losses + self.draws)
-
-  def record_result(self, w: float, l: float, d: float, ema_alpha: float = 0.2):
-    total = w + l + d
-    if total <= 0:
-      return
-
-    self.wins += w
-    self.losses += l
-    self.draws += d
-
-    batch_wr = (w + 0.5 * d) / total
-    self.recent_win_rate = (1.0 - ema_alpha) * self.recent_win_rate + ema_alpha * batch_wr
-
-  def log_step(self, global_ep: int, rank: int):
-    if self.log_dir is None:
-      return
-    if self.writer is None:
-      self.writer = SummaryWriter(log_dir=self.log_dir, purge_step=self.purge_step)
-    total = max(self.games, 1)
-    self.writer.add_scalar("bot/elo", self.elo, global_ep)
-    self.writer.add_scalar("bot/rank", rank, global_ep)
-    self.writer.add_scalar("bot/win_rate_cum", (self.wins + 0.5 * self.draws) / total, global_ep)
-    self.writer.add_scalar("bot/win_rate_recent", self.recent_win_rate, global_ep)
-    self.writer.add_scalar("bot/games_played", self.games, global_ep)
-
-  def to_dict(self) -> dict:
-    return {
-      "name": self.name,
-      "path": self.path,
-      "log_dir": self.log_dir,
-      "agent_type": self.agent_type,
-      "agent_kwargs": self.agent_kwargs,
-      "elo": self.elo,
-      "wins": self.wins,
-      "losses": self.losses,
-      "draws": self.draws,
-      "recent_win_rate": self.recent_win_rate,
-    }
-
-  def cleanup(self):
-    if self.writer is not None:
-      self.writer.close()
-      self.writer = None
-    if self.path and os.path.exists(self.path):
-      os.remove(self.path)
-    if self.log_dir and os.path.exists(self.log_dir):
-      shutil.rmtree(self.log_dir, ignore_errors=True)
-    self._instance = None
+from entry import BotEntry, JSONFix
+from config import ArenaConfig
+from utils import calculate_nash_weights
 
 class Arena:
   def __init__(
     self,
-    config,
+    config: ArenaConfig,
     env: VecEnv,
     save_dir: str = "checkpoints"
   ):
     self.config = config
     self.save_dir = save_dir
-    self.bots_log_root = f"runs/ppo_{config.name}/bots"
+    self.bots_log_root = f"runs/{config.name}/bots"
     self.state_path = os.path.join(save_dir, "arena_state.json")
-    self.learner_path = os.path.join(save_dir, "learner_latest.pt")
     self.env = env
     os.makedirs(save_dir, exist_ok=True)
 
     self.pool: list[BotEntry] = []
 
+    self.wins = torch.zeros((0, 0), dtype=torch.int32)
+    self.draws = torch.zeros((0, 0), dtype=torch.int32)
+    self.losses = torch.zeros((0, 0), dtype=torch.int32)
+  
   def save_state(
     self,
-    learner: Agent,
-    learner_entry: BotEntry,
     next_gen: int,
     global_ep: int
   ):
-    tmp_learner = self.learner_path + ".tmp"
-    torch.save(
-      {
-        "model": learner.state_dict(),
-        "optimizer": learner.optimizer.state_dict()
-      },
-      tmp_learner
-    )
-
-    os.replace(tmp_learner, self.learner_path)
-
     state_data = {
       "next_gen": next_gen,
       "global_ep": global_ep,
-      "learner_entry": learner_entry.to_dict(),
       "pool": [b.to_dict() for b in self.pool]
     }
     tmp_state = self.state_path + ".tmp"
@@ -136,7 +49,7 @@ class Arena:
       json.dump(state_data, f, indent=2, cls=JSONFix)
     os.replace(tmp_state, self.state_path)
   
-  def load_state(self, learner: Agent, learner_entry: BotEntry) -> tuple[int, int]:
+  def load_state(self) -> tuple[int, int]:
     if not (os.path.exists(self.state_path) and os.path.exists(self.learner_path)):
       return 0, 0
 
@@ -145,17 +58,6 @@ class Arena:
 
     next_gen = int(data["next_gen"])
     global_ep = int(data["global_ep"])
-
-    ckpt = torch.load(self.learner_path, map_location=self.config.device, weights_only=True)
-    learner.load_state_dict(ckpt["model"])
-    learner.optimizer.load_state_dict(ckpt["optimizer"])
-
-    le = data.get("learner_entry", {})
-    learner_entry.elo = float(le.get("elo", 1000.0))
-    learner_entry.wins = float(le.get("wins", 0.0))
-    learner_entry.losses = float(le.get("losses", 0.0))
-    learner_entry.draws = float(le.get("draws", 0.0))
-    learner_entry.recent_win_rate = float(le.get("recent_win_rate", 0.5))
 
     for b in self.pool:
       if b.writer is not None:
@@ -176,13 +78,9 @@ class Arena:
           name=item["name"],
           path=path,
           log_dir=item.get("log_dir"),
-          agent_type=item.get("agent_type", "SPOAgent"),
+          pool_idx=item.get("pool_idx"),
+          agent_type=item.get("agent_type"),
           agent_kwargs=agent_kwargs,
-          elo=float(item.get("elo", 1000.0)),
-          wins=float(item.get("wins", 0.0)),
-          losses=float(item.get("losses", 0.0)),
-          draws=float(item.get("draws", 0.0)),
-          recent_win_rate=float(item.get("recent_win_rate", 0.5)),
           purge_step=global_ep,
         )
       )
@@ -192,7 +90,7 @@ class Arena:
 
     print(
       f"[Arena] Resumed from gen={next_gen}, global_ep={global_ep}, "
-      f"learner_elo={learner_entry.elo:.1f}, pool_size={len(self.pool)}"
+      f"pool_size={len(self.pool)}"
     )
     return next_gen, global_ep
 
@@ -215,110 +113,130 @@ class Arena:
       ckpt = torch.load(entry.path, map_location=self.config.device, weights_only=True)
       if isinstance(agent, torch.nn.Module):
         agent.load_state_dict(ckpt)
-        # agent.eval()
       
     entry._instance = agent
     return agent 
 
-  def sample_opponent(self, learner_elo: float):
-    weights = [1.0 / (1.0 + abs(b.elo - learner_elo) / 200.0) for b in self.pool]
-    entry = random.choices(self.pool, weights=weights, k=1)[0]
-    return entry, self.load_bot(entry)
-
-  @staticmethod
-  def update_elo(
-    a: BotEntry, 
-    b: BotEntry, 
-    wins: float, 
-    losses: float, 
-    draws: float, 
-    k: float = 32.0
-  ):
-    total = wins + losses + draws
-    if total == 0:
-      return
-    exp_a = 1.0 / (1.0 + 10.0 ** ((b.elo - a.elo) / 400.0))
-    expected_score = total * exp_a
-    
-    actual_score = wins + 0.5 * draws
-
-    delta = k * (actual_score - expected_score)
-    delta = max(-300, delta)
-    delta = min(+300, delta)
-
-    a.elo += delta
-    b.elo -= delta
-
-    a.record_result(wins, losses, draws)
-    b.record_result(losses, wins, draws)
-
   @torch.no_grad()
-  def play_match(self, agent_a, agent_b, steps: int = 512):
+  def play_match(self, agent0: Agent, agent1: Agent, steps: int = 512):
     s0, s1 = self.env.reset()
     wins = torch.zeros((), device=self.config.device)
     losses = torch.zeros((), device=self.config.device)
     draws = torch.zeros((), device=self.config.device)
     for _ in range(steps):
-      a0 = agent_a.act(s0)
-      a1 = agent_b.act(s1)
+      a0 = agent0.act(s0)
+      a1 = agent1.act(s1)
       s0, s1, _, done = self.env.step(torch.cat([a0, a1], dim=-1))
       wins += (done == 1.0).sum()
       losses += (done == 2.0).sum()
       draws += (done == 3.0).sum()
-
+    
     return wins.item(), losses.item(), draws.item()
+
+  def record_match(
+    self,
+    entry0: BotEntry, entry1: BotEntry,
+    w: int, d: int, l: int
+  ):
+    idx0, idx1 = entry0.pool_idx, entry1.pool_idx
+
+    self.wins[idx0][idx1] += w 
+    self.draws[idx0][idx1] += d
+    self.losses[idx0][idx1] += l
+
+    self.wins[idx1][idx0] += l
+    self.draws[idx1][idx0] += d
+    self.losses[idx1][idx0] += w
 
   def register(
     self, 
     name: str,
-    agent: Agent, 
-    global_ep: int,
-    start_elo: float = 1000.0,
+    agent: Agent,
+    agent_type: str,
     agent_kwargs: dict | None = None,
   ) -> BotEntry:
     path = os.path.join(self.save_dir, f"{name}.pt")
     torch.save(agent.state_dict(), path)
 
-    new_bot = BotEntry(
+    bot_idx = len(self.pool)
+    bot_entry = BotEntry(
       name=name, 
       path=path, 
       log_dir=os.path.join(self.bots_log_root, name),
-      agent_type=type(agent).__name__,
+      pool_idx=bot_idx,
+      agent_type=agent_type,
       agent_kwargs=agent_kwargs or {},
-      elo=start_elo,
     )
-
-    new_bot._instance = agent
-
+    bot_entry._instance = agent
+    
+    self.pool.append(bot_entry)
+    self.wins = F.pad(self.wins, (0, 1, 0, 1), mode='constant', value=0)
+    self.draws = F.pad(self.draws, (0, 1, 0, 1), mode='constant', value=0)
+    self.losses = F.pad(self.losses, (0, 1, 0, 1), mode='constant', value=0)
+    
     for opp_entry in self.pool:
       opp_agent = self.load_bot(opp_entry)
-      w, l, d = self.play_match(agent, opp_agent, steps=self.config.episode_steps)
-      self.update_elo(new_bot, opp_entry, w, l, d)
+      w, d, l = self.play_match(agent, opp_agent, steps=self.config.warmup_steps)
+      self.record_match(bot_entry, opp_entry, w, d, l)
 
-    self.pool.append(new_bot)
+    if len(self.pool) > config.max_bots:
+      weights = self.nash_weights()
+      weak_bot = -1
+      for i, entry in enumerate(self.pool):
+        if entry.type != "baseline" and \
+           (weak_bot == -1 or weights[weak_bot] > weighs[i]):
+          weak_bot = i
 
-    self.log_ranks(global_ep)
+      # it is not used anywhere and there are too many agents in the leaderboard
+      if weak_bot != -1 and weights[weak_bot] < 1e-10:
+        self.remove_bot(weak_bot)
 
-    return new_bot
-  
-  def stabilize(self, num_matches: int = 10):
+    return bot_entry
+
+  # wins with the nash equilibrium with high probability
+  def is_champion(self, agent: Agent):
+    weights = self.nash_weights()
+   
+    total_wr = 0 
+    for i, opp_entry in enumerate(self.pool):
+      opp_agent = self.load_bot(opp_entry)
+      w, d, l = self.play_match(agent, opp_agent, steps=self.config.champion_steps)
+      wr = (w + 0.5 * d) / max(1, w + d + l)
+
+      total_wr += weights[i] * wr
+
+    return total_wr >= config.champion_threshold, total_wr
+
+  def sample_opponent(self, weights):
+    entry = random.choices(self.pool, weights=weights, k=1)[0]
+    return entry, self.load_bot(entry)
+
+  def nash_weights(self):
+    return calculate_nash_weights(
+      self.wins.numpy(),
+      self.draws.numpy(),
+      self.losses.numpy(),
+    )
+
+  def remove_bot(self, bot_idx):
+    mask = torch.ones(len(self.pool), dtype=torch.bool)
+    mask[i] = False
+
+    self.wins = self.wins[mask, :][:, mask]
+    self.draws = self.draws[mask, :][:, mask]
+    self.losses = self.losses[mask, :][:, mask]
+    
+    self.pool.pop(bot_idx
+
+  def stabilize(self, num_matches: int = 20):
     if len(self.pool) < 2:
       return
 
     for _ in range(num_matches):
-      entry_a = random.choice(self.pool)
-      entry_b = random.choice(self.pool)
-      while entry_b is entry_a:
-        entry_b = random.choice(self.pool)
+      entry0, entry1 = random.sample(self.pool, k=2)
 
-      agent_a = self.load_bot(entry_a)
-      agent_b = self.load_bot(entry_b)
+      agent0 = self.load_bot(entry_a)
+      agent1 = self.load_bot(entry_b)
 
-      w, l, d = self.play_match(agent_a, agent_b)
-
-      self.update_elo(entry_a, entry_b, w, l, d)
-
-  def log_ranks(self, global_ep):
-    ranked_all = sorted(self.pool, key=lambda x: x.elo, reverse=True)
-    for rank, bot in enumerate(ranked_all, start=1):
-      bot.log_step(global_ep, rank)
+      w, d, l = self.play_match(agent0, agent1)
+      self.record_match(entry0, entry1, w, d, l)
