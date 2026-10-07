@@ -221,15 +221,51 @@ class Arena:
     return entry, self.load_bot(entry)
 
   def nash_weights(self):
-    weights = calculate_nash_weights(
+    return calculate_nash_weights(
       self.wins.numpy(),
       self.draws.numpy(),
       self.losses.numpy(),
     ).tolist()
+  
+  def print_leaderboard(self):
+    names = [entry.name for entry in self.pool]
+    weights = self.nash_weights()
+
+    first_col_width = max([len(f"{n} ({w:.3f})") for n, w in zip(names, weights)])
+    col_width = max([len(n) for n in names] + [8])
+
+    header = f"{'Bot Name (Nash)':<{first_col_width}} | "
+    header += " | ".join(f"{name:^{col_width}}" for name in names)
+    header += f" | {'Overall':^{col_width}}"
+
+    print(header)
+    print("-" * len(header))
 
     for i, entry in enumerate(self.pool):
-      print(i, ":", entry.name, weights[i], self.wins[i], self.draws[i], self.losses[i])
-    return weights
+      row_label = f"{entry.name} ({weights[i]:.3f})"
+      row_str = f"{row_label:<{first_col_width}} | "
+      cell_strs = []
+      for j in range(len(self.pool)):
+        if i == j:
+          cell_strs.append(f"{'-':^{col_width}}")
+        else:
+          w = self.wins[i, j].item()
+          d = self.draws[i, j].item()
+          l = self.losses[i, j].item()
+          total = w + d + l
+          win_ratio = ((w + 0.5 * d) / total) if total > 0 else 0.5
+          cell_strs.append(f"{win_ratio:^{col_width}.2%}")
+      
+      total_wins = self.wins[i].sum().item()
+      total_draws = self.draws[i].sum().item()
+      total_losses = self.losses[i].sum().item()
+      total_games = total_wins + total_draws + total_losses
+
+      overall_ratio = (total_wins + total_draws * 0.5) / max(1, total_games)
+
+      row_str += " | ".join(cell_strs)
+      row_str += f" | {overall_ratio:^{col_width}.2%}"
+      print(row_str)
 
   def remove_bot(self, bot_idx):
     mask = torch.ones(len(self.pool), dtype=torch.bool)
@@ -244,7 +280,7 @@ class Arena:
     for i, entry in enumerate(self.pool):
       entry.pool_idx = i
 
-  def stabilize(self, num_matches: int = 20):
+  def stabilize(self, num_matches: int = 100):
     if len(self.pool) < 2:
       return
 

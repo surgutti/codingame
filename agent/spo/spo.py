@@ -12,7 +12,6 @@ from spo.model import ActorNetwork, CriticNetwork
 from spo.config import SPOConfig
 from spo.spo_utils import _fast_sample_and_logprob, compute_spo_dual_clip_loss, _compute_gae_fused, RunningReturnScaler
 from config import Config
-
 class SPOAgent(nn.Module):
   def __init__(self, env_config: Config, config: SPOConfig):
     super().__init__()
@@ -49,8 +48,8 @@ class SPOAgent(nn.Module):
     self.action_dim = action_dim
     self.entropy_norm_const = math.log(action_dim) # ln(144) = 4.9698133
 
-    self.actor = torch.compile(ActorNetwork(action_dim).to(self.device))
-    self.critic = torch.compile(CriticNetwork().to(self.device))
+    self.actor = torch.compile(ActorNetwork(action_dim).to(self.device), fullgraph=True, mode="reduce-overhead")
+    self.critic = torch.compile(CriticNetwork().to(self.device), fullgraph=True, mode="reduce-overhead")
 
     self.optimizer = torch.optim.AdamW(
       [ 
@@ -86,7 +85,7 @@ class SPOAgent(nn.Module):
       validate_args=False
     )
 
-  @torch.no_grad()
+  @torch.inference_mode()
   def act(
     self,
     state,
@@ -106,7 +105,7 @@ class SPOAgent(nn.Module):
 
     return action.unsqueeze(0)
   
-  @torch.no_grad()
+  @torch.inference_mode()
   def observe(
     self,
     reward: torch.Tensor,
@@ -132,7 +131,7 @@ class SPOAgent(nn.Module):
     ckpt = torch.load(path, map_location=self.config.device, weights_only=False)
     self.load_state_dict(ckpt)
 
-  @torch.no_grad()
+  @torch.inference_mode()
   def _evaluate_rollout_values(self) -> None:
     T, E = self.batch_dim
     flat_states = self.states.flatten(0, 1)
@@ -253,8 +252,8 @@ class SPOAgent(nn.Module):
           ratio_cap=self.config.spo_ratio_cap
         )
 
-        if float(approx_kl.detach().item()) > self.config.target_kl:
-          do_actor_step = False
+        #if float(approx_kl.detach().item()) > self.config.target_kl:
+        #  do_actor_step = False
 
         vf_scale = max(return_scale_std, 1e-4) if self.config.scale_vf else 1.0
         if self.config.clip_vloss:
@@ -294,7 +293,7 @@ class SPOAgent(nn.Module):
         )
         self.optimizer.step()
 
-        with torch.no_grad():
+        with torch.inference_mode():
           L_spo_acc += L_spo.detach()
           L_vf_acc += L_vf.detach()
           S_pi_acc += S_pi.detach()
@@ -308,7 +307,7 @@ class SPOAgent(nn.Module):
           critic_grad_acc += critic_gn.detach()
           total_batches += 1
 
-    with torch.no_grad():
+    with torch.inference_mode():
       actor_w_norm = torch.norm(
         torch.stack([p.norm(2) for p in self.actor.parameters()])
       )

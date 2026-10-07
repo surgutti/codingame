@@ -59,7 +59,7 @@ def train(
       for step in range(config.episode_steps):
         start = time.perf_counter()
 
-        with torch.no_grad():
+        with torch.inference_mode():
           action0 = agent0.act(state0, training=True)
           action1 = agent1.act(state1) #training=True)
     
@@ -123,7 +123,7 @@ if __name__ == "__main__":
   if len(arena.pool) == 0:
     arena.register("Handmade1", HandmadeAgent(), agent_type="HandmadeAgent")
     arena.register("Handmade2", Handmade2Agent(), agent_type="Handmade2Agent")
-    arena.register("Dummy", DummyAgent(), agent_type="baseline", agent_type="DummyAgent")
+    arena.register("Dummy", DummyAgent(), agent_type="DummyAgent")
 
   writer = SummaryWriter(
     log_dir=f"runs/dashboard",
@@ -131,6 +131,8 @@ if __name__ == "__main__":
   )
   if global_ep == 0:
     writer.add_custom_scalars(CUSTOM_LAYOUT)
+
+  arena.stabilize()
 
   total_gens = config.total_episodes // config.episodes_per_gen
   try:
@@ -146,30 +148,32 @@ if __name__ == "__main__":
       )
       global_ep += config.episodes_per_gen
 
+      ckpt_name = f"{agent_config.name}_{gen:04d}"
+      tb_vid = visualize_fight(
+        agent0,
+        Handmade2Agent(),
+        save_path=f"replays/match_{ckpt_name}.mp4",
+        agent_names=["Learner", "Handmade2"],
+        device=config.device
+      )
+      writer.add_video("replays/match", tb_vid, global_step=global_ep, fps=15)
+
+      arena.print_leaderboard()
+
       is_champion, wr = arena.is_champion(agent0)
-      print(f"Learner have win ratio: {wr=} against the Nash")
+      print(f"Learner have win ratio: {wr*100:.2f}% against the Nash")
       if is_champion:
         print("Adding learner to the leaderboard")
         frozen_learner = SPOAgent(config, agent_config).to(config.device)
         frozen_learner.load_state_dict(agent0.state_dict())
         frozen_learner.eval()
 
-        ckpt_name = f"{agent_config.name}_{gen:04d}"
         ckpt_entry = arena.register(
           name=ckpt_name,
           agent=frozen_learner,
           agent_type="SPOAgent",
           agent_kwargs={"config": agent_config}
         )
-
-        tb_vid = visualize_fight(
-          agent0,
-          Handmade2Agent(),
-          save_path=f"replays/match_{ckpt_name}.mp4",
-          agent_names=["Learner", "Handmade2"],
-          device=config.device
-        )
-        writer.add_video("replays/match", tb_vid, global_step=global_ep, fps=15)
 
         arena.save_state(
           next_gen=gen + 1, 
