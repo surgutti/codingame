@@ -56,12 +56,14 @@ class StateEmbedding(nn.Module):
     ], dim=-1)
 '''
 
+'''
 pod_cp_scale = [1/16000, 1/9000]
 pod_scale = [1/16000, 1/9000, 1/2000, 1/2000, 1.0, 1/6, 1/3, 1.0] + (pod_cp_scale * 4)
 cp_scale = [1/16000, 1/9000]
 meta_scale = [1/6, 1/4, 1/100, 1/100]
 
 scale_list = (pod_scale * 4) + (cp_scale * 6) + meta_scale
+'''
 
 class ActorNetwork(nn.Module):
   def __init__(
@@ -85,23 +87,23 @@ class ActorNetwork(nn.Module):
     )
     '''
 
-    self.register_buffer("scale", torch.tensor(scale_list, dtype=torch.float32))
+    # self.register_buffer("scale", torch.tensor(scale_list, dtype=torch.float32))
 
-    input_dim = 16 * 4 + 2 * 6 + 4 * 1
+    input_dim = 290
     self.net = nn.Sequential(
-      layer_init(nn.Linear(input_dim, 128)),
-      nn.LayerNorm(128),
+      layer_init(nn.Linear(input_dim, 32)),
+      nn.LayerNorm(32),
       nn.SiLU(),
-      SwiGLU(128, 128, 128),
-      nn.LayerNorm(128),
+      SwiGLU(32, 32, 64),
+      nn.LayerNorm(64),
       nn.SiLU(),
-      layer_init(nn.Linear(128, action_dim), std=0.01)
+      layer_init(nn.Linear(64, action_dim), std=0.01)
     )
 
-    assert len(scale_list) == input_dim
+    # assert len(scale_list) == input_dim
 
   def forward(self, state):
-    return self.net(state * self.scale)
+    return self.net(state)
     # return self.core(self.embd(state))
 
 class CriticNetwork(nn.Module):
@@ -125,21 +127,21 @@ class CriticNetwork(nn.Module):
     )
     '''
     
-    self.register_buffer("scale", torch.tensor(scale_list, dtype=torch.float32))
+    # self.register_buffer("scale", torch.tensor(scale_list, dtype=torch.float32))
 
-    input_dim = 16 * 4 + 2 * 6 + 4 * 1
+    input_dim = 290
     self.net = nn.Sequential(
-      layer_init(nn.Linear(input_dim, 256)),
-      nn.LayerNorm(256),
+      layer_init(nn.Linear(input_dim, 64)),
+      nn.LayerNorm(64),
       nn.SiLU(),
-      SwiGLU(256, 256, 256),
-      nn.LayerNorm(256),
+      SwiGLU(64, 64, 64),
+      nn.LayerNorm(64),
       nn.SiLU(),
-      layer_init(nn.Linear(256, 1), std=1.0)
+      layer_init(nn.Linear(64, 1), std=1.0)
     )
 
   def forward(self, state):
-    return self.net(state * self.scale)
+    return self.net(state)
     # return self.core(self.embd(state))
 
 if __name__ == "__main__":

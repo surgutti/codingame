@@ -149,14 +149,16 @@ if __name__ == "__main__":
       global_ep += config.episodes_per_gen
 
       ckpt_name = f"{agent_config.name}_{gen:04d}"
-      tb_vid = visualize_fight(
-        agent0,
-        Handmade2Agent(),
-        save_path=f"replays/match_{ckpt_name}.mp4",
-        agent_names=["Learner", "Handmade2"],
-        device=config.device
-      )
-      writer.add_video("replays/match", tb_vid, global_step=global_ep, fps=15)
+
+      if gen % config.video_every == 0:
+        tb_vid = visualize_fight(
+          agent0,
+          Handmade2Agent(),
+          save_path=f"replays/match_{ckpt_name}.mp4",
+          agent_names=["Learner", "Handmade2"],
+          device=config.device
+        )
+        writer.add_video("replays/match", tb_vid, global_step=global_ep, fps=15)
 
       arena.print_leaderboard()
 

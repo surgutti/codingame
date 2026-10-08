@@ -4,8 +4,10 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include <iostream>
 
 #include "src/engine.h"
+#include "src/unit.h"
 
 namespace nb = nanobind;
 
@@ -26,8 +28,8 @@ public:
     for (i32 i = 0; i < num_envs_; i++) {
       i64 env_seed = base_seed_ + static_cast<i64>(i) * 1000000LL + (episode_counts_[i]++);
       envs_[i].initializeRefereeGenerated(LAPS, env_seed);
-      writeRawState(envs_[i], state0_ptr + i * RAW_STATE_DIM, 0);
-      writeRawState(envs_[i], state1_ptr + i * RAW_STATE_DIM, 1);
+      writeObservations(envs_[i], state0_ptr + i * RAW_STATE_DIM, 0);
+      writeObservations(envs_[i], state1_ptr + i * RAW_STATE_DIM, 1);
     }
   }
 
@@ -74,15 +76,15 @@ public:
         } else {
           done_ptr[i] = 0.0f;
         }
-        writeRawState(envs_[i], state0_ptr + i * RAW_STATE_DIM, 0);
-        writeRawState(envs_[i], state1_ptr + i * RAW_STATE_DIM, 1);
+        writeObservations(envs_[i], state0_ptr + i * RAW_STATE_DIM, 0);
+        writeObservations(envs_[i], state1_ptr + i * RAW_STATE_DIM, 1);
       }
     }
   }
 
 private:
 
-  static void writeRawState(Engine const& eng, f32* out, int team) {
+  static void writeObservations(Engine const& eng, f32* out, int team) {
     auto const& pods = eng.pods();
     auto const& cps = eng.checkpoints();
     i32 cps_len = static_cast<i32>(cps.size());
@@ -111,6 +113,100 @@ private:
     out[77] = static_cast<f32>(LAPS);
     out[78] = static_cast<f32>(eng.timeouts()[0 ^ team]);
     out[79] = static_cast<f32>(eng.timeouts()[1 ^ team]);
+
+    // from here only the neural network features
+    i32 nxt = 80;
+    for (i32 p = 0; p < 2; p++) {
+      i32 a = p ^ (team << 1);
+
+      Vector af{cos(pods[a].angle), sin(pods[a].angle)};
+      Vector av{pods[a].vx, pods[a].vy};
+
+      f32 arv = std::max<f32>(hypot(av.x, av.y), 1e-6);
+      Vector auv{av.x / arv, av.y / arv};
+
+      // TODO: think about better function for speed
+      out[nxt++] = 1.0 / (1 + arv / 500.0);
+      out[nxt++] = static_cast<f32>(pods[a].shield) / 3.0;
+      out[nxt++] = static_cast<f32>(pods[a].boosted);
+
+      for (i32 o = 1; o < 4; o++) {
+        i32 b = a ^ o; // vectors to
+      
+        Checkpoint cp0 = cps[pods[b].next % cps_len],
+                   cp1 = cps[(pods[b].next + 1) % cps_len],
+                   cp2 = cps[(pods[b].next + 2) % cps_len];
+
+        Vector bd{pods[b].x - pods[a].x, pods[b].y - pods[a].y};
+        Vector bv{pods[b].vx, pods[b].vy};
+        Vector bdv{pods[b].x + pods[b].vx - pods[a].x,
+                   pods[b].y + pods[b].vy - pods[a].y};
+        Vector bc0{cp0.x - pods[a].x, cp0.y - pods[a].y};
+        Vector bc1{cp1.x - pods[a].x, cp1.y - pods[a].y};
+        Vector bc2{cp2.x - pods[a].x, cp2.y - pods[a].y};
+        Vector bc01{cp1.x - cp0.x, cp1.y - cp0.y};
+        
+        f32 brd = std::max<f32>(hypot(bd.x, bd.y), 1e-6);
+        f32 brv = std::max<f32>(hypot(bv.x, bv.y), 1e-6);
+        f32 brdv = std::max<f32>(hypot(bdv.x, bdv.y), 1e-6);
+        f32 brc0 = std::max<f32>(hypot(bc0.x, bc0.y), 1e-6);
+        f32 brc1 = std::max<f32>(hypot(bc1.x, bc1.y), 1e-6);
+        f32 brc2 = std::max<f32>(hypot(bc2.x, bc2.y), 1e-6);
+        f32 brc01 = std::max<f32>(hypot(bc01.x, bc01.y), 1e-6);
+        
+        Vector bf{cos(pods[b].angle), sin(pods[b].angle)}; 
+        Vector bud{bd.x / brd, bd.y / brd};
+        Vector buv{bv.x / brv, bv.y / brv};
+        Vector budv{bdv.x / brdv, bdv.y / brdv};
+        Vector buc0{bc0.x / brc0, bc0.y / brc0};
+        Vector buc1{bc1.x / brc1, bc1.y / brc1};
+        Vector buc2{bc2.x / brc2, bc2.y / brc2};
+        Vector buc01{bc01.x / brc01, bc01.y / brc01};
+
+        out[nxt++] = 1.0 / (1 + brv  / 500.0);
+        out[nxt++] = 1.0 / (1 + brd  / 500.0);
+        out[nxt++] = 1.0 / (1 + brdv / 500.0);
+        out[nxt++] = 1.0 / (1 + brc0 / 500.0);
+        out[nxt++] = 1.0 / (1 + brc1 / 500.0);
+        out[nxt++] = 1.0 / (1 + brc2 / 500.0);
+        out[nxt++] = 1.0 / (1 + brc01 / 500.0);
+
+        for (Vector av : {af, auv}) {
+          for (Vector bv : {bf, bud, buv, bdv, buc0, buc1, buc2, buc01}) {
+            out[nxt++] = av.dot(bv);
+            out[nxt++] = av.cross(bv);
+          }
+        }
+
+        out[nxt++] = static_cast<f32>(pods[a].next - pods[b].next) / cps_len / LAPS;
+        out[nxt++] = std::min<f32>(2.0, pods[a].collisionTime(pods[b], POD_DIAMETER_SQ));
+      }
+
+      for (i32 c = 0; c < 3; c++) {
+        Checkpoint cp = cps[(pods[a].next + c) % cps_len];
+        Unit unit_cp(cp.x, cp.y);
+
+        Vector d{cp.x - pods[a].x, cp.y - pods[a].y};
+        f32 rd = std::max<f32>(hypot(d.x, d.y), 1e-6);
+        
+        Vector ud{d.x / rd, d.y / rd};
+
+        out[nxt++] = 1.0 / (1 + rd / 500.0);
+        out[nxt++] = std::min<f32>(2.0, pods[a].collisionTime(unit_cp, POD_AND_CHECKPOINT_SQ));
+
+        for (Vector av : {af, auv}) {
+          for (Vector cv : {ud}) {
+            out[nxt++] = av.dot(cv);
+            out[nxt++] = av.cross(cv);
+          }
+        }
+      }
+    }
+
+    out[nxt++] = static_cast<f32>(eng.timeouts()[0 ^ team]) / 100.0;
+    out[nxt++] = static_cast<f32>(eng.timeouts()[1 ^ team]) / 100.0;
+
+    // std::cerr << "NXT: " << nxt << '\n';
   }
 
   i32 num_envs_;

@@ -1,10 +1,11 @@
+#!/usr/bin/env python3
 import torch
 from engine import VectorEnv
 import numpy as np
 
 from state import State
 
-RAW_STATE_DIM = 80
+RAW_STATE_DIM = 370
 POD_NB = 4
 
 class VecEnv:
@@ -40,3 +41,8 @@ class VecEnv:
     dones_gpu = self.dones_cpu.to(self.device, non_blocking=True)
 
     return State(state0_gpu), State(state1_gpu), rewards_gpu, dones_gpu
+
+if __name__ == "__main__":
+  env = VecEnv(1)
+
+  env.reset()

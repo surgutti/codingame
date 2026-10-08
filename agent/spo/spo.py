@@ -91,7 +91,7 @@ class SPOAgent(nn.Module):
     state,
     training: bool = False
   ):
-    s = state.raw.squeeze(0)
+    s = state.features.squeeze(0)
     logits = self.actor(s)
     action, action_idx, chosen_logprob = _fast_sample_and_logprob(
       logits, self.action_list
@@ -117,7 +117,7 @@ class SPOAgent(nn.Module):
     self.dones[idx].copy_(done.view(-1, 1).long())
 
     if idx == self.batch_dim[0] - 1:
-      self.last_next_state.copy_(next_state.raw.squeeze(0))
+      self.last_next_state.copy_(next_state.features.squeeze(0))
 
     self.batch_idx += 1
   
