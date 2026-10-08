@@ -89,7 +89,7 @@ class ActorNetwork(nn.Module):
 
     # self.register_buffer("scale", torch.tensor(scale_list, dtype=torch.float32))
 
-    input_dim = 290
+    input_dim = 286
     self.net = nn.Sequential(
       layer_init(nn.Linear(input_dim, 32)),
       nn.LayerNorm(32),
@@ -129,7 +129,7 @@ class CriticNetwork(nn.Module):
     
     # self.register_buffer("scale", torch.tensor(scale_list, dtype=torch.float32))
 
-    input_dim = 290
+    input_dim = 286
     self.net = nn.Sequential(
       layer_init(nn.Linear(input_dim, 64)),
       nn.LayerNorm(64),

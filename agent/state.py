@@ -5,7 +5,7 @@ MAX_ROT = 0.3141592653589793
 
 @dataclass
 class State:
-  raw: torch.Tensor # [B, E, 370]
+  raw: torch.Tensor # [B, E, 366]
 
   @property
   def pods(self) -> torch.Tensor:
@@ -65,7 +65,7 @@ class State:
   
   @property
   def features(self) -> torch.Tensor:
-    return self.raw[..., 80:370] # [B, E, 290]
+    return self.raw[..., 80:366] # [B, E, 286]
 
   '''
   wrong and not used

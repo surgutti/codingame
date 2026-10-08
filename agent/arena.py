@@ -62,9 +62,9 @@ class Arena:
 
     next_gen = int(data["next_gen"])
     global_ep = int(data["global_ep"])
-    self.wins = torch.tensor(state_data.get("wins", []), dtype=torch.int32)
-    self.draws = torch.tensor(state_data.get("draws", []), dtype=torch.int32)
-    self.losses = torch.tensor(state_data.get("losses", []), dtype=torch.int32)
+    self.wins = torch.tensor(data.get("wins", []), dtype=torch.int32)
+    self.draws = torch.tensor(data.get("draws", []), dtype=torch.int32)
+    self.losses = torch.tensor(data.get("losses", []), dtype=torch.int32)
 
     for b in self.pool:
       if b.writer is not None:
@@ -192,7 +192,7 @@ class Arena:
       weights = self.nash_weights()
       weak_bot = -1
       for i, entry in enumerate(self.pool):
-        if entry.agent_type not in BASELINE \
+        if entry.agent_type not in BASELINE and \
            (weak_bot == -1 or weights[weak_bot] > weighs[i]):
           weak_bot = i
 

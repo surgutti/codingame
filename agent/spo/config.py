@@ -6,7 +6,7 @@ class SPOConfig:
   name: str = "simple-mlp"
   device: str = "cuda" if torch.cuda.is_available() else "cpu"
   seed: int = 42
-  state_dim: int = 290
+  state_dim: int = 286
 
   learning_rate: float = 5e-5
   gamma: float = 0.995

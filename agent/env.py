@@ -5,7 +5,7 @@ import numpy as np
 
 from state import State
 
-RAW_STATE_DIM = 370
+RAW_STATE_DIM = 366
 POD_NB = 4
 
 class VecEnv:

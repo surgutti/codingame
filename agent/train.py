@@ -174,7 +174,7 @@ if __name__ == "__main__":
           name=ckpt_name,
           agent=frozen_learner,
           agent_type="SPOAgent",
-          agent_kwargs={"config": agent_config}
+          agent_kwargs={"env_config": confing, "config": agent_config}
         )
 
         arena.save_state(

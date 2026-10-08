@@ -11,6 +11,18 @@
 
 namespace nb = nanobind;
 
+inline f32 closeDist(f32 d, f32 scale = 1000.0f) {
+  return 1.0f - std::min(1.0f, d / scale);
+}
+
+inline f32 middleDist(f32 d, f32 scale = 1000.0f) {
+    return 1.0f / (1.0f + d / scale);
+}
+
+inline f32 farDist(f32 d, f32 scale = 10000.0f) {
+    return 1.0f - std::tanh(d / scale);
+}
+
 class VectorEnv {
 public:
   VectorEnv(i32 num_envs, i64 seed=42)
@@ -126,9 +138,14 @@ private:
       Vector auv{av.x / arv, av.y / arv};
 
       // TODO: think about better function for speed
-      out[nxt++] = 1.0 / (1 + arv / 500.0);
+      out[nxt++] = 1.0 / (1 + arv / 1000.0);
       out[nxt++] = static_cast<f32>(pods[a].shield) / 3.0;
       out[nxt++] = static_cast<f32>(pods[a].boosted);
+
+      out[nxt++] = af.x;
+      out[nxt++] = af.y;
+      out[nxt++] = auv.x;
+      out[nxt++] = auv.y;
 
       for (i32 o = 1; o < 4; o++) {
         i32 b = a ^ o; // vectors to
@@ -139,8 +156,8 @@ private:
 
         Vector bd{pods[b].x - pods[a].x, pods[b].y - pods[a].y};
         Vector bv{pods[b].vx, pods[b].vy};
-        Vector bdv{pods[b].x + pods[b].vx - pods[a].x,
-                   pods[b].y + pods[b].vy - pods[a].y};
+        Vector bdv{pods[b].x + pods[b].vx - pods[a].x - pods[a].vx,
+                   pods[b].y + pods[b].vy - pods[a].y - pods[a].vy};
         Vector bc0{cp0.x - pods[a].x, cp0.y - pods[a].y};
         Vector bc1{cp1.x - pods[a].x, cp1.y - pods[a].y};
         Vector bc2{cp2.x - pods[a].x, cp2.y - pods[a].y};
@@ -163,19 +180,15 @@ private:
         Vector buc2{bc2.x / brc2, bc2.y / brc2};
         Vector buc01{bc01.x / brc01, bc01.y / brc01};
 
-        out[nxt++] = 1.0 / (1 + brv  / 500.0);
-        out[nxt++] = 1.0 / (1 + brd  / 500.0);
-        out[nxt++] = 1.0 / (1 + brdv / 500.0);
-        out[nxt++] = 1.0 / (1 + brc0 / 500.0);
-        out[nxt++] = 1.0 / (1 + brc1 / 500.0);
-        out[nxt++] = 1.0 / (1 + brc2 / 500.0);
-        out[nxt++] = 1.0 / (1 + brc01 / 500.0);
+        for (f32 v : {brv, brd, brdv, brc0, brc1, brc2, brc01}) {
+          out[nxt++] = closeDist(v);
+          out[nxt++] = middleDist(v);
+          out[nxt++] = farDist(v);
+        }
 
-        for (Vector av : {af, auv}) {
-          for (Vector bv : {bf, bud, buv, bdv, buc0, buc1, buc2, buc01}) {
-            out[nxt++] = av.dot(bv);
-            out[nxt++] = av.cross(bv);
-          }
+        for (Vector bv : {bf, bud, buv, bdv, buc0, buc1, buc2, buc01}) {
+          out[nxt++] = bv.x;
+          out[nxt++] = bv.y;
         }
 
         out[nxt++] = static_cast<f32>(pods[a].next - pods[b].next) / cps_len / LAPS;
@@ -191,14 +204,16 @@ private:
         
         Vector ud{d.x / rd, d.y / rd};
 
-        out[nxt++] = 1.0 / (1 + rd / 500.0);
+        for (f32 v : {rd}) {
+          out[nxt++] = closeDist(v);
+          out[nxt++] = middleDist(v);
+          out[nxt++] = farDist(v);
+        }
         out[nxt++] = std::min<f32>(2.0, pods[a].collisionTime(unit_cp, POD_AND_CHECKPOINT_SQ));
 
-        for (Vector av : {af, auv}) {
-          for (Vector cv : {ud}) {
-            out[nxt++] = av.dot(cv);
-            out[nxt++] = av.cross(cv);
-          }
+        for (Vector cv : {ud}) {
+          out[nxt++] = cv.x;
+          out[nxt++] = cv.y;
         }
       }
     }
