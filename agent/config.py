@@ -7,7 +7,7 @@ class Config:
   warmup_steps: int = 1024
   device: str = "cuda" if torch.cuda.is_available() else "cpu"
   seed: int = 42
-  state_dim: int = 286
+  # state_dim: int = 286
 
   total_episodes: int = 1_000_000
   episode_steps: int = 1024

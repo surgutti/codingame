@@ -128,98 +128,75 @@ private:
 
     // from here only the neural network features
     i32 nxt = 80;
-    for (i32 p = 0; p < 2; p++) {
-      i32 a = p ^ (team << 1);
 
-      Vector af{cos(pods[a].angle), sin(pods[a].angle)};
-      Vector av{pods[a].vx, pods[a].vy};
+    i32 p0 = (team << 1) | 0;
+    i32 p1 = (team << 1) | 1;
+    i32 q0 = p0 ^ 2;
+    i32 q1 = p1 ^ 2;
+ 
+    out[nxt++] = eng.timeouts()[0 ^ team];
+    out[nxt++] = eng.timeouts()[1 ^ team];
 
-      f32 arv = std::max<f32>(hypot(av.x, av.y), 1e-6);
-      Vector auv{av.x / arv, av.y / arv};
+    for (i32 p : {p0, p1, q0, q1}) {
+      Pod const& P = pods[p];
 
-      // TODO: think about better function for speed
-      out[nxt++] = 1.0 / (1 + arv / 1000.0);
-      out[nxt++] = static_cast<f32>(pods[a].shield) / 3.0;
-      out[nxt++] = static_cast<f32>(pods[a].boosted);
+      Vector head{cos(P.angle), sin(P.angle)};
+      Vector v{P.vx, P.vy};
+      Vector center{WIDTH * 0.5, HEIGHT * 0.5};
 
-      out[nxt++] = af.x;
-      out[nxt++] = af.y;
-      out[nxt++] = auv.x;
-      out[nxt++] = auv.y;
+      out[nxt++] = P.distance(center) / 1000.0;
+      out[nxt++] = head.dot(v) / 600.0;
+      out[nxt++] = head.cross(v) / 600.0;
+      out[nxt++] = hypot(P.vx, P.vy) / 600.0;
+      out[nxt++] = P.shield;
+      out[nxt++] = P.boosted;
+      out[nxt++] = static_cast<f32>(P.next) / cps_len / LAPS;
 
-      for (i32 o = 1; o < 4; o++) {
-        i32 b = a ^ o; // vectors to
+      if (p == p0 || p == p1) {
+        for (i32 q : {p0, p1, q0, q1}) if (q != p) {
+          // p0 - p1, p1 - p0
+          // p0 - q0, p0 - q1
+          // p1 - q0, p1 - q1
+
+          Pod const& Q = pods[q];
+          Checkpoint const& C = cps[pods[q].next % cps_len];
+
+          Vector dirQ{Q.x - P.x, Q.y - P.y};
+          Vector dirC{C.x - P.x, C.y - P.y};
+
+          out[nxt++] = head.dot(dirQ) / 1000.0;
+          out[nxt++] = head.cross(dirQ) / 1000.0;
+          out[nxt++] = head.dot(dirC) / 1000.0;
+          out[nxt++] = head.cross(dirC) / 1000.0;
+
+          Vector headQ{cos(Q.angle), sin(Q.angle)};
+
+          out[nxt++] = head.dot(headQ);
+          out[nxt++] = head.cross(headQ);
+
+          Vector vQ{Q.vx - P.vx, Q.vy - P.vy};
+
+          out[nxt++] = head.dot(vQ) / 600.0;
+          out[nxt++] = head.cross(vQ) / 600.0;
+        }
+      }
+
+      Checkpoint const& C0 = cps[P.next % cps_len];
+      Checkpoint const& C1 = cps[(P.next + 1) % cps_len];
       
-        Checkpoint cp0 = cps[pods[b].next % cps_len],
-                   cp1 = cps[(pods[b].next + 1) % cps_len],
-                   cp2 = cps[(pods[b].next + 2) % cps_len];
+      Vector dirC0{C0.x - P.x, C0.y - P.y};
+      Vector dirC1{C1.x - P.x, C1.y - P.y};
+      Vector curve{C1.x - C0.x, C1.y - C0.y};
 
-        Vector bd{pods[b].x - pods[a].x, pods[b].y - pods[a].y};
-        Vector bv{pods[b].vx, pods[b].vy};
-        Vector bdv{pods[b].x + pods[b].vx - pods[a].x - pods[a].vx,
-                   pods[b].y + pods[b].vy - pods[a].y - pods[a].vy};
-        Vector bc0{cp0.x - pods[a].x, cp0.y - pods[a].y};
-        Vector bc1{cp1.x - pods[a].x, cp1.y - pods[a].y};
-        Vector bc2{cp2.x - pods[a].x, cp2.y - pods[a].y};
-        Vector bc01{cp1.x - cp0.x, cp1.y - cp0.y};
-        
-        f32 brd = std::max<f32>(hypot(bd.x, bd.y), 1e-6);
-        f32 brv = std::max<f32>(hypot(bv.x, bv.y), 1e-6);
-        f32 brdv = std::max<f32>(hypot(bdv.x, bdv.y), 1e-6);
-        f32 brc0 = std::max<f32>(hypot(bc0.x, bc0.y), 1e-6);
-        f32 brc1 = std::max<f32>(hypot(bc1.x, bc1.y), 1e-6);
-        f32 brc2 = std::max<f32>(hypot(bc2.x, bc2.y), 1e-6);
-        f32 brc01 = std::max<f32>(hypot(bc01.x, bc01.y), 1e-6);
-        
-        Vector bf{cos(pods[b].angle), sin(pods[b].angle)}; 
-        Vector bud{bd.x / brd, bd.y / brd};
-        Vector buv{bv.x / brv, bv.y / brv};
-        Vector budv{bdv.x / brdv, bdv.y / brdv};
-        Vector buc0{bc0.x / brc0, bc0.y / brc0};
-        Vector buc1{bc1.x / brc1, bc1.y / brc1};
-        Vector buc2{bc2.x / brc2, bc2.y / brc2};
-        Vector buc01{bc01.x / brc01, bc01.y / brc01};
+      out[nxt++] = head.dot(dirC0) / 1000.0;
+      out[nxt++] = head.cross(dirC0) / 1000.0;
 
-        for (f32 v : {brv, brd, brdv, brc0, brc1, brc2, brc01}) {
-          out[nxt++] = closeDist(v);
-          out[nxt++] = middleDist(v);
-          out[nxt++] = farDist(v);
-        }
+      out[nxt++] = head.dot(dirC1) / 1000.0;
+      out[nxt++] = head.cross(dirC1) / 1000.0;
 
-        for (Vector bv : {bf, bud, buv, bdv, buc0, buc1, buc2, buc01}) {
-          out[nxt++] = bv.x;
-          out[nxt++] = bv.y;
-        }
-
-        out[nxt++] = static_cast<f32>(pods[a].next - pods[b].next) / cps_len / LAPS;
-        out[nxt++] = std::min<f32>(2.0, pods[a].collisionTime(pods[b], POD_DIAMETER_SQ));
-      }
-
-      for (i32 c = 0; c < 3; c++) {
-        Checkpoint cp = cps[(pods[a].next + c) % cps_len];
-        Unit unit_cp(cp.x, cp.y);
-
-        Vector d{cp.x - pods[a].x, cp.y - pods[a].y};
-        f32 rd = std::max<f32>(hypot(d.x, d.y), 1e-6);
-        
-        Vector ud{d.x / rd, d.y / rd};
-
-        for (f32 v : {rd}) {
-          out[nxt++] = closeDist(v);
-          out[nxt++] = middleDist(v);
-          out[nxt++] = farDist(v);
-        }
-        out[nxt++] = std::min<f32>(2.0, pods[a].collisionTime(unit_cp, POD_AND_CHECKPOINT_SQ));
-
-        for (Vector cv : {ud}) {
-          out[nxt++] = cv.x;
-          out[nxt++] = cv.y;
-        }
-      }
+      out[nxt++] = head.dot(curve) / 1000.0;
+      out[nxt++] = head.cross(curve) / 1000.0;
     }
-
-    out[nxt++] = static_cast<f32>(eng.timeouts()[0 ^ team]) / 100.0;
-    out[nxt++] = static_cast<f32>(eng.timeouts()[1 ^ team]) / 100.0;
 
     // std::cerr << "NXT: " << nxt << '\n';
   }

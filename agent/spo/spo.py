@@ -12,6 +12,7 @@ from spo.model import ActorNetwork, CriticNetwork
 from spo.config import SPOConfig
 from spo.spo_utils import _fast_sample_and_logprob, compute_spo_dual_clip_loss, _compute_gae_fused, RunningReturnScaler
 from config import Config
+
 class SPOAgent(nn.Module):
   def __init__(self, env_config: Config, config: SPOConfig):
     super().__init__()
@@ -41,15 +42,28 @@ class SPOAgent(nn.Module):
 
     self.register_buffer("action_list", action_list)
 
-    state_dim = env_config.state_dim
+    state_dim = config.state_dim
     action_dim = len(self.action_list)
 
     self.state_dim = state_dim
     self.action_dim = action_dim
     self.entropy_norm_const = math.log(action_dim) # ln(144) = 4.9698133
 
-    self.actor = torch.compile(ActorNetwork(action_dim).to(self.device), fullgraph=True, mode="reduce-overhead")
-    self.critic = torch.compile(CriticNetwork().to(self.device), fullgraph=True, mode="reduce-overhead")
+    self.actor = torch.compile(
+      ActorNetwork(
+        state_dim, action_dim
+      ).to(self.device), 
+      fullgraph=True, 
+      mode="reduce-overhead"
+    )
+
+    self.critic = torch.compile(
+      CriticNetwork(
+        state_dim
+      ).to(self.device), 
+      fullgraph=True, 
+      mode="reduce-overhead"
+    )
 
     self.optimizer = torch.optim.AdamW(
       [ 
@@ -66,14 +80,14 @@ class SPOAgent(nn.Module):
     ).to(self.device)
 
     self.batch_idx = 0
-    self.states = torch.zeros((*self.batch_dim, env_config.state_dim), dtype=torch.float32, device=self.device)
+    self.states = torch.zeros((*self.batch_dim, config.state_dim), dtype=torch.float32, device=self.device)
     self.actions = torch.zeros((*self.batch_dim, 1), dtype=torch.long, device=self.device)
     self.rewards = torch.zeros((*self.batch_dim, 1), dtype=torch.float32, device=self.device)
     self.dones = torch.zeros((*self.batch_dim, 1), dtype=torch.long, device=self.device)
     self.logprobs = torch.zeros((*self.batch_dim, 1), dtype=torch.float32, device=self.device)
     self.values = torch.zeros((*self.batch_dim, 1), dtype=torch.float32, device=self.device)
     self.next_values = torch.zeros((*self.batch_dim, 1), dtype=torch.float32, device=self.device)
-    self.last_next_state = torch.zeros((env_config.num_envs, env_config.state_dim), dtype=torch.float32, device=self.device)
+    self.last_next_state = torch.zeros((env_config.num_envs, config.state_dim), dtype=torch.float32, device=self.device)
 
 
   def get_value(self, state: torch.Tensor) -> torch.Tensor:
@@ -374,7 +388,7 @@ if __name__ == "__main__":
 
   T, E = agent.batch_dim
   for i in range(T):
-    state = State(torch.randn((E, env_config.state_dim)))
+    state = State(torch.randn((E, config.state_dim)))
     next_state = torch.randn_like(state)
     reward = torch.randn((E, 1))
     done = (torch.randn((E, 1)) < 0.05).long()
