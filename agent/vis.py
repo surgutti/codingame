@@ -166,7 +166,7 @@ def visualize_fight(
   frames = []
   frames.append(env.render(agent_names))
 
-  for i in range(2000):
+  for i in range(500):
     a0 = agent0.act(s0)
     a1 = agent1.act(s1)
 

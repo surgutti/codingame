@@ -74,7 +74,7 @@ class Arena:
     for item in data.get("pool", []):
       path = item.get("path")
       if path is not None and not os.path.exists(path):
-        continue
+        raise FileNotFoundError(f"Cannot restore arena: missing {path}")
 
       agent_kwargs = item.get("agent_kwargs", {})
       if "config" in agent_kwargs and isinstance(agent_kwargs["config"], dict):
