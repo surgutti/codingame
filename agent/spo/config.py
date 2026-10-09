@@ -8,19 +8,19 @@ class SPOConfig:
   seed: int = 42
   state_dim: int = 102
 
-  learning_rate: float = 5e-5
+  learning_rate: float = 1e-4
   gamma: float = 0.995
-  gae_lambda: float = 0.95
+  gae_lambda: float = 0.97
   grad_clip: float = 0.67
 
-  minibatch_size: int = 32768
+  minibatch_size: int = 65536
   update_epochs: int = 4
 
   norm_adv: bool = True
   clip_eps_low: float = 0.2
   clip_eps_high: float = 0.28
   clip_vloss: bool = False
-  ent_coef: float = 0.003
+  ent_coef: float = 0.002
   vf_coef: float = 0.5
 
   scale_vf: bool = True

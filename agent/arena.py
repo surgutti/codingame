@@ -79,6 +79,8 @@ class Arena:
       agent_kwargs = item.get("agent_kwargs", {})
       if "config" in agent_kwargs and isinstance(agent_kwargs["config"], dict):
         agent_kwargs["config"] = SPOConfig(**agent_kwargs["config"])
+      if "env_config" in agent_kwargs and isinstance(agent_kwargs["env_config"], dict):
+        agent_kwargs["env_config"] = Config(**agent_kwargs["env_config"])
 
       loaded_pool.append(
         BotEntry(
@@ -188,17 +190,19 @@ class Arena:
       w, d, l = self.play_match(agent, opp_agent, steps=self.config.warmup_steps)
       self.record_match(bot_entry, opp_entry, w, d, l)
 
-    if len(self.pool) > self.config.max_bots:
+    while len(self.pool) > self.config.max_bots:
       weights = self.nash_weights()
       weak_bot = -1
       for i, entry in enumerate(self.pool):
         if entry.agent_type not in BASELINE and \
-           (weak_bot == -1 or weights[weak_bot] > weighs[i]):
+           (weak_bot == -1 or weights[weak_bot] > weights[i]):
           weak_bot = i
 
       # it is not used anywhere and there are too many agents in the leaderboard
-      if weak_bot != -1 and weights[weak_bot] < 1e-10:
+      if weak_bot != -1 and weights[weak_bot] < 1e-7:
         self.remove_bot(weak_bot)
+      else:
+        break
 
     return bot_entry
 

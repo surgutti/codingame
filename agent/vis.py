@@ -47,7 +47,7 @@ class RenderEnv(VecEnv):
   def _world_to_screen(self, x: float, y: float):
     return int(x * self.scale), int(y * self.scale)
 
-  def render(self, agent_names = None) -> np.ndarray:
+  def render(self, agent_names = None, reward: float = 0) -> np.ndarray:
     canvas = pygame.Surface((self.screen_w, self.screen_h))
     canvas.fill(self.COLOR_BG)
     
@@ -99,6 +99,8 @@ class RenderEnv(VecEnv):
       py = float(state.y[..., i].item())
       vx = float(state.vx[..., i].item())
       vy = float(state.vy[..., i].item())
+      fx = float(np.cos(state.angle[..., i].item())) * 800
+      fy = float(np.sin(state.angle[..., i].item())) * 800
       c = self.COLOR_P1 if i < 2 else self.COLOR_P2
    
       sx, sy = self._world_to_screen(px, py) 
@@ -107,6 +109,26 @@ class RenderEnv(VecEnv):
         c,
         (sx, sy),
         pod_radius_px 
+      )
+      
+      sfx, sfy = self._world_to_screen(px + fx, py + fy)
+
+      pygame.draw.line(
+        canvas,
+        c,
+        (sx, sy),
+        (sfx, sfy),
+        3
+      )
+
+      svx, svy = self._world_to_screen(px + vx, py + vy)
+
+      pygame.draw.line(
+        canvas,
+        (255, 0, 0),
+        (sx, sy),
+        (svx, svy),
+        3
       )
 
       next_cp = int(state.next_cp[..., i].item())
@@ -118,6 +140,9 @@ class RenderEnv(VecEnv):
 
     step_text = self.font_large.render(f"Step: {self.step_count}", True, self.COLOR_TEXT)
     hud_surface.blit(step_text, (20, 12))
+
+    reward_text = self.font_large.render(f"Reward: {reward:.4f}", True, self.COLOR_TEXT)
+    hud_surface.blit(reward_text, (self.screen_w - 250, 12))
 
     if agent_names is not None:
       match_title = self.font_large.render(f"{agent_names[0]} vs {agent_names[1]}", True, self.COLOR_TEXT)
@@ -141,14 +166,14 @@ def visualize_fight(
   frames = []
   frames.append(env.render(agent_names))
 
-  for i in range(300):
+  for i in range(2000):
     a0 = agent0.act(s0)
     a1 = agent1.act(s1)
 
     a = torch.cat([a0, a1], -1)
 
     s0, s1, reward, done = env.step(a)
-    frames.append(env.render(agent_names))
+    frames.append(env.render(agent_names, float(reward.item())))
 
     if done.item():
       break
@@ -167,13 +192,13 @@ if __name__ == "__main__":
   from dummy.dummy import DummyAgent
 
   agent0 = DummyAgent()
-  agent1 = Handmade2Agent()
+  agent1 = DummyAgent() # Handmade2Agent()
 
   tb_vid = visualize_fight(
     agent0, 
     agent1, 
     save_path="replays/match.mp4",
-    agent_names=["Handmade1", "Handmade2"]
+    agent_names=["Dummy1", "Dummy2"]
   )
 
   from torch.utils.tensorboard import SummaryWriter

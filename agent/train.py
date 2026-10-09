@@ -160,7 +160,6 @@ if __name__ == "__main__":
         )
         writer.add_video("replays/match", tb_vid, global_step=global_ep, fps=15)
 
-      arena.print_leaderboard()
 
       is_champion, wr = arena.is_champion(agent0)
       print(f"Learner have win ratio: {wr*100:.2f}% against the Nash")
@@ -174,13 +173,15 @@ if __name__ == "__main__":
           name=ckpt_name,
           agent=frozen_learner,
           agent_type="SPOAgent",
-          agent_kwargs={"env_config": confing, "config": agent_config}
+          agent_kwargs={"env_config": config, "config": agent_config}
         )
 
         arena.save_state(
           next_gen=gen + 1, 
           global_ep=global_ep
         )
+
+      arena.print_leaderboard()
 
   except KeyboardInterrupt:
     print(f"\n[Train] Interrupted at episode {global_ep}. Last saved genertion is safe in '{arena.save_dir}/'.")
