@@ -25,9 +25,9 @@ class Engine {
 public:
   Engine();
 
-  void initialize(i32 laps, std::vector<std::pair<i32, i32>> const& checkpoints, i32 podTimeout = TIMEOUT);
-  void initializeRefereeGenerated(i32 laps, i64 seed, i32 mapIndex = -1, i32 podTimeout = TIMEOUT);
-  void resetRace();
+  void initialize(i32 laps, std::vector<std::pair<i32, i32>> const& checkpoints, i32 podTimeout = TIMEOUT, i32 swap_places = 0);
+  void initializeRefereeGenerated(i32 laps, i64 seed, i32 mapIndex = -1, i32 podTimeout = TIMEOUT, i32 swap_places = 0);
+  void resetRace(i32 swap_places = 0);
   void setTurn(i32 turn);
 
   void setPodState(

@@ -30,7 +30,7 @@ def train(
   num_episodes: int,
   start_episode: int
 ):
-  opponent_weights = arena.nash_weights()
+  opponent_weights = arena.sample_weights(agent0)
 
   with tqdm(
     range(start_episode, start_episode + num_episodes),

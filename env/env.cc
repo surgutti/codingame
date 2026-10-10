@@ -39,7 +39,7 @@ public:
     #pragma omp parallel for schedule(static)
     for (i32 i = 0; i < num_envs_; i++) {
       i64 env_seed = base_seed_ + static_cast<i64>(i) * 1000000LL + (episode_counts_[i]++);
-      envs_[i].initializeRefereeGenerated(LAPS, env_seed);
+      envs_[i].initializeRefereeGenerated(LAPS, env_seed, -1, TIMEOUT, (i & 1));
       writeObservations(envs_[i], state0_ptr + i * RAW_STATE_DIM, 0);
       writeObservations(envs_[i], state1_ptr + i * RAW_STATE_DIM, 1);
     }
@@ -84,7 +84,7 @@ public:
         if (envs_[i].winnerTeam() != -1) {
           done_ptr[i] = static_cast<f32>(envs_[i].winnerTeam() + 1);
           i64 env_seed = base_seed_ + static_cast<i64>(i) * 1000000LL + (episode_counts_[i]++);
-          envs_[i].initializeRefereeGenerated(LAPS, env_seed);
+          envs_[i].initializeRefereeGenerated(LAPS, env_seed, -1, TIMEOUT, (i & 1));
         } else {
           done_ptr[i] = 0.0f;
         }
@@ -134,8 +134,8 @@ private:
     i32 q0 = p0 ^ 2;
     i32 q1 = p1 ^ 2;
  
-    out[nxt++] = eng.timeouts()[0 ^ team];
-    out[nxt++] = eng.timeouts()[1 ^ team];
+    out[nxt++] = eng.timeouts()[0 ^ team] / 100.0f;
+    out[nxt++] = eng.timeouts()[1 ^ team] / 100.0f;
 
     for (i32 p : {p0, p1, q0, q1}) {
       Pod const& P = pods[p];

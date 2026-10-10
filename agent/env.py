@@ -45,4 +45,8 @@ class VecEnv:
 if __name__ == "__main__":
   env = VecEnv(1)
 
-  env.reset()
+  s0, s1 = env.reset()
+
+  s = s0.features
+
+  print((s).mean().item())

@@ -11,7 +11,7 @@ class Config:
 
   total_episodes: int = 1_000_000
   episode_steps: int = 1024
-  num_envs: int = 512
+  num_envs: int = 1024
   episodes_per_gen: int = 100
   video_every: int = 10
 

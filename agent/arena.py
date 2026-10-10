@@ -230,6 +230,30 @@ class Arena:
       self.draws.numpy(),
       self.losses.numpy(),
     ).tolist()
+
+  def sample_weights(self, agent0):
+    pool_len = len(self.pool)
+
+    nash_weights = self.nash_weights()
+    uniform_weights = [1.0 / pool_len for i in range(pool_len)]
+    wr_weights = [0.0 for i in range(pool_len)]
+
+    for i in range(pool_len):
+      agent1 = self.load_bot(self.pool[i])
+      w, d, l = self.play_match(agent0, agent1)
+      total = max(1, w + d + l)
+      wr = (w + 0.5 * d) / total
+      wr_weights[i] = 1 - (w + 0.5 * d) / total
+
+    weights = [0.0 for i in range(pool_len)]
+    for i in range(pool_len):
+      weights[i] = nash_weights[i] * 0.7 + uniform_weights[i] * 0.1 + wr_weights[i] * 0.2
+
+    s = sum(weights)
+    for i in range(len(weights)):
+      weights[i] /= s
+
+    return weights
   
   def print_leaderboard(self):
     names = [entry.name for entry in self.pool]

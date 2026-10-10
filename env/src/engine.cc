@@ -46,7 +46,7 @@ Engine::Engine() {
   timeouts_.fill(TIMEOUT);
 }
 
-void Engine::initialize(i32 laps, std::vector<std::pair<i32, i32>> const& checkpoints, i32 podTimeout) {
+void Engine::initialize(i32 laps, std::vector<std::pair<i32, i32>> const& checkpoints, i32 podTimeout, i32 swap_places) {
   laps_ = laps;
   podTimeout_ = podTimeout;
   track_.clear();
@@ -57,14 +57,14 @@ void Engine::initialize(i32 laps, std::vector<std::pair<i32, i32>> const& checkp
       static_cast<f64>(checkpoint.second),
     });
   }
-  resetRace();
+  resetRace(swap_places);
 }
 
-void Engine::initializeRefereeGenerated(i32 laps, i64 seed, i32 mapIndex, i32 podTimeout) {
-  initialize(laps, generateRefereeMap(seed, mapIndex), podTimeout);
+void Engine::initializeRefereeGenerated(i32 laps, i64 seed, i32 mapIndex, i32 podTimeout, i32 swap_places) {
+  initialize(laps, generateRefereeMap(seed, mapIndex), podTimeout, swap_places);
 }
 
-void Engine::resetRace() {
+void Engine::resetRace(i32 swap_places) {
   turn_ = 0;
   winnerTeam_ = -1;
   nextCollisionId_ = 0;
@@ -88,7 +88,8 @@ void Engine::resetRace() {
   direction.x /= norm;
   direction.y /= norm;
 
-  for (i32 podId = 0; podId < POD_NB; ++podId) {
+  for (i32 p = 0; p < POD_NB; p++) {
+    i32 podId = p ^ (swap_places << 1);
     Pod& pod = pods_[podId];
     pod.next = 1;
     pod.x = roundHalfUp(track_[0].x + direction.y * START_OFFSETS[podId].x);
@@ -174,6 +175,14 @@ void Engine::checkpointCompleted(i32 podId) {
   }
 }
 
+inline f32 smooth_max(f32 a, f32 b, f32 tau = 0.05f) {
+    const f32 m = std::max(a, b);
+    return m + tau * std::log(
+        (std::exp((a - m) / tau) +
+         std::exp((b - m) / tau)) * 0.5f
+    );
+}
+
 f32 Engine::statePotential() {
   if (track_.empty() || winnerTeam_ != -1) {
     return 0.0f;
@@ -200,36 +209,8 @@ f32 Engine::statePotential() {
     progress[podId] = (static_cast<f32>(pod.next - 1) + seg_frag) / finishIndex;
   }
 
-  i32 const L0 = (progress[0] >= progress[1]) ? 0 : 1;
-  i32 const B0 = 1 - L0;
-  i32 const L1 = (progress[2] >= progress[3]) ? 2 : 3;
-  i32 const B1 = 5 - L1;
-
-  auto computeIntercept = [&](i32 blockerId, i32 enemyLeaderId) -> f32 {
-    Pod const& enemy = pods_[enemyLeaderId];
-    Checkpoint const& enemyCp = track_[enemy.next % trackSize];
-
-    f64 const dx = enemy.x - enemyCp.x;
-    f64 const dy = enemy.y - enemyCp.y;
-    f64 const dist = std::hypot(dx, dy) + 1e-5;
-
-    f64 const offset = std::min<f64>(600, 0.5 * dist);
-    Vector const chokePoint{
-      enemyCp.x + (dx / dist) * offset,
-      enemyCp.y + (dy / dist) * offset
-    };
-
-    f64 const blocker_dist = pods_[blockerId].distance(chokePoint);
-    return static_cast<f32>(1.0 / (1.0 + blocker_dist / 3000.0));
-  };
-
-  f32 const intercept0 = computeIntercept(B0, L1);
-  f32 const intercept1 = computeIntercept(B1, L0);
-
-  f32 const team0_score = 0.85f * progress[L0] + 0.10f * progress[B0] + 0.05f * intercept0;
-  f32 const team1_score = 0.85f * progress[L1] + 0.10f * progress[B1] + 0.05f * intercept1;
-
-  return 2.0 * (team0_score - team1_score);
+  return + smooth_max(progress[0], progress[1])
+         - smooth_max(progress[2], progress[3]);
 }
 
 f32 Engine::nextTurn() {

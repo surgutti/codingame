@@ -35,13 +35,13 @@ class ActorNetwork(nn.Module):
     super().__init__()
 
     self.net = nn.Sequential(
-      layer_init(nn.Linear(state_dim, 128)),
-      nn.LayerNorm(128),
+      layer_init(nn.Linear(state_dim, 256)),
+      nn.LayerNorm(256),
       nn.SiLU(),
-      SwiGLU(128, 128, 128),
-      nn.LayerNorm(128),
+      SwiGLU(256, 512, 256),
+      nn.LayerNorm(256),
       nn.SiLU(),
-      layer_init(nn.Linear(128, action_dim), std=0.01)
+      layer_init(nn.Linear(256, action_dim), std=0.01)
     )
 
   def forward(self, state):

@@ -3,18 +3,18 @@ from dataclasses import dataclass
 
 @dataclass
 class SPOConfig:
-  name: str = "simple-mlp"
+  name: str = "swiglu-gen1"
   device: str = "cuda" if torch.cuda.is_available() else "cpu"
   seed: int = 42
   state_dim: int = 102
 
-  learning_rate: float = 1e-4
+  learning_rate: float = 5e-4
   gamma: float = 0.995
-  gae_lambda: float = 0.97
+  gae_lambda: float = 0.95
   grad_clip: float = 0.67
 
   minibatch_size: int = 65536
-  update_epochs: int = 4
+  update_epochs: int = 6
 
   norm_adv: bool = True
   clip_eps_low: float = 0.2
